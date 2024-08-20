@@ -15,7 +15,21 @@ class A1Grid:
         x = (x + self.width) % self.width
         self.goal = (y, x)
 
+        return (y, x)
+
     def add_item(self, y=None, x=None):
+        y, x = self.get_unoccupied_random(y, x)
+        self.item = (y, x)
+
+        return (y, x)
+
+    def add_agent(self, agent, y=None, x=None):
+        y, x = self.get_unoccupied_random(y, x)
+        self.grid[y][x] = agent
+        agent.set_grid(self)
+        return (y, x)
+
+    def get_unoccupied_random(self, y, x):
         if y is None:
             y = random.randint(0, self.height - 1)
         if x is None:
@@ -23,8 +37,7 @@ class A1Grid:
         while (y, x) == self.goal:
             print(f"({y},{x}) is occupied, generating new location")
             y, x = self.generate_random_loc()
-
-        self.item = (y, x)
+        return y, x
 
     def generate_random_loc(self):
         y = random.randint(0, self.height - 1)
@@ -45,7 +58,9 @@ class A1Grid:
             map(
                 lambda row: list(
                     # map(lambda grid: 0 if grid is None else grid.get_repr(), row)
-                    map(lambda grid: 0 if grid is None else -4, row)
+                    map(
+                        lambda grid: 0 if grid is None else -2, row
+                    )  # TODO: a more appropriate way than hardcode
                 ),
                 self.grid,
             )
@@ -53,5 +68,5 @@ class A1Grid:
         y, x = self.goal
         repr[y][x] = 1
         y, x = self.item
-        repr[y][x] = -2
+        repr[y][x] = -1
         return repr
