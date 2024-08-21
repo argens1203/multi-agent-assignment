@@ -26,7 +26,6 @@ class A1Grid:
     def add_agent(self, agent, y=None, x=None):
         y, x = self.get_unoccupied_random(y, x)
         self.grid[y][x] = agent
-        agent.set_grid(self)
         return (y, x)
 
     def get_unoccupied_random(self, y, x):
@@ -70,3 +69,11 @@ class A1Grid:
         y, x = self.item
         repr[y][x] = -1
         return repr
+
+    # TODO
+    def has_ended(self):
+        pass
+
+    # TODO
+    def get_final_cost(self):
+        return None

@@ -63,6 +63,7 @@ class SchellingWorld(World):
         shuffle(self.agents)
         for agent in self.agents:
             agent.perceive(self.grid)
+        for agent in self.agents:
             agent.react(self.grid)
 
         self.store_metrics()
