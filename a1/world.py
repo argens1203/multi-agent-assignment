@@ -38,8 +38,8 @@ class A1World(World):
         while not self.grid.has_ended():
             # self.agent.perceive(self.grid)
             action = self.agent.react(self.grid, epsilon)
-            reward = self.grid.progress(action)
-            self.agent.receive(reward)
+            state, reward = self.grid.progress(action)
+            self.agent.update(state, reward)
 
         self.costs.append(self.grid.get_final_cost())
 
