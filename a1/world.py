@@ -30,7 +30,6 @@ class A1World(World):
 
     def get_repr(self):
         rep = self.grid.get_repr()
-        print(rep)
         return rep
 
     # TODO: epsilon is explore ratio or exploit ratio?

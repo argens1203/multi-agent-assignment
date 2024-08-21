@@ -6,6 +6,8 @@ matplotlib.use("TkAgg")
 
 import random
 import threading
+import math
+import numpy
 
 
 class Sim:
@@ -31,7 +33,7 @@ class Sim:
     def advance(self, event):
         self.time += 1
         self.world.step()
-        self.mat.set_data(self.world.get_repr())
+        self.show_data()
         plt.title("t = " + str(self.time))
         plt.show()
 
@@ -40,10 +42,57 @@ class Sim:
 
         self.world.init()
 
-        self.mat = self.ax.matshow(self.world.get_repr(), cmap=plt.cm.seismic)
-        self.mat.set_data(self.world.get_repr())
+        self.create_lookup_for_world()
+        transformed = self.get_transformed_data()
+        self.mat = self.ax.matshow(transformed, cmap=plt.cm.seismic)
+
+        self.show_data()
         plt.title("t = " + str(self.time))
         plt.show()
+
+    def create_lookup_for_world(self):
+        s = set()
+        minimum = math.inf
+        maximum = -math.inf
+        for row in self.world.get_repr():
+            for cell in row:
+                if type(cell) is int or type(cell) is float:
+                    minimum = min(minimum, cell)
+                    maximum = max(maximum, cell)
+                else:
+                    s.add(cell)
+
+        # Arbitrarily setting lookup values to start from max + 1
+        curr = maximum + 1
+        self.lookup = dict()
+        self.rev_lookup = dict()
+        for item in s:
+            self.lookup[item] = curr
+            self.rev_lookup[curr] = item
+            curr += 1
+
+    def show_data(self):
+        repr = self.world.get_repr()
+        shown = self.get_transformed_data()
+        self.mat.set_data(shown)
+        for j, row in enumerate(repr):
+            for i, z in enumerate(row):
+                if type(z) is str:
+                    self.ax.text(i, j, z, ha="center", va="center")
+
+    def get_transformed_data(self):
+        data = self.world.get_repr()
+        return list(
+            map(
+                lambda row: list(
+                    map(
+                        lambda cell: self.lookup[cell] if cell in self.lookup else cell,
+                        row,
+                    )
+                ),
+                data,
+            )
+        )
 
     def updateSpeed(self, val: float | None):
         if val:

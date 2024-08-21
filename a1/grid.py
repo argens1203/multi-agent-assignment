@@ -33,7 +33,7 @@ class A1Grid:
             y = random.randint(0, self.height - 1)
         if x is None:
             x = random.randint(0, self.width - 1)
-        while (y, x) == self.goal:
+        while (y, x) == self.goal or (y, x) == self.item:
             print(f"({y},{x}) is occupied, generating new location")
             y, x = self.generate_random_loc()
         return y, x
@@ -58,16 +58,16 @@ class A1Grid:
                 lambda row: list(
                     # map(lambda grid: 0 if grid is None else grid.get_repr(), row)
                     map(
-                        lambda grid: 0 if grid is None else -2, row
+                        lambda grid: 0 if grid is None else "A", row
                     )  # TODO: a more appropriate way than hardcode
                 ),
                 self.grid,
             )
         )
         y, x = self.goal
-        repr[y][x] = 1
+        repr[y][x] = "G"
         y, x = self.item
-        repr[y][x] = -1
+        repr[y][x] = "I"
         return repr
 
     # TODO
