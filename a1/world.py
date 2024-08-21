@@ -36,7 +36,7 @@ class A1World(World):
     # TODO: epsilon is explore ratio or exploit ratio?
     def step(self, epsilon=1):
         while not self.grid.has_ended():
-            self.agent.perceive(self.grid)
+            # self.agent.perceive(self.grid)
             action = self.agent.react(self.grid, epsilon)
             reward = self.grid.progress(action)
             self.agent.receive(reward)
