@@ -21,7 +21,7 @@ class GridWorld:
         self.item_position = self.random_position(exclude=[self.agent_position, self.B_position])
         self.has_item = False
 
-    def reward(self):
+    def reward(self): # TODO: Can increase penalty for hitting the wall
         if self.agent_position == self.item_position and not self.has_item:
             self.has_item = True
             return 50

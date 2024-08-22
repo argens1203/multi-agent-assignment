@@ -32,8 +32,8 @@ class Agent:
         return self.env.get_state()[2]
     
     def choose_action(self, state):
-        if np.random.rand() < self.epsilon:
-            return random.choice(self.actions)
+        if np.random.rand() < self.epsilon: # TODO: epsilon should decay
+            return random.choice(self.actions) # TODO: Should be random among the rest?
         else:
             # print(state)
             q_values = self.Q[state]
@@ -45,7 +45,7 @@ class Agent:
 
     def move(self):
         state = self.env.get_state()
-        action = self.choose_action(state)
+        action = self.choose_action(state) # TODO: Should only choose among valid moves?
         print(action)
         next_state, reward, terminal = self.env.move(action)
 
@@ -61,4 +61,7 @@ class Agent:
                 state = next_state
                 total_reward += reward
                 # print(f"Episode {_} completed with total reward: {total_reward}")
+    
+    # TODO: reward metrics
+    # TODO: disable epsilon whent testing
 
