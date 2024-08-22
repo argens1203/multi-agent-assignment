@@ -11,12 +11,25 @@ class Visualization:
         self.environment.reset()
         self.agent = agent
         self.fig, self.ax = plt.subplots()
-        self.update()
-
+        
         # Add button for next step
         self.ax_button = plt.axes([0.8, 0.01, 0.1, 0.075])
         self.button = Button(self.ax_button, 'Next Step')
-        self.button.on_clicked(self.next_step)
+        self.button_connection_id = self.button.on_clicked(self.next_step)
+
+        # Add button for reset
+        self.ax_reset_button = plt.axes([0.65, 0.01, 0.1, 0.075])
+        self.reset_button = Button(self.ax_reset_button, 'Reset')
+        self.reset_button.on_clicked(self.reset)
+
+        # Add text box for cumulative reward
+        self.ax_reward = plt.axes([0.01, 0.01, 0.2, 0.075])
+        self.reward_text = self.ax_reward.text(0.5, 0.5, f'Reward: {self.agent.total_reward}', 
+                                               horizontalalignment='center', verticalalignment='center', 
+                                               transform=self.ax_reward.transAxes, fontsize=12)
+        self.ax_reward.axis('off')
+
+        self.update()
 
     def draw_grid(self):
         self.ax.clear()
@@ -34,6 +47,13 @@ class Visualization:
         target_patch = patches.Rectangle((tx, ty), 1, 1, linewidth=1, edgecolor='black', facecolor='green')
         self.ax.add_patch(target_patch)
 
+    def reset(self, event):
+        self.environment.reset()
+        self.agent.total_reward = 0
+        # self.button.on_clicked(self.next_step)
+        # self.agent.reset()
+        self.update()
+
     def update(self):
         self.draw_grid()
 
@@ -48,10 +68,14 @@ class Visualization:
             ix, iy = self.environment.item_position
             item_patch = patches.Circle((ix + 0.5, iy + 0.5), 0.2, color='red')
             self.ax.add_patch(item_patch)
+
+        # Update reward text
+        self.reward_text.set_text(f'Reward: {self.agent.total_reward}')
+
         # Check if the environment is terminal
         if self.environment.is_terminal():
             self.ax.text(0.5, 0.5, 'Complete', horizontalalignment='center', verticalalignment='center', transform=self.ax.transAxes, fontsize=20, color='red')
-            self.button.disconnect_events()
+            # self.button.disconnect(self.button_connection_id)
         self.fig.canvas.draw()
 
     def next_step(self,i):
@@ -65,8 +89,7 @@ class Visualization:
 if __name__ == "__main__":
     env = Environment(size=5)
     agent = Agent(env)
-    # visualization = Visualization(env, agent)
-    agent.train(20000)
+    agent.train(5000)
     visualization = Visualization(env, agent)
-    ani = FuncAnimation(visualization.fig, visualization.animate, frames=400, interval=400, repeat=False)
+    # ani = FuncAnimation(visualization.fig, visualization.animate, frames=400, interval=400, repeat=False)
     plt.show()

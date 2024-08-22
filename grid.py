@@ -6,7 +6,6 @@ class GridWorld:
         self.B_position = (self.size - 1, self.size - 1)
         self.agent_position = self.random_position(exclude=[self.B_position])
         self.item_position = self.random_position(exclude=[self.agent_position, self.B_position])
-        
         self.has_item = False
     
     def random_position(self, exclude=[]):
@@ -49,8 +48,9 @@ class GridWorld:
         if (x, y) == self.agent_position:
             reward = -10
         else:
+            self.agent_position = (x, y)
             reward = self.reward()
-        self.agent_position = (x, y)
+        
         #We update "has_item" in the reward function
         # if self.agent_position == self.item_position:
         #     self.has_item = True
