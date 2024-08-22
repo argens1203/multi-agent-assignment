@@ -60,13 +60,13 @@ class Visualization:
 
     def animate(self, i):
         if not self.environment.is_terminal():
-            self.next_step()
+            self.next_step(1)
 
 if __name__ == "__main__":
     env = Environment(size=5)
     agent = Agent(env)
     # visualization = Visualization(env, agent)
-    agent.train(2000)
+    agent.train(20000)
     visualization = Visualization(env, agent)
-    # ani = FuncAnimation(visualization.fig, visualization.animate, frames=200, interval=400, repeat=False)
+    ani = FuncAnimation(visualization.fig, visualization.animate, frames=400, interval=400, repeat=False)
     plt.show()

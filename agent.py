@@ -23,7 +23,7 @@ class Agent:
         self.Q = q_table
         # self.q_table = np.zeros(   (self.env.size**2, self.env.size**2, 2, len(self.actions))   )
         self.epsilon = 0.2
-        self.gamma = 0.9
+        self.gamma = 0.8
         self.alpha = 0.1
     def get_position(self):
         return self.env.get_state()[0]

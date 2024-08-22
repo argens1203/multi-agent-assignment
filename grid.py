@@ -46,10 +46,14 @@ class GridWorld:
             x -= 1
         elif action == 'east' and x < self.size - 1:
             x += 1
+        if (x, y) == self.agent_position:
+            reward = -10
+        else:
+            reward = self.reward()
         self.agent_position = (x, y)
         #We update "has_item" in the reward function
         # if self.agent_position == self.item_position:
         #     self.has_item = True
-        return self.get_state(), self.reward(), self.is_terminal()
+        return self.get_state(), reward, self.is_terminal()
 
 
