@@ -134,3 +134,6 @@ class Visualization:
     def animate(self, i):
         if not self.environment.is_terminal():
             self.next_step(1)
+
+    def show(self):
+        plt.show()

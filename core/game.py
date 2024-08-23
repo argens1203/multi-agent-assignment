@@ -1,7 +1,17 @@
 import matplotlib.pyplot as plt
+from .grid import GridWorld as Environment
+from .agent import Agent
+from .visualization import Visualization
 
 
 class Game:
+    def run():
+        env = Environment(size=8)
+        agent = Agent(env)
+        training_record = agent.train(50000)
+        Game.plot_training(training_record)
+        Visualization(env, agent).show()
+
     def plot_training(results):
         iterations = [t[0] for t in results]
         losses = [t[3] for t in results]
