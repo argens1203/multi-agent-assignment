@@ -5,35 +5,39 @@ from .visualization import Visualization
 
 
 class Game:
-    def run():
-        env = Environment(size=8)
-        agent = Agent(env)
-        training_record = agent.train(50000)
-        Game.plot_training(training_record)
-        Visualization(env, agent).show()
+    def run(self):
+        self.env = Environment(size=8)
+        self.agent = Agent(self.env)
+        training_record = self.train_agent(50000)
+        plot_training(training_record)
+        Visualization(self.env, self.agent).show()
 
-    def plot_training(results):
-        iterations = [t[0] for t in results]
-        losses = [t[3] for t in results]
-        total_rewards = [t[2] for t in results]
+    def train_agent(self, episodes):
+        return self.agent.train(episodes)
 
-        # Create a figure with 1 row and 2 columns of subplots
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
-        # Plotting the loss in the first subplot
-        ax1.plot(iterations, losses, marker="o", label="Loss")
-        ax1.set_title("Iteration vs Loss")
-        ax1.set_xlabel("Iteration Number")
-        ax1.set_ylabel("Loss")
+def plot_training(results):
+    iterations = [t[0] for t in results]
+    losses = [t[3] for t in results]
+    total_rewards = [t[2] for t in results]
 
-        # Plotting the total rewards in the second subplot
-        ax2.plot(
-            iterations, total_rewards, label="Total Reward", color="orange", marker="o"
-        )
-        ax2.set_title("Iteration vs Total Reward")
-        ax2.set_xlabel("Iteration Number")
-        ax2.set_ylabel("Total Reward")
+    # Create a figure with 1 row and 2 columns of subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
-        # Display the plots
-        plt.tight_layout()
-        plt.show()
+    # Plotting the loss in the first subplot
+    ax1.plot(iterations, losses, marker="o", label="Loss")
+    ax1.set_title("Iteration vs Loss")
+    ax1.set_xlabel("Iteration Number")
+    ax1.set_ylabel("Loss")
+
+    # Plotting the total rewards in the second subplot
+    ax2.plot(
+        iterations, total_rewards, label="Total Reward", color="orange", marker="o"
+    )
+    ax2.set_title("Iteration vs Total Reward")
+    ax2.set_xlabel("Iteration Number")
+    ax2.set_ylabel("Total Reward")
+
+    # Display the plots
+    plt.tight_layout()
+    plt.show()
