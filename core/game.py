@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import itertools
 
-from .grid import GridWorld as Environment, Action
+from .grid import GridWorld as Environment, Action, GridUtil
 from .agent import Agent
 from .visualization import Visualization
 
@@ -37,7 +37,7 @@ class Game:
         for _ in range(episodes):
             self.env.reset()
             state = self.env.get_state()
-            max_reward = self.env.calculate_max_reward()
+            max_reward = GridUtil.calculate_max_reward(self.env)
 
             total_reward = 0
             while not self.env.is_terminal():
@@ -63,16 +63,16 @@ class Game:
 
     def get_untaken_items(self):
         pos, has_item = self.agent.get_props()
-        return [] if has_item else [self.env.item_position]
+        return [] if has_item else self.env.get_item_positions()
 
     def get_max_reward(self):
-        return self.env.calculate_max_reward()
+        return GridUtil.calculate_max_reward(self.env)
 
     def get_size(self):
         return self.env.size
 
     def get_target_location(self):
-        return self.env.goal_position
+        return self.env.get_goal_positions()
 
     def has_ended(self):
         return self.env.is_terminal()

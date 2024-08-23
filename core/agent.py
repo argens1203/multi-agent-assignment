@@ -24,10 +24,7 @@ class Agent:
         self.gamma = 0.8
         self.alpha = 0.1
 
-    # ----- Public Functions ----- #
-    def get_props(self):
-        return self.position, self.has_item
-
+    # ----- Core Functions ----- #
     def choose_action(self, state, explore = True):
         if explore and np.random.rand() < self.epsilon:
             return random.choice(self.actions)
@@ -49,6 +46,10 @@ class Agent:
 
         # Epsilon decay
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+
+    # ----- Public Functions ----- #
+    def get_props(self):
+        return self.position, self.has_item
 
     def set_state(self, state):
         agent_pos, item_pos, has_item = state
