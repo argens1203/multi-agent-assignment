@@ -24,8 +24,9 @@ class Agent:
         self.gamma = 0.8
         self.alpha = 0.1
 
-        # Initialize Agent metrics
-        self.total_reward = 0
+    # ----- Public Functions ----- #
+    def get_props(self):
+        return self.position, self.has_item
 
     def choose_action(self, state, explore = True):
         if explore and np.random.rand() < self.epsilon:
@@ -57,3 +58,5 @@ class Agent:
 
     def reset(self):
         pass
+
+    # ----- Private Functions ----- #

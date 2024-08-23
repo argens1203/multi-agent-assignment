@@ -105,9 +105,9 @@ class Visualization:
     def draw_agent(self, agents):
         # Draw agent
         for agent in agents:
-            print(agent.position)
-            ax, ay = agent.position
-            agent_color = "blue" if not agent.has_item else "orange"
+            pos, has_item = agent.get_props()
+            ax, ay = pos
+            agent_color = "blue" if not has_item else "orange"
             agent_patch = patches.Circle((ax + 0.5, ay + 0.5), 0.3, color=agent_color)
             self.ax.add_patch(agent_patch)
 

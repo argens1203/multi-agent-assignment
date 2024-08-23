@@ -22,7 +22,6 @@ class Game:
         vis.show()
 
     def get_agent(self):
-
         # Generate all possible states
         positions = [(x, y) for x in range(8) for y in range(8)]
         has_items = [True, False]
@@ -63,7 +62,8 @@ class Game:
         return [self.agent]
 
     def get_untaken_items(self):
-        return [] if self.agent.has_item else [self.env.item_position]
+        pos, has_item = self.agent.get_props()
+        return [] if has_item else [self.env.item_position]
 
     def get_max_reward(self):
         return self.env.calculate_max_reward()
