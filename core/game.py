@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
-from .grid import GridWorld as Environment
+import itertools
+
+from .grid import GridWorld as Environment, Action
 from .agent import Agent
 from .visualization import Visualization
 
@@ -12,12 +14,24 @@ class Game:
 
     def run(self):
         self.env = Environment(size=8)
-        self.agent = Agent(self.env)
+        self.agent = self.get_agent()
         training_record = self.train_agent(50000)
         plot_training(training_record)
         vis = Visualization(self)
         vis.reset(None)
         vis.show()
+
+    def get_agent(self):
+
+        # Generate all possible states
+        positions = [(x, y) for x in range(8) for y in range(8)]
+        has_items = [True, False]
+        possible_states = itertools.product(positions, positions, has_items)
+
+        # Generate possible actions
+        possible_actions = [Action.NORTH, Action.SOUTH, Action.EAST, Action.WEST]
+        
+        return Agent(possible_states, possible_actions)
 
     def train_agent(self, episodes):
         training_record = []

@@ -11,8 +11,8 @@ class Visualization:
     def __init__(self, game):
         self.game = game
         self.game.reset()
-        self.fig, self.ax = plt.subplots()
 
+        self.fig, self.ax = plt.subplots()
         self.add_ui_elements()
         self.update()
 
@@ -65,6 +65,19 @@ class Visualization:
 
     # ----- ----- ----- ----- Render Main Board  ----- ----- ----- ----- #
 
+    def update(self):
+        self.draw_grid()
+
+        self.draw_agent(self.game.get_agents())
+        self.draw_item(self.game.get_untaken_items())
+        self.reward.set_text(f"Reward: {self.game.total_reward}")
+
+        # Check if the environment is terminal
+        if self.game.has_ended():
+            self.draw_complete()
+
+        self.fig.canvas.draw()
+    
     def draw_grid(self):
         self.ax.clear()
         size = self.game.get_size()
@@ -88,18 +101,6 @@ class Visualization:
             (tx, ty), 1, 1, linewidth=1, edgecolor="black", facecolor="green"
         )
         self.ax.add_patch(target_patch)
-
-    def update(self):
-        self.draw_grid()
-
-        self.draw_agent(self.game.get_agents())
-        self.draw_item(self.game.get_untaken_items())
-        self.reward.set_text(f"Reward: {self.game.total_reward}")
-
-        # Check if the environment is terminal
-        if self.game.has_ended():
-            self.draw_complete()
-        self.fig.canvas.draw()
 
     def draw_agent(self, agents):
         # Draw agent
