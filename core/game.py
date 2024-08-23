@@ -72,7 +72,7 @@ class Game:
         return self.env.size
 
     def get_target_location(self):
-        return self.env.B_position
+        return self.env.goal_position
 
     def has_ended(self):
         return self.env.is_terminal()
