@@ -3,6 +3,8 @@ from .grid import GridWorld as Environment
 from .agent import Agent
 from .visualization import Visualization
 
+debug = False
+
 
 class Game:
     def run(self):
@@ -13,7 +15,30 @@ class Game:
         Visualization(self.env, self.agent).show()
 
     def train_agent(self, episodes):
-        return self.agent.train(episodes)
+        training_record = []
+        for _ in range(episodes):
+            self.env.reset()
+            state = self.env.get_state()
+            max_reward = self.env.calculate_max_reward()
+
+            total_reward = 0
+            while not self.env.is_terminal():
+                action = self.agent.choose_action(state)
+                next_state, reward, terminal = self.env.move(action)
+                self.agent.learn(state, action, reward, next_state, terminal)
+
+                state = next_state
+                total_reward += reward
+
+            loss = max_reward - total_reward
+            if debug:
+                print(
+                    f"Episode {_} completed with total reward: {total_reward},max_reward:{max_reward}, loss:{loss}"
+                )
+            training_record.append([_, max_reward, total_reward, loss])
+
+        print("Training complete")
+        return training_record
 
 
 def plot_training(results):

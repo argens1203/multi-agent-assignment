@@ -49,7 +49,8 @@ class Agent:
             q_values = self.Q[state]
             return self.actions[np.argmax(q_values)]
 
-    def learn(self, state, action, reward, next_state):
+    def learn(self, state, action, reward, next_state, is_terminal):
+        # All states (including terminal states) have initial Q-values of 0 and thus there is no need for branching for handling terminal next state
         self.Q[state][self.actions.index(action)] += self.alpha * (
             reward
             + self.gamma * np.max(self.Q[next_state])
@@ -70,29 +71,6 @@ class Agent:
 
     def reset(self):
         pass
-
-    def train(self, episodes=1000):
-        training_record = []
-        for _ in range(episodes):
-            self.env.reset()
-            state = self.env.get_state()
-            max_reward = self.env.calculate_max_reward()
-            total_reward = 0
-            while not self.env.is_terminal():
-                action = self.choose_action(state)
-                next_state, reward, terminal = self.env.move(action)
-                self.learn(state, action, reward, next_state)
-                state = next_state
-                total_reward += reward
-            loss = max_reward - total_reward
-            # print(
-            #     f"Episode {_} completed with total reward: {total_reward},max_reward:{max_reward}, loss:{loss}"
-            # )
-            training_record.append([_, max_reward, total_reward, loss])
-        print("Training complete")
-        print(f"{self.epsilon}")
-        # print(f"Q-values:{self.Q}")
-        return training_record
 
     # TODO: reward metrics
     # TODO: disable epsilon whent testing
