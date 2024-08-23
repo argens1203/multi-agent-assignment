@@ -137,7 +137,7 @@ class Visualization:
         self.update()
 
     def next_step(self, i):
-        self.game.step()
+        self.game.step(learn = False)
         self.update()
 
     def animate(self, i):

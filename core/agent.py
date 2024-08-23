@@ -31,9 +31,9 @@ class Agent:
         else:
             return self.actions[np.argmax(self.Q[state])]
 
-    def perceive(self, state, action, reward, next_state, is_terminal, learn = True):
+    def update_learn(self, state, action, reward, next_state, is_terminal, learn = True):
         # Update internal params wrt to updated state
-        self.set_state(state)
+        self.update(state)
         if not learn:
             return
 
@@ -51,7 +51,7 @@ class Agent:
     def get_props(self):
         return self.position, self.has_item
 
-    def set_state(self, state):
+    def update(self, state):
         agent_pos, item_pos, has_item = state
 
         self.position = agent_pos

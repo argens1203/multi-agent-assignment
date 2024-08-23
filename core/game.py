@@ -11,10 +11,10 @@ debug = False
 class Game:
     def __init__(self):
         self.total_reward = 0
-
-    def run(self):
         self.env = Environment(size=8)
         self.agent = self.get_agent()
+
+    def run(self):
         training_record = self.train_agent(50000)
         plot_training(training_record)
         vis = Visualization(self)
@@ -36,24 +36,18 @@ class Game:
         training_record = []
         for _ in range(episodes):
             self.env.reset()
-            state = self.env.get_state()
+            self.total_reward = 0
             max_reward = GridUtil.calculate_max_reward(self.env)
 
-            total_reward = 0
             while not self.env.is_terminal():
-                action = self.agent.choose_action(state)
-                next_state, reward, terminal = self.env.move(action)
-                self.agent.perceive(state, action, reward, next_state, terminal)
+                self.step()
 
-                state = next_state
-                total_reward += reward
-
-            loss = max_reward - total_reward
+            loss = max_reward - self.total_reward
             if debug:
                 print(
-                    f"Episode {_} completed with total reward: {total_reward},max_reward:{max_reward}, loss:{loss}"
+                    f"Episode {_} completed with total reward: {self.total_reward},max_reward:{max_reward}, loss:{loss}"
                 )
-            training_record.append([_, max_reward, total_reward, loss])
+            training_record.append([_, max_reward, self.total_reward, loss])
 
         print("Training complete")
         return training_record
@@ -80,18 +74,21 @@ class Game:
     def reset(self):
         self.env.reset()
         self.total_reward = 0
-        self.agent.set_state(self.env.get_state())
+        self.agent.update(self.env.get_state())
 
-    def step(self):
+    def step(self, learn=True):
         if self.env.is_terminal():
             return
         state = self.env.get_state()
         action = self.agent.choose_action(
             state
             # TODO: disable epsilon whent testing
-        )  # TODO: Should only choose among valid moves?
+        )
         next_state, reward, terminal = self.env.move(action)
-        self.agent.set_state(next_state)
+        if learn:
+            self.agent.update_learn(state, action, reward, next_state, terminal)
+        else:
+            self.agent.update(next_state)
         self.total_reward += reward
 
 
