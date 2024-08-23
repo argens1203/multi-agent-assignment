@@ -8,15 +8,15 @@ Coordinates: TypeAlias = Tuple[float, float, float, float]
 
 
 class Visualization:
-    def __init__(self, game, environment, agent):
+    def __init__(self, game):
         self.game = game
-        self.environment = environment
-        self.environment.reset()
-        self.agent = agent
+        self.game.reset()
         self.fig, self.ax = plt.subplots()
 
         self.add_ui_elements()
         self.update()
+
+    # ----- ----- ----- ----- Render UI Element  ----- ----- ----- ----- #
 
     def add_ui_elements(self):
         # Add button for next step
@@ -31,13 +31,13 @@ class Visualization:
 
         # Add text box for cumulative reward
         self.reward = self.add_text(
-            [0.01, 0.01, 0.2, 0.075], f"Reward: {self.agent.total_reward}"
+            [0.01, 0.01, 0.2, 0.075], f"Reward: {self.game.total_reward}"
         )
 
         # Add text box for max reward
         self.max_reward = self.add_text(
             [0.25, 0.01, 0.2, 0.075],
-            f"Max Reward: {self.environment.calculate_max_reward()}",
+            f"Max Reward: {self.game.get_max_reward()}",
         )
 
         self.update()
@@ -63,9 +63,11 @@ class Visualization:
         axis.axis("off")
         return textbox
 
+    # ----- ----- ----- ----- Render Main Board  ----- ----- ----- ----- #
+
     def draw_grid(self):
         self.ax.clear()
-        size = self.environment.size
+        size = self.game.get_size()
         for x in range(size):
             for y in range(size):
                 rect = patches.Rectangle(
@@ -81,30 +83,21 @@ class Visualization:
         self.ax.xaxis.tick_top()
 
         # Draw target
-        tx, ty = self.environment.B_position
+        tx, ty = self.game.get_target_location()
         target_patch = patches.Rectangle(
             (tx, ty), 1, 1, linewidth=1, edgecolor="black", facecolor="green"
         )
         self.ax.add_patch(target_patch)
-
-    def reset(self, event):
-        self.environment.reset()
-        self.agent.total_reward = 0
-        self.agent.set_state(self.environment.get_state())
-        self.max_reward.set_text(
-            f"Max Reward: {self.environment.calculate_max_reward()}"
-        )
-        self.update()
 
     def update(self):
         self.draw_grid()
 
         self.draw_agent(self.game.get_agents())
         self.draw_item(self.game.get_untaken_items())
-        self.reward.set_text(f"Reward: {self.agent.total_reward}")
+        self.reward.set_text(f"Reward: {self.game.total_reward}")
 
         # Check if the environment is terminal
-        if self.environment.is_terminal():
+        if self.game.has_ended():
             self.draw_complete()
         self.fig.canvas.draw()
 
@@ -135,12 +128,19 @@ class Visualization:
             color="red",
         )
 
+    # ----- ----- ----- ----- Event Handlers  ----- ----- ----- ----- #
+
+    def reset(self, event):
+        self.game.reset()
+        self.max_reward.set_text(f"Max Reward: {self.game.get_max_reward()}")
+        self.update()
+
     def next_step(self, i):
-        self.agent.move()
+        self.game.step()
         self.update()
 
     def animate(self, i):
-        if not self.environment.is_terminal():
+        while not self.game.has_ended():
             self.next_step(1)
 
     def show(self):

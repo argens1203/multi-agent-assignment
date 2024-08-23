@@ -7,12 +7,15 @@ debug = False
 
 
 class Game:
+    def __init__(self):
+        self.total_reward = 0
+
     def run(self):
         self.env = Environment(size=8)
         self.agent = Agent(self.env)
         training_record = self.train_agent(50000)
         plot_training(training_record)
-        vis = Visualization(self, self.env, self.agent)
+        vis = Visualization(self)
         vis.reset(None)
         vis.show()
 
@@ -47,6 +50,35 @@ class Game:
 
     def get_untaken_items(self):
         return [] if self.agent.has_item else [self.env.item_position]
+
+    def get_max_reward(self):
+        return self.env.calculate_max_reward()
+
+    def get_size(self):
+        return self.env.size
+
+    def get_target_location(self):
+        return self.env.B_position
+
+    def has_ended(self):
+        return self.env.is_terminal()
+
+    def reset(self):
+        self.env.reset()
+        self.total_reward = 0
+        self.agent.set_state(self.env.get_state())
+
+    def step(self):
+        if self.env.is_terminal():
+            return
+        state = self.env.get_state()
+        action = self.agent.choose_action(
+            state
+            # TODO: disable epsilon whent testing
+        )  # TODO: Should only choose among valid moves?
+        next_state, reward, terminal = self.env.move(action)
+        self.agent.set_state(next_state)
+        self.total_reward += reward
 
 
 def plot_training(results):
