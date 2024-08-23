@@ -12,7 +12,9 @@ class Game:
         self.agent = Agent(self.env)
         training_record = self.train_agent(50000)
         plot_training(training_record)
-        Visualization(self.env, self.agent).show()
+        vis = Visualization(self, self.env, self.agent)
+        vis.reset(None)
+        vis.show()
 
     def train_agent(self, episodes):
         training_record = []
@@ -25,7 +27,7 @@ class Game:
             while not self.env.is_terminal():
                 action = self.agent.choose_action(state)
                 next_state, reward, terminal = self.env.move(action)
-                self.agent.learn(state, action, reward, next_state, terminal)
+                self.agent.perceive(state, action, reward, next_state, terminal)
 
                 state = next_state
                 total_reward += reward
@@ -39,6 +41,12 @@ class Game:
 
         print("Training complete")
         return training_record
+
+    def get_agents(self):
+        return [self.agent]
+
+    def get_untaken_items(self):
+        return [] if self.agent.has_item else [self.env.item_position]
 
 
 def plot_training(results):

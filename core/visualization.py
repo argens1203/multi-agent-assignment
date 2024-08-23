@@ -8,7 +8,8 @@ Coordinates: TypeAlias = Tuple[float, float, float, float]
 
 
 class Visualization:
-    def __init__(self, environment, agent):
+    def __init__(self, game, environment, agent):
+        self.game = game
         self.environment = environment
         self.environment.reset()
         self.agent = agent
@@ -89,6 +90,7 @@ class Visualization:
     def reset(self, event):
         self.environment.reset()
         self.agent.total_reward = 0
+        self.agent.set_state(self.environment.get_state())
         self.max_reward.set_text(
             f"Max Reward: {self.environment.calculate_max_reward()}"
         )
@@ -97,35 +99,41 @@ class Visualization:
     def update(self):
         self.draw_grid()
 
-        # Draw agent
-        ax, ay = self.agent.get_position()
-        agent_color = "blue" if not self.agent.has_item() else "orange"
-        agent_patch = patches.Circle((ax + 0.5, ay + 0.5), 0.3, color=agent_color)
-        self.ax.add_patch(agent_patch)
-
-        # Draw item
-        if not self.agent.has_item():
-            ix, iy = self.environment.item_position
-            item_patch = patches.Circle((ix + 0.5, iy + 0.5), 0.2, color="red")
-            self.ax.add_patch(item_patch)
-
-        # Update reward text
+        self.draw_agent(self.game.get_agents())
+        self.draw_item(self.game.get_untaken_items())
         self.reward.set_text(f"Reward: {self.agent.total_reward}")
 
         # Check if the environment is terminal
         if self.environment.is_terminal():
-            self.ax.text(
-                0.5,
-                0.5,
-                "Complete",
-                horizontalalignment="center",
-                verticalalignment="center",
-                transform=self.ax.transAxes,
-                fontsize=20,
-                color="red",
-            )
-            # self.button.disconnect(self.button_connection_id)
+            self.draw_complete()
         self.fig.canvas.draw()
+
+    def draw_agent(self, agents):
+        # Draw agent
+        for agent in agents:
+            print(agent.position)
+            ax, ay = agent.position
+            agent_color = "blue" if not agent.has_item else "orange"
+            agent_patch = patches.Circle((ax + 0.5, ay + 0.5), 0.3, color=agent_color)
+            self.ax.add_patch(agent_patch)
+
+    def draw_item(self, items):
+        for item in items:
+            ix, iy = item
+            item_patch = patches.Circle((ix + 0.5, iy + 0.5), 0.2, color="red")
+            self.ax.add_patch(item_patch)
+
+    def draw_complete(self):
+        self.ax.text(
+            0.5,
+            0.5,
+            "Complete",
+            horizontalalignment="center",
+            verticalalignment="center",
+            transform=self.ax.transAxes,
+            fontsize=20,
+            color="red",
+        )
 
     def next_step(self, i):
         self.agent.move()

@@ -35,11 +35,13 @@ class Agent:
         self.alpha = 0.1
         self.total_reward = 0
 
-    def get_position(self):
-        return self.env.get_state()[0]
+        self.position = None
+        self.has_item = False
 
-    def has_item(self):
-        return self.env.get_state()[2]
+    def set_state(self, state):
+        agent_pos, item_pos, has_item = state
+        self.position = agent_pos
+        self.has_item = has_item
 
     def choose_action(self, state):
         if np.random.rand() < self.epsilon:  # TODO: epsilon should decay
@@ -49,7 +51,10 @@ class Agent:
             q_values = self.Q[state]
             return self.actions[np.argmax(q_values)]
 
-    def learn(self, state, action, reward, next_state, is_terminal):
+    def perceive(self, state, action, reward, next_state, is_terminal):
+        # Update internal params wrt to updated state
+        self.set_state(state)
+
         # All states (including terminal states) have initial Q-values of 0 and thus there is no need for branching for handling terminal next state
         self.Q[state][self.actions.index(action)] += self.alpha * (
             reward
@@ -64,13 +69,12 @@ class Agent:
         state = self.env.get_state()
         action = self.choose_action(
             state
+            # TODO: disable epsilon whent testing
         )  # TODO: Should only choose among valid moves?
         print(action)
         next_state, reward, terminal = self.env.move(action)
+        self.set_state(next_state)
         self.total_reward += reward
 
     def reset(self):
         pass
-
-    # TODO: reward metrics
-    # TODO: disable epsilon whent testing
