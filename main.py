@@ -5,6 +5,10 @@ from matplotlib.animation import FuncAnimation
 from agent import Agent
 from grid import GridWorld as Environment
 
+from typing import Tuple, TypeAlias
+
+Coordinates: TypeAlias = Tuple[float, float, float, float]
+
 
 class Visualization:
     def __init__(self, environment, agent):
@@ -13,43 +17,53 @@ class Visualization:
         self.agent = agent
         self.fig, self.ax = plt.subplots()
 
+        self.add_ui_elements()
+        self.update()
+
+    def add_ui_elements(self):
         # Add button for next step
-        self.ax_button = plt.axes([0.8, 0.01, 0.1, 0.075])
-        self.button = Button(self.ax_button, "Next Step")
-        self.button_connection_id = self.button.on_clicked(self.next_step)
+        self.next_step_button = self.add_button(
+            [0.8, 0.01, 0.1, 0.075], "Next Step", self.next_step
+        )
 
         # Add button for reset
-        self.ax_reset_button = plt.axes([0.65, 0.01, 0.1, 0.075])
-        self.reset_button = Button(self.ax_reset_button, "Reset")
-        self.reset_button.on_clicked(self.reset)
+        self.reset_button = self.add_button(
+            [0.65, 0.01, 0.1, 0.075], "Reset", self.reset
+        )
 
         # Add text box for cumulative reward
-        self.ax_reward = plt.axes([0.01, 0.01, 0.2, 0.075])
-        self.reward_text = self.ax_reward.text(
-            0.5,
-            0.5,
-            f"Reward: {self.agent.total_reward}",
-            horizontalalignment="center",
-            verticalalignment="center",
-            transform=self.ax_reward.transAxes,
-            fontsize=12,
+        self.reward = self.add_text(
+            [0.01, 0.01, 0.2, 0.075], f"Reward: {self.agent.total_reward}"
         )
-        self.ax_reward.axis("off")
 
         # Add text box for max reward
-        self.ax_max_reward = plt.axes([0.25, 0.01, 0.2, 0.075])
-        self.max_reward_text = self.ax_max_reward.text(
-            0.5,
-            0.5,
+        self.max_reward = self.add_text(
+            [0.25, 0.01, 0.2, 0.075],
             f"Max Reward: {self.environment.calculate_max_reward()}",
-            horizontalalignment="center",
-            verticalalignment="center",
-            transform=self.ax_max_reward.transAxes,
-            fontsize=12,
         )
-        self.ax_max_reward.axis("off")
 
         self.update()
+
+    def add_button(self, coordinates: Coordinates, text, on_click):
+        axis = plt.axes(coordinates)
+        button = Button(axis, text)
+        button.on_clicked(on_click)
+
+        return button
+
+    def add_text(self, coordinates: Coordinates, text):
+        axis = plt.axes(coordinates)
+        textbox = axis.text(
+            0.5,
+            0.5,
+            text,
+            horizontalalignment="center",
+            verticalalignment="center",
+            transform=axis.transAxes,
+            fontsize=12,
+        )
+        axis.axis("off")
+        return textbox
 
     def draw_grid(self):
         self.ax.clear()
@@ -61,7 +75,7 @@ class Visualization:
                 )
                 self.ax.add_patch(rect)
         self.ax.set_xlim(0, size)
-        self.ax.set_ylim(size, 0)  
+        self.ax.set_ylim(size, 0)
         self.ax.set_aspect("equal")
 
         # Move x-axis labels to the top
@@ -78,7 +92,7 @@ class Visualization:
     def reset(self, event):
         self.environment.reset()
         self.agent.total_reward = 0
-        self.max_reward_text.set_text(
+        self.max_reward.set_text(
             f"Max Reward: {self.environment.calculate_max_reward()}"
         )
         self.update()
@@ -99,7 +113,7 @@ class Visualization:
             self.ax.add_patch(item_patch)
 
         # Update reward text
-        self.reward_text.set_text(f"Reward: {self.agent.total_reward}")
+        self.reward.set_text(f"Reward: {self.agent.total_reward}")
 
         # Check if the environment is terminal
         if self.environment.is_terminal():
