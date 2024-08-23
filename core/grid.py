@@ -2,6 +2,13 @@ import numpy as np
 import random
 
 
+class Action:
+    NORTH = "N"
+    WEST = "W"
+    EAST = "E"
+    SOUTH = "S"
+
+
 class GridWorld:
     def __init__(self, size=5):
         self.size = size
@@ -12,16 +19,6 @@ class GridWorld:
         )
         self.has_item = False
         self.max_reward = self.calculate_max_reward()
-
-    def random_position(self, exclude=[]):
-        # return (random.randint(0, self.size - 1), random.randint(0, self.size - 1))
-        while True:
-            position = (
-                random.randint(0, self.size - 1),
-                random.randint(0, self.size - 1),
-            )
-            if position not in exclude:
-                return position
 
     def reset(self):
         self.agent_position = self.random_position(exclude=[self.B_position])
@@ -39,6 +36,22 @@ class GridWorld:
 
         return (dist_to_obj + dist_to_goal) * -1 + 102
 
+    def get_state(self):
+        return (self.agent_position, self.item_position, self.has_item)
+
+    def is_terminal(self):
+        return self.agent_position == self.B_position and self.has_item
+
+    def random_position(self, exclude=[]):
+        # return (random.randint(0, self.size - 1), random.randint(0, self.size - 1))
+        while True:
+            position = (
+                random.randint(0, self.size - 1),
+                random.randint(0, self.size - 1),
+            )
+            if position not in exclude:
+                return position
+
     def reward(self):  # TODO: Can increase penalty for hitting the wall
         if self.agent_position == self.item_position and not self.has_item:
             self.has_item = True
@@ -47,22 +60,15 @@ class GridWorld:
             return 50
         return -1
 
-    def get_state(self):
-        return (self.agent_position, self.item_position, self.has_item)
-
-    def is_terminal(self):
-        return self.agent_position == self.B_position and self.has_item
-
     def move(self, action):
-        # Define movement logic for 'north', 'south', 'east', 'west'
         x, y = self.agent_position
-        if action == "north" and y > 0:
+        if action == Action.NORTH and y > 0:
             y -= 1
-        elif action == "south" and y < self.size - 1:
+        elif action == Action.SOUTH and y < self.size - 1:
             y += 1
-        elif action == "west" and x > 0:
+        elif action == Action.WEST and x > 0:
             x -= 1
-        elif action == "east" and x < self.size - 1:
+        elif action == Action.EAST and x < self.size - 1:
             x += 1
         if (x, y) == self.agent_position:
             reward = -10

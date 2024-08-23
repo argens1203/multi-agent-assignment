@@ -1,12 +1,13 @@
 import numpy as np
 import random
 import itertools
+from .grid import Action
 
 
 class Agent:
     def __init__(self, env):
         self.env = env
-        self.actions = ["north", "south", "east", "west"]
+        self.actions = [Action.NORTH, Action.SOUTH, Action.EAST, Action.WEST]
         # Define the grid size (n x n)
         grid_size = self.env.size
         # Initialize the dictionary
