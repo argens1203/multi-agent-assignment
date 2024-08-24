@@ -36,9 +36,7 @@ class Game:
     def train_agent(self, episodes):
         training_record = []
         for _ in range(episodes):
-            # print(_)
             self.env.reset()
-            # print(self.env.get_state())
             self.total_reward = 0
             max_reward = GridUtil.calculate_max_reward(self.env)
 
@@ -57,6 +55,9 @@ class Game:
 
     def get_agents(self):
         return self.agent
+
+    def get_agent_positions(self):
+        return self.env.get_agent_positions()
 
     def get_untaken_items(self):
         return self.env.get_untaken_item_pos()

@@ -68,7 +68,7 @@ class Visualization:
     def update(self):
         self.draw_grid()
 
-        self.draw_agent(self.game.get_agents())
+        self.draw_agent(self.game.get_agents(), self.game.get_agent_positions())
         self.draw_item(self.game.get_untaken_items())
         self.reward.set_text(f"Reward: {self.game.total_reward}")
 
@@ -102,10 +102,10 @@ class Visualization:
         )
         self.ax.add_patch(target_patch)
 
-    def draw_agent(self, agents):
+    def draw_agent(self, agents, positions):
         # Draw agent
-        for agent in agents:
-            pos, has_item = agent.get_props()
+        for agent, pos in zip(agents, positions):
+            has_item = agent.has_item()
             ax, ay = pos
             agent_color = "blue" if not has_item else "orange"
             agent_patch = patches.Circle((ax + 0.5, ay + 0.5), 0.3, color=agent_color)

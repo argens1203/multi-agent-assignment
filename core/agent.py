@@ -5,7 +5,7 @@ class Agent:
     def __init__(self, all_states, actions): # TODO: store idx for multi-agent scenario
         # Agent property (for illustration purposes)
         self.position = None
-        self.has_item = False
+        self.is_having_item = False
 
         # Initialize action vector
         self.actions = actions # TODO: encode different action per state. How to initialize Q-Table
@@ -48,14 +48,14 @@ class Agent:
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
 
     # ----- Public Functions ----- #
-    def get_props(self):
-        return self.position, self.has_item
+    def has_item(self):
+        return self.is_having_item
 
     def update(self, state):
         agent_pos, item_pos, has_item = state
 
         self.position = agent_pos
-        self.has_item = has_item
+        self.is_having_item = has_item
 
     def reset(self):
         pass

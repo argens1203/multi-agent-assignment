@@ -35,7 +35,7 @@ class Goal(Empty):
         self.reached = False
 
     def interact(self, other: Agent):
-        pos, has_item = other.get_props()
+        has_item = other.has_item()
         if has_item:
             self.reached = True
             return 50, (self.x, self.y)
@@ -86,6 +86,7 @@ class GridWorld:
         self.state = {} # TODO: multiple entities in one cell
         self.lookup = set()
         self.agents = []
+        self.agent_positions = []
 
         for x in range(-1, width + 1):
             for y in range(-1, height + 1):
@@ -98,18 +99,14 @@ class GridWorld:
 
     # ----- Core Functions ----- #
     def move(self, actions):
-        agent_positions = self.get_agent_positions()
-        # print(agent_positions)
-        temp_positions = [self.process_action(action, agent_pos) for action, agent_pos in zip(actions, agent_positions)]
-        # print(temp_positions)
+        temp_positions = [self.process_action(action, agent_pos) for action, agent_pos in zip(actions, self.agent_positions)]
+        reward_new_positions = [self.state[(x, y)].interact(agent) for agent, (x, y) in zip(self.agents, temp_positions)]
+        rewards, new_positions = zip(*reward_new_positions)
+        
+        self.agent_positions = new_positions
 
-        # List of (reward, agent_new_pos)
-        reward_pos = [self.state[(x, y)].interact(agent) for agent, (x, y) in zip(self.agents, temp_positions)]
-        # print('reward_pos', reward_pos)
-        reward_state = [(reward, self.update_agent_positions(new_pos)) for reward, new_pos in reward_pos]
-        # print('reward_state',reward_state)
-
-        return [(reward, new_state, self.is_terminal()) for reward, new_state in reward_state]
+        reward_new_states = [(reward, (new_pos, self.get_item_positions()[0], self.has_item())) for reward, new_pos in reward_new_positions]
+        return [(reward, new_state, self.is_terminal()) for reward, new_state in reward_new_states]
 
     def process_action(self, action, agent_position):
         # Move according to action
@@ -166,9 +163,10 @@ class GridWorld:
             agent_pos = GridFactory.get_random_pos(self.width, self.height, [goal_pos] + used_pos)
             agent.update((agent_pos, item_pos, False))
             used_pos.append(agent_pos)
+        self.agent_positions = used_pos
 
     def get_agent_positions(self):
-        return list(map(lambda agent: agent.get_props()[0], self.agents))
+        return self.agent_positions
 
     def get_goal_positions(self):
         goal = self.get_goal()
