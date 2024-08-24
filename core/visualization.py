@@ -20,23 +20,18 @@ plotly.offline.init_notebook_mode(connected=True)
 
 
 class RegrMagic(object):
-    """Mock for function Regr_magic()"""
-
-    def __init__(self):
-        self.x = 0
+    def __init__(self, game):
+        self.game = game
 
     def __call__(self):
-        time.sleep(0.01)
-        self.x += 1
-        return self.x, random.random()
+        time.sleep(0.2)
+        self.game.step(learn=False)
 
+        info = self.game.get_agent_info()
+        items = self.game.get_untaken_items()
+        tot_reward = self.game.total_reward
 
-# regr_magic = RegrMagic()
-
-
-# def frames():
-#     while True:
-#         yield regr_magic()
+        return info, items, tot_reward
 
 
 class Visualization:
@@ -50,7 +45,8 @@ class Visualization:
         self.fig, self.ax = plt.subplots()
         self.add_ui_elements()
         # self.update()
-        self.controller = RegrMagic()
+        self.controller = RegrMagic(self.game)
+        self.fig.canvas.mpl_connect("close_event", self.on_close)
         self.start_anim2()
         plt.show()
 
@@ -74,13 +70,43 @@ class Visualization:
     ys = []
 
     def animate(self, args):
-        x, y = args
-        self.xs.append(x)
-        self.ys.append(y)
-        self.ax.clear()
-        self.ax.plot(self.xs, self.ys)
+        info, items, tot_reward = args
 
-        self.fig.canvas.mpl_connect("close_event", self.on_close)
+        self.ax.clear()
+        self.draw_grid()
+        self.draw_agent(info)
+        self.draw_item(items)
+        self.reward.set_text(f"Reward: {tot_reward}")
+
+        # Check if the environment is terminal
+        if self.game.has_ended():
+            self.draw_complete()
+
+    def draw_agent(self, info):
+        # Draw agent
+        for pos, has_item in info:
+            ax, ay = pos
+            agent_color = "blue" if not has_item else "orange"
+            agent_patch = patches.Circle((ax + 0.5, ay + 0.5), 0.3, color=agent_color)
+            self.ax.add_patch(agent_patch)
+
+    def draw_item(self, items):
+        for item in items:
+            ix, iy = item
+            item_patch = patches.Circle((ix + 0.5, iy + 0.5), 0.2, color="red")
+            self.ax.add_patch(item_patch)
+
+    def draw_complete(self):
+        self.ax.text(
+            0.5,
+            0.5,
+            "Complete",
+            horizontalalignment="center",
+            verticalalignment="center",
+            transform=self.ax.transAxes,
+            fontsize=20,
+            color="red",
+        )
 
     # ----- ----- ----- ----- Render UI Element  ----- ----- ----- ----- #
 
@@ -162,7 +188,7 @@ class Visualization:
         self.fig.canvas.draw()
 
     def draw_grid(self):
-        self.ax.clear()
+        # self.ax.clear()
         width, height = self.game.get_size()
         for x in range(width):
             for y in range(height):

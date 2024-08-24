@@ -13,8 +13,8 @@ debug = False
 class Game:
     def __init__(self):
         # Parameters
-        self.width = 8
-        self.height = 8
+        self.width = 5
+        self.height = 5
 
         # Metrics
         self.total_reward = 0
@@ -36,7 +36,7 @@ class Game:
 
     # This is the main function to be called for external
     def run(self):
-        training_record = self.train_agent(5)
+        training_record = self.train_agent(10000)
         # Visualization.plot_training(training_record)
         vis = Visualization(self)
         vis.reset(None)
