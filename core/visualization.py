@@ -62,8 +62,8 @@ class Visualization:
             self.fig, self.draw, frames=self.frames, interval=200, save_count=100
         )
 
-        self.animating = False
-        self.ani.pause()
+        self.animating = True
+        # self.ani.pause()
 
         plt.show()
 
@@ -145,25 +145,29 @@ class Visualization:
 
     def init_buttons(self):
         # Add button for next step
-        self.next_step_button = self.add_button(
+        self.next_step_btn = self.add_button(
             [0.85, 0.01, 0.12, 0.075], "Next Step", self.on_next
         )
 
         # Add button for reset
-        self.reset_button = self.add_button(
+        self.reset_btn = self.add_button(
             [0.85, 0.11, 0.12, 0.075], "Reset", self.on_reset
         )
         # Add button for reset
-        self.animate_button = self.add_button(
-            [0.85, 0.21, 0.12, 0.075], "Animate", self.on_start_anim
+        self.toggle_anim_btn = self.add_button(
+            [0.85, 0.21, 0.12, 0.075], "Pause", self.on_toggle_anim
         )
+        # # Add button for reset
+        # self.stop_button = self.add_button(
+        #     [0.85, 0.31, 0.12, 0.075], "Stop Anim", self.on_stop_anim
+        # )
+        # # Add button for auto-reset
+        # self.auto_reset_button = self.add_button(
+        #     [0.85, 0.41, 0.12, 0.075], "Auto Reset", self.on_auto_reset
+        # )
         # Add button for reset
-        self.stop_button = self.add_button(
-            [0.85, 0.31, 0.12, 0.075], "Stop Anim", self.on_stop_anim
-        )
-        # Add button for auto-reset
-        self.auto_reset_button = self.add_button(
-            [0.85, 0.41, 0.12, 0.075], "Auto Reset", self.on_auto_reset
+        self.auto_reset_btn = self.add_button(
+            [0.85, 0.31, 0.12, 0.075], "Auto Reset", self.on_auto_reset
         )
 
     def init_text(self):
@@ -210,13 +214,21 @@ class Visualization:
         pass
 
     # ----- ----- ----- ----- Event Handlers  ----- ----- ----- ----- #
-    def on_start_anim(self, event):
-        self.animating = True
-        self.ani.resume()
+    # def on_toggle_anim(self, event):
+    #     if not self.animating:
+    #         self.ani.resume()
+    #     self.animating = True
 
-    def on_stop_anim(self, event):
-        self.animating = False
-        self.ani.pause()
+    def on_toggle_anim(self, event):
+        if self.animating:
+            self.ani.pause()
+            self.toggle_anim_btn.label.set_text("Play")
+        else:
+            self.ani.resume()
+            self.toggle_anim_btn.label.set_text("Pause")
+
+        self.animating = not self.animating
+        plt.show()
 
     def on_auto_reset(self, event):
         self.controller.toggle_auto_reset()
