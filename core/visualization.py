@@ -1,22 +1,18 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import threading
-import plotly
-from plotly.offline import iplot
-import plotly.graph_objs as go
+
+# import plotly
 from matplotlib.widgets import Button, Slider
 import matplotlib.animation as animation
 
 from typing import Tuple, TypeAlias, TYPE_CHECKING
-import time
-import random
 
 if TYPE_CHECKING:
     from .game import Game
 
 Coordinates: TypeAlias = Tuple[float, float, float, float]
 
-plotly.offline.init_notebook_mode(connected=True)
+# plotly.offline.init_notebook_mode(connected=True)
 
 
 class RegrMagic(object):
@@ -27,7 +23,7 @@ class RegrMagic(object):
     def get_info(self):
         info = self.game.get_agent_info()
         items = self.game.get_untaken_items()
-        tot_reward = self.game.total_reward
+        tot_reward = self.game.get_total_reward()
         return info, items, tot_reward
 
     def set_timeout(self, timeout):
@@ -56,7 +52,7 @@ class Visualization:
         self.controller = RegrMagic(self.game)
         self.fig.canvas.mpl_connect("close_event", self.on_close)
         self.ani = animation.FuncAnimation(
-            self.fig, self.draw, frames=self.frames, interval=100, save_count=100
+            self.fig, self.draw, frames=self.frames, interval=200, save_count=100
         )
 
         self.animating = False
@@ -75,6 +71,7 @@ class Visualization:
         self.draw_grid()
         self.draw_agent(info)
         self.draw_item(items)
+        print(tot_reward)
         self.reward.set_text(f"Reward: {tot_reward}")
 
         # Check if the environment is terminal
@@ -84,7 +81,6 @@ class Visualization:
             self.fig.canvas.draw()
 
     def draw_grid(self):
-        # self.ax.clear()
         width, height = self.game.get_size()
         for x in range(width):
             for y in range(height):
@@ -137,32 +133,26 @@ class Visualization:
 
     def add_ui_elements(self):
         self.init_buttons()
-        self.init_slider()
         self.init_text()
-        # self.update()
 
     def init_buttons(self):
         # Add button for next step
         self.next_step_button = self.add_button(
-            [0.85, 0.01, 0.1, 0.075], "Next Step", self.next
+            [0.85, 0.01, 0.1, 0.075], "Next Step", self.on_next
         )
 
         # Add button for reset
         self.reset_button = self.add_button(
-            [0.85, 0.11, 0.1, 0.075], "Reset", self.reset
+            [0.85, 0.11, 0.1, 0.075], "Reset", self.on_reset
         )
         # Add button for reset
         self.animate_button = self.add_button(
-            [0.85, 0.21, 0.1, 0.075], "Animate", self.start_animation
+            [0.85, 0.21, 0.1, 0.075], "Animate", self.on_start_anim
         )
         # Add button for reset
-        self.stop_button = self.add_button([0.85, 0.31, 0.1, 0.075], "Stop", self.stop)
-
-    def init_slider(self):
-        plt.subplots_adjust(bottom=0.15)
-        axspeed = plt.axes([0.175, 0.08, 0.6, 0.03])
-        self.sspeed = Slider(axspeed, "Speed", 0.5, 5, valinit=2.0)
-        self.sspeed.on_changed(self.on_speed_update)
+        self.stop_button = self.add_button(
+            [0.85, 0.31, 0.1, 0.075], "Stop", self.on_stop_anim
+        )
 
     def init_text(self):
         # Add text box for cumulative reward
@@ -198,26 +188,6 @@ class Visualization:
         return textbox
 
     # ----- ----- ----- ----- Render Main Board  ----- ----- ----- ----- #
-
-    # def update(self):
-    #     self.draw_grid()
-
-    #     self.draw_agent(self.game.get_agent_info())
-    #     self.draw_item(self.game.get_untaken_items())
-    #     self.reward.set_text(f"Reward: {self.game.total_reward}")
-
-    #     # Check if the environment is terminal
-    #     if self.game.has_ended():
-    #         self.draw_complete()
-
-    #     self.fig.canvas.draw()
-
-    # def foo(self):
-    #     self.one_step()
-    #     if not (self.is_stopping):
-    #         self.timer = threading.Timer(self.speed, self.foo)
-    #         self.timer.start()
-
     def one_step(self):
         self.draw(self.controller.next())
 
@@ -228,39 +198,23 @@ class Visualization:
         pass
 
     # ----- ----- ----- ----- Event Handlers  ----- ----- ----- ----- #
-    def start_animation(self, event):
+    def on_start_anim(self, event):
         self.animating = True
         self.ani.resume()
 
-    def stop(self, event):
-        print("stop")
+    def on_stop_anim(self, event):
         self.animating = False
         self.ani.pause()
 
-    def reset(self, event):
-        print("reset")
-        # self.stop_anim()
+    def on_reset(self, event):
         self.game.reset()
         self.draw(self.controller.get_info())
-        # self.max_reward.set_text(f"Max Reward: {self.game.get_max_reward()}")
-        # self.update()
 
-    def next(self, e):
-        print("next")
+    def on_next(self, e):
         self.draw(self.controller.next())
-        # self.stop_anim()
-        # self.one_step()
 
     def on_close(self, e):
-        print("on_close")
         pass
-        # self.stop_anim()
-
-    def on_speed_update(self, val: float | None):
-        if val:
-            self.controller.set_timeout(1 / val)
-        # if val:
-        #     self.speed = 1 / val
 
     def show(self):
         self.fig.canvas.mpl_connect("close_event", self.on_close)

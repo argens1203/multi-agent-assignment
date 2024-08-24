@@ -39,7 +39,7 @@ class Game:
         training_record = self.train_agent(10000)
         # Visualization.plot_training(training_record)
         vis = Visualization(self)
-        vis.reset(None)
+        vis.on_reset(None)
         vis.show()
 
     def train_agent(self, episodes):
@@ -86,6 +86,9 @@ class Game:
 
     def has_ended(self):
         return self.grid.get_state().is_terminal()
+
+    def get_total_reward(self):
+        return self.total_reward
 
     # ---- Public Control Functions ----- #
     def reset(self):
