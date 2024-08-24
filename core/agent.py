@@ -2,7 +2,7 @@ import numpy as np
 import random
 
 class Agent:
-    def __init__(self, all_states, actions):
+    def __init__(self, all_states, actions): # TODO: store idx for multi-agent scenario
         # Agent property (for illustration purposes)
         self.position = None
         self.has_item = False
@@ -33,7 +33,7 @@ class Agent:
 
     def update_learn(self, state, action, reward, next_state, is_terminal, learn = True):
         # Update internal params wrt to updated state
-        self.update(state)
+        self.update(next_state)
         if not learn:
             return
 

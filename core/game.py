@@ -7,12 +7,13 @@ from .visualization import Visualization
 
 debug = False
 
-
 class Game:
     def __init__(self):
         self.total_reward = 0
-        self.env = Environment(size=8)
-        self.agent = self.get_agent()
+        self.agent = [self.get_agent() for _ in range(1)]
+        self.env = Environment(8, 8)
+        self.env.add_agents(self.agent)
+        self.env.reset()
 
     def run(self):
         training_record = self.train_agent(50000)
@@ -35,7 +36,9 @@ class Game:
     def train_agent(self, episodes):
         training_record = []
         for _ in range(episodes):
+            # print(_)
             self.env.reset()
+            # print(self.env.get_state())
             self.total_reward = 0
             max_reward = GridUtil.calculate_max_reward(self.env)
 
@@ -49,21 +52,20 @@ class Game:
                 )
             training_record.append([_, max_reward, self.total_reward, loss])
 
-        print("Training complete")
+        # print("Training complete")
         return training_record
 
     def get_agents(self):
-        return [self.agent]
+        return self.agent
 
     def get_untaken_items(self):
-        pos, has_item = self.agent.get_props()
-        return [] if has_item else self.env.get_item_positions()
+        return self.env.get_untaken_item_pos()
 
     def get_max_reward(self):
         return GridUtil.calculate_max_reward(self.env)
 
     def get_size(self):
-        return self.env.size
+        return self.env.get_size()
 
     def get_target_location(self):
         return self.env.get_goal_positions()
@@ -72,24 +74,26 @@ class Game:
         return self.env.is_terminal()
 
     def reset(self):
-        self.env.reset()
         self.total_reward = 0
-        self.agent.update(self.env.get_state())
+        self.env.reset()
 
     def step(self, learn=True):
         if self.env.is_terminal():
             return
         state = self.env.get_state()
-        action = self.agent.choose_action(
-            state
-            # TODO: disable epsilon whent testing
-        )
-        next_state, reward, terminal = self.env.move(action)
-        if learn:
-            self.agent.update_learn(state, action, reward, next_state, terminal)
-        else:
-            self.agent.update(next_state)
-        self.total_reward += reward
+        # print(self.env.get_state())
+        
+        actions = [agent.choose_action(state) for agent in self.agent] # TODO: disable epsilon whent testing
+        # print(actions)
+        results = self.env.move(actions)
+        # print('results',results)
+
+        for action, (reward, next_state, terminal), agent in zip(actions, results, self.agent):
+            self.total_reward += reward
+            if learn:
+                agent.update_learn(state, action, reward, next_state, terminal)
+            else:
+                agent.update(next_state)
 
 
 def plot_training(results):

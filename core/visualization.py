@@ -80,15 +80,15 @@ class Visualization:
     
     def draw_grid(self):
         self.ax.clear()
-        size = self.game.get_size()
-        for x in range(size):
-            for y in range(size):
+        width, height = self.game.get_size()
+        for x in range(width):
+            for y in range(height):
                 rect = patches.Rectangle(
                     (x, y), 1, 1, linewidth=1, edgecolor="black", facecolor="white"
                 )
                 self.ax.add_patch(rect)
-        self.ax.set_xlim(0, size)
-        self.ax.set_ylim(size, 0)
+        self.ax.set_xlim(0, width)
+        self.ax.set_ylim(height, 0)
         self.ax.set_aspect("equal")
 
         # Move x-axis labels to the top
