@@ -33,6 +33,7 @@ class Game:
         self.grid = Grid(self.width, self.height)
         self.grid.add_agents(self.agent)
         self.grid.reset()
+        self.max_reward = GridUtil.calculate_max_reward(self.grid)
 
     # This is the main function to be called for external
     def run(self):
@@ -76,7 +77,7 @@ class Game:
         return self.grid.get_state().get_untaken_item_pos()
 
     def get_max_reward(self):
-        return GridUtil.calculate_max_reward(self.grid)
+        return self.max_reward
 
     def get_size(self):
         return self.width, self.height
@@ -94,6 +95,7 @@ class Game:
     def reset(self):
         self.total_reward = 0
         self.grid.reset()
+        self.max_reward = GridUtil.calculate_max_reward(self.grid)
 
     def step(self, learn=True):
         if self.grid.get_state().is_terminal():

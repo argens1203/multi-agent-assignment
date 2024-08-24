@@ -24,7 +24,8 @@ class RegrMagic(object):
         info = self.game.get_agent_info()
         items = self.game.get_untaken_items()
         tot_reward = self.game.get_total_reward()
-        return info, items, tot_reward
+        max_reward = self.game.get_max_reward()
+        return info, items, tot_reward, max_reward
 
     def set_timeout(self, timeout):
         self.timeout = timeout
@@ -65,14 +66,15 @@ class Visualization:
             yield self.controller()
 
     def draw(self, args):
-        info, items, tot_reward = args
+        info, items, tot_reward, max_reward = args
 
         self.ax.clear()
         self.draw_grid()
         self.draw_agent(info)
         self.draw_item(items)
-        print(tot_reward)
+
         self.reward.set_text(f"Reward: {tot_reward}")
+        self.max_reward.set_text(f"Reward: {max_reward}")
 
         # Check if the environment is terminal
         if self.game.has_ended():
