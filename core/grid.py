@@ -80,34 +80,38 @@ class Grid:
         if action == Action.WEST:
             return -1, 0
 
-    # ----- Public Functions ----- #
-    def reset(self):
+    def set_interactive_tiles(self):
         self.lookup.clear()
+        used_pos = []
 
         # Assign goal to set position
         goal_pos = (self.width - 1, self.height - 1)
         goal = Goal(goal_pos)
         self.state[goal_pos] = goal
         self.lookup.add(goal)
+        used_pos.append(goal_pos)
 
         # Assign items to a random position in the remaining tiles
-        item_pos = GridFactory.get_random_pos(self.width, self.height, [goal_pos])
+        item_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
         item = Item(item_pos)
         self.state[item_pos] = item
         self.lookup.add(item)
+        used_pos.append(item_pos)
 
         # Assign agents to random positions
-        used_pos = []
+        self.agent_positions = []
         for _ in self.agents:
-            agent_pos = GridFactory.get_random_pos(
-                self.width, self.height, [goal_pos, item_pos] + used_pos
-            )
+            agent_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
             used_pos.append(agent_pos)
-        self.agent_positions = used_pos
+            self.agent_positions.append(agent_pos)
 
         # Future proofing: update agents in case they spwaned on an item
         for agent in self.agents:
             agent.update(State(self.agent_positions, self.lookup))
+
+    # ----- Public Functions ----- #
+    def reset(self):
+        self.set_interactive_tiles()
 
     def add_agents(self, agents):
         self.agents = agents
