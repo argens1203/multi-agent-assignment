@@ -20,9 +20,9 @@ class State:
         # Generate possible actions
         return [Action.NORTH, Action.SOUTH, Action.EAST, Action.WEST]
 
-    def get_possible_states():
+    def get_possible_states(width, height):
         # Generate all possible states
-        positions = [(x, y) for x in range(8) for y in range(8)]
+        positions = [(x, y) for x in range(width) for y in range(height)]
         has_items = [True, False]
         return itertools.product(positions, positions, has_items)
 

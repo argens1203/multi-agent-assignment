@@ -11,16 +11,20 @@ debug = False
 class Game:
     def __init__(self):
         # Parameters
-        self.width = 8
-        self.height = 8
+        self.width = 9
+        self.height = 3
 
         # Metrics
         self.total_reward = 0
 
         # Agents
         self.agent = [
-            Agent(i, State.get_possible_states(), State.get_possible_actions())
-            for i in range(1)
+            Agent(
+                idx,
+                State.get_possible_states(self.width, self.height),
+                State.get_possible_actions(),
+            )
+            for idx in range(1)
         ]
 
         # Grid
@@ -86,9 +90,7 @@ class Game:
             return
         state = self.grid.get_state()
 
-        actions = [
-            agent.choose_action(state) for agent in self.agent
-        ]  # TODO: disable epsilon whent testing
+        actions = [agent.choose_action(state, explore=False) for agent in self.agent]
         results = self.grid.move(actions)
 
         for action, (reward, next_state, terminal), agent in zip(

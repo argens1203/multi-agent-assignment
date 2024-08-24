@@ -100,7 +100,7 @@ class Grid:
         used_pos = []
         for _ in self.agents:
             agent_pos = GridFactory.get_random_pos(
-                self.width, self.height, [goal_pos] + used_pos
+                self.width, self.height, [goal_pos, item_pos] + used_pos
             )
             used_pos.append(agent_pos)
         self.agent_positions = used_pos
