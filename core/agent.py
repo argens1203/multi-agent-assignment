@@ -1,21 +1,19 @@
 import numpy as np
 import random
 
+
 class Agent:
-    def __init__(self, idx, all_states, actions): # TODO: store idx for multi-agent scenario
+    def __init__(self, idx, all_states, actions):
         # Agent property (for illustration purposes)
         self.is_having_item = False
 
-        # Initialize action vector
-        self.actions = actions # TODO: encode different action per state. How to initialize Q-Table
+        self.actions = actions  # TODO: encode different action for different state. How to initialize Q-Table
         self.idx = idx
-        
+
         # Initialize Q Table for all state-action to be 0
         self.Q = {}
         for state in all_states:
-            self.Q[state] = np.zeros(
-                len(actions)
-            )
+            self.Q[state] = np.zeros(len(actions))
 
         # Initialize Learning param
         self.epsilon = 1
@@ -25,20 +23,21 @@ class Agent:
         self.alpha = 0.1
 
     # ----- Core Functions ----- #
-    def choose_action(self, state, explore = True):
-        state_i = self.massage(state)
+    def choose_action(self, state, explore=True):
         if explore and np.random.rand() < self.epsilon:
             return random.choice(self.actions)
         else:
+            # Extract immutable state information
+            state_i = self.massage(state)
             return self.actions[np.argmax(self.Q[state_i])]
 
-    def update_learn(self, state, action, reward, next_state, is_terminal, learn = True):
+    def update_learn(self, state, action, reward, next_state, is_terminal, learn=True):
         self.update(next_state)
 
+        # Extract immutable state information
         state_i = self.massage(state)
         nxt_state_i = self.massage(next_state)
 
-        # Update internal params wrt to updated state
         if not learn:
             return
 
@@ -60,9 +59,10 @@ class Agent:
         self.is_having_item = state.has_item()
 
     def reset(self):
+        # TODO: possible undo of learnt progress?
         pass
 
+    # ----- Private Functions ----- #
+    # Extract immutable information from State object
     def massage(self, state):
         return state.extract_state(self.idx)
-
-    # ----- Private Functions ----- #

@@ -5,6 +5,7 @@ from .cell import *
 
 
 class GridFactory:
+    # Getting a random location in a grid, excluding certain locations
     def get_random_pos(width, height, exclude=[]):
         while True:
             position = (
@@ -21,42 +22,54 @@ class Grid:
         self.height = height
 
         self.state = {}  # TODO: multiple entities in one cell
-        self.lookup = set()
+        self.lookup = set()  # Interactive tiles
         self.agents = []
         self.agent_positions = []
 
-        for x in range(-1, width + 1):
-            for y in range(-1, height + 1):
-                if x < 0 or x >= width:
-                    self.state[(x, y)] = Wall((x, y), (width, height))
-                elif y < 0 or y >= height:
-                    self.state[(x, y)] = Wall((x, y), (width, height))
+        self.init_environment()
+
+    # ----- Init Functions ----- #
+    def init_environment(self):
+        for x in range(-1, self.width + 1):
+            for y in range(-1, self.height + 1):
+                if x < 0 or x >= self.width:
+                    self.state[(x, y)] = Wall((x, y), (self.width, self.height))
+                elif y < 0 or y >= self.height:
+                    self.state[(x, y)] = Wall((x, y), (self.width, self.height))
                 else:
                     self.state[(x, y)] = Empty((x, y))
 
     # ----- Core Functions ----- #
-    def move(self, actions):
+    def move(self, actions):  # List of actions, in the same order as self.agents
+        # Update agent to temporary location according to move
         temp_positions = [
             self.process_action(action, agent_pos)
             for action, agent_pos in zip(actions, self.agent_positions)
         ]
+
+        # Retreive reward and new location according to Entity.interaction
         reward_new_positions = [
             self.state[(x, y)].interact(agent)
             for agent, (x, y) in zip(self.agents, temp_positions)
         ]
         rewards, new_positions = zip(*reward_new_positions)
 
+        # Update new positions
         self.agent_positions = new_positions
 
-        return [(reward, self.get_state(), self.is_terminal()) for reward in rewards]
+        # Return move results, in the same order as self.agents
+        return [
+            (reward, self.get_state(), self.get_state().is_terminal())
+            for reward in rewards
+        ]
 
+    # ----- Private Functions ----- #
     def process_action(self, action, agent_position):
         # Move according to action
         x, y = agent_position
         dx, dy = self.interpret_action(action)
         return x + dx, y + dy
 
-    # ----- Private Functions ----- #
     def interpret_action(self, action):
         if action == Action.NORTH:
             return 0, -1
@@ -67,35 +80,23 @@ class Grid:
         if action == Action.WEST:
             return -1, 0
 
-    # ----- Private Functions ----- #
-    def get_items(self):
-        return [x for x in self.lookup if isinstance(x, Item)]
-        # return next((x for x in self.lookup if isinstance(x, Item)), [None])
-
-    def get_goal(self):
-        return next((x for x in self.lookup if isinstance(x, Goal)), [None])
-
-    def has_item(self):
-        item = next((x for x in self.lookup if isinstance(x, Item)), [None])
-        return item.taken
-
     # ----- Public Functions ----- #
-    def add_agents(self, agents):
-        self.agents = agents
-
     def reset(self):
         self.lookup.clear()
 
+        # Assign goal to set position
         goal_pos = (self.width - 1, self.height - 1)
         goal = Goal(goal_pos)
         self.state[goal_pos] = goal
         self.lookup.add(goal)
 
+        # Assign items to a random position in the remaining tiles
         item_pos = GridFactory.get_random_pos(self.width, self.height, [goal_pos])
         item = Item(item_pos)
         self.state[item_pos] = item
         self.lookup.add(item)
 
+        # Assign agents to random positions
         used_pos = []
         for _ in self.agents:
             agent_pos = GridFactory.get_random_pos(
@@ -104,41 +105,27 @@ class Grid:
             used_pos.append(agent_pos)
         self.agent_positions = used_pos
 
+        # Future proofing: update agents in case they spwaned on an item
         for agent in self.agents:
             agent.update(State(self.agent_positions, self.lookup))
 
-    def get_agent_positions(self):
-        return self.agent_positions
-
-    def get_goal_positions(self):
-        goal = self.get_goal()
-        return goal.x, goal.y
-
-    def get_item_positions(self):
-        return [item.get_pos() for item in self.get_items()]
+    def add_agents(self, agents):
+        self.agents = agents
 
     def get_state(self):
-        state = State(self.agent_positions, self.lookup)
-        return state
-
-    def is_terminal(self):
-        goal = self.get_goal()
-        return goal.has_reached()
-
-    def get_untaken_item_pos(self):
-        untaken_items = filter(lambda i: not i.taken, self.get_items())
-        return [i.get_pos() for i in untaken_items]
-
-    def get_size(self):
-        return self.width, self.height
+        return State(self.agent_positions, self.lookup)
 
 
 class GridUtil:
     def calculate_max_reward(grid):
-        x1, y1 = grid.get_agent_positions()[0]
-        x2, y2 = grid.get_item_positions()[0]
-        x3, y3 = grid.get_goal_positions()
+        # TODO: can only work with one agent and one item ATM
+        x1, y1 = grid.get_state().get_agent_positions()[0]
+        x2, y2 = grid.get_state().get_item_positions()[0]
+        x3, y3 = grid.get_state().get_goal_positions()
+
+        # Manhanttan distance from agent to obj and obj to goal
         dist_to_obj = abs(x1 - x2) + abs(y1 - y2)
         dist_to_goal = abs(x2 - x3) + abs(y2 - y3)
 
+        # +100 for reward and +2 for 2 unneeded mark deduction when stepping on item and goal respectively
         return (dist_to_obj + dist_to_goal) * -1 + 102

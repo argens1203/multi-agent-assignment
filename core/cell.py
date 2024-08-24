@@ -1,5 +1,6 @@
 from .agent import Agent
 
+
 class Empty:
     def __init__(self, pos):
         x, y = pos
@@ -8,6 +9,13 @@ class Empty:
 
     def interact(self, other: Agent):
         return -1, (self.x, self.y)
+
+    def __copy__(self):
+        return Empty((self.x, self.y))
+
+    def __deepcopy__(self, memo):
+        return self.__copy__()
+
 
 class Goal(Empty):
     def __init__(self, pos):
@@ -23,10 +31,18 @@ class Goal(Empty):
             return 50, (self.x, self.y)
         else:
             return -1, (self.x, self.y)
-    
+
     def has_reached(self):
-        # print('self.has_reached', self.reached)
         return self.reached
+
+    def __copy__(self):
+        copy = Goal((self.x, self.y))
+        copy.reached = self.reached
+        return copy
+
+    def __deepcopy__(self, memo):
+        return self.__copy__()
+
 
 class Item(Empty):
     def __init__(self, pos):
@@ -34,18 +50,25 @@ class Item(Empty):
         x, y = pos
         self.x = x
         self.y = y
-    
+
     def interact(self, other: Agent):
-        # print('interacting')
         if not self.taken:
             self.taken = True
-            # print('taken')
             return 50, (self.x, self.y)
-        
+
         return -1, (self.x, self.y)
 
     def get_pos(self):
         return self.x, self.y
+
+    def __copy__(self):
+        copy = Item((self.x, self.y))
+        copy.taken = self.taken
+        return copy
+
+    def __deepcopy__(self, memo):
+        return self.__copy__()
+
 
 class Wall(Empty):
     def __init__(self, pos, dimensions):
@@ -59,3 +82,9 @@ class Wall(Empty):
 
     def interact(self, other: Agent):
         return -10, (self.new_x, self.new_y)
+
+    def __copy__(self):
+        return Wall((self.x, self.y))
+
+    def __deepcopy__(self, memo):
+        return self.__copy__()

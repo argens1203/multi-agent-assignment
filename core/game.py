@@ -10,12 +10,15 @@ debug = False
 
 class Game:
     def __init__(self):
+        self.width = 8
+        self.height = 8
+
         self.total_reward = 0
         self.agent = [
             Agent(i, State.get_possible_states(), State.get_possible_actions())
             for i in range(1)
         ]
-        self.grid = Grid(8, 8)
+        self.grid = Grid(self.width, self.height)
         self.grid.add_agents(self.agent)
         self.grid.reset()
 
@@ -33,7 +36,7 @@ class Game:
             self.total_reward = 0
             max_reward = GridUtil.calculate_max_reward(self.grid)
 
-            while not self.grid.is_terminal():
+            while not self.grid.get_state().is_terminal():
                 self.step()
 
             loss = max_reward - self.total_reward
@@ -50,29 +53,29 @@ class Game:
         return self.agent
 
     def get_agent_positions(self):
-        return self.grid.get_agent_positions()
+        return self.grid.get_state().get_agent_positions()
 
     def get_untaken_items(self):
-        return self.grid.get_untaken_item_pos()
+        return self.grid.get_state().get_untaken_item_pos()
 
     def get_max_reward(self):
         return GridUtil.calculate_max_reward(self.grid)
 
     def get_size(self):
-        return self.grid.get_size()
+        return self.width, self.height
 
     def get_target_location(self):
-        return self.grid.get_goal_positions()
+        return self.grid.get_state().get_goal_positions()
 
     def has_ended(self):
-        return self.grid.is_terminal()
+        return self.grid.get_state().is_terminal()
 
     def reset(self):
         self.total_reward = 0
         self.grid.reset()
 
     def step(self, learn=True):
-        if self.grid.is_terminal():
+        if self.grid.get_state().is_terminal():
             return
         state = self.grid.get_state()
 
