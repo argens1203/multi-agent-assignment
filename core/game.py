@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 
+from typing import List, Tuple
+
 from .grid import Grid, GridUtil
 from .agent import Agent
 from .visualization import Visualization
@@ -59,11 +61,16 @@ class Game:
         return training_record
 
     # ---- Public Getter Functions (For Visualisation) ----- #
-    def get_agents(self):
-        return self.agent
 
-    def get_agent_positions(self):
-        return self.grid.get_state().get_agent_positions()
+    def get_agent_info(self) -> List[Tuple[Tuple[int, int], bool]]:
+        """
+        Output: List of
+                - Tuple of:
+                    - coordinate: (int, int)
+                    - has_item: bool
+        """
+        has_items = map(lambda agent: agent.has_item(), self.agent)
+        return list(zip(self.grid.get_state().get_agent_positions(), has_items))
 
     def get_untaken_items(self):
         return self.grid.get_state().get_untaken_item_pos()

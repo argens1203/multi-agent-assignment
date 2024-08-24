@@ -2,13 +2,16 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.widgets import Button
 
-from typing import Tuple, TypeAlias
+from typing import Tuple, TypeAlias, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .game import Game
 
 Coordinates: TypeAlias = Tuple[float, float, float, float]
 
 
 class Visualization:
-    def __init__(self, game):
+    def __init__(self, game: "Game"):
         self.game = game
         self.game.reset()
 
@@ -68,7 +71,7 @@ class Visualization:
     def update(self):
         self.draw_grid()
 
-        self.draw_agent(self.game.get_agents(), self.game.get_agent_positions())
+        self.draw_agent(self.game.get_agent_info())
         self.draw_item(self.game.get_untaken_items())
         self.reward.set_text(f"Reward: {self.game.total_reward}")
 
@@ -102,10 +105,9 @@ class Visualization:
         )
         self.ax.add_patch(target_patch)
 
-    def draw_agent(self, agents, positions):
+    def draw_agent(self, info):
         # Draw agent
-        for agent, pos in zip(agents, positions):
-            has_item = agent.has_item()
+        for pos, has_item in info:
             ax, ay = pos
             agent_color = "blue" if not has_item else "orange"
             agent_patch = patches.Circle((ax + 0.5, ay + 0.5), 0.3, color=agent_color)
