@@ -19,6 +19,7 @@ class RegrMagic(object):
     def __init__(self, game):
         self.game = game
         self.timeout = 0.5
+        self.auto_reset = True
 
     def get_info(self):
         info = self.game.get_agent_info()
@@ -30,7 +31,12 @@ class RegrMagic(object):
     def set_timeout(self, timeout):
         self.timeout = timeout
 
+    def toggle_auto_reset(self):
+        self.auto_reset = not self.auto_reset
+
     def next(self):
+        if self.game.has_ended() and self.auto_reset:
+            self.game.reset()
         self.game.step(learn=False)
         return self.get_info()
 
@@ -155,6 +161,10 @@ class Visualization:
         self.stop_button = self.add_button(
             [0.85, 0.31, 0.12, 0.075], "Stop Anim", self.on_stop_anim
         )
+        # Add button for auto-reset
+        self.auto_reset_button = self.add_button(
+            [0.85, 0.41, 0.12, 0.075], "Auto Reset", self.on_auto_reset
+        )
 
     def init_text(self):
         # Add text box for cumulative reward
@@ -207,6 +217,9 @@ class Visualization:
     def on_stop_anim(self, event):
         self.animating = False
         self.ani.pause()
+
+    def on_auto_reset(self, event):
+        self.controller.toggle_auto_reset()
 
     def on_reset(self, event):
         self.game.reset()
