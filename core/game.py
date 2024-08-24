@@ -1,19 +1,23 @@
 import matplotlib.pyplot as plt
 
-from .grid import GridWorld as Environment, GridUtil
+from .grid import Grid, GridUtil
 from .agent import Agent
 from .visualization import Visualization
 from .state import State
 
 debug = False
 
+
 class Game:
     def __init__(self):
         self.total_reward = 0
-        self.agent = [Agent(i, State.get_possible_states(), State.get_possible_actions()) for i in range(1)]
-        self.env = Environment(8, 8)
-        self.env.add_agents(self.agent)
-        self.env.reset()
+        self.agent = [
+            Agent(i, State.get_possible_states(), State.get_possible_actions())
+            for i in range(1)
+        ]
+        self.grid = Grid(8, 8)
+        self.grid.add_agents(self.agent)
+        self.grid.reset()
 
     def run(self):
         training_record = self.train_agent(50000)
@@ -25,11 +29,11 @@ class Game:
     def train_agent(self, episodes):
         training_record = []
         for _ in range(episodes):
-            self.env.reset()
+            self.grid.reset()
             self.total_reward = 0
-            max_reward = GridUtil.calculate_max_reward(self.env)
+            max_reward = GridUtil.calculate_max_reward(self.grid)
 
-            while not self.env.is_terminal():
+            while not self.grid.is_terminal():
                 self.step()
 
             loss = max_reward - self.total_reward
@@ -46,36 +50,40 @@ class Game:
         return self.agent
 
     def get_agent_positions(self):
-        return self.env.get_agent_positions()
+        return self.grid.get_agent_positions()
 
     def get_untaken_items(self):
-        return self.env.get_untaken_item_pos()
+        return self.grid.get_untaken_item_pos()
 
     def get_max_reward(self):
-        return GridUtil.calculate_max_reward(self.env)
+        return GridUtil.calculate_max_reward(self.grid)
 
     def get_size(self):
-        return self.env.get_size()
+        return self.grid.get_size()
 
     def get_target_location(self):
-        return self.env.get_goal_positions()
+        return self.grid.get_goal_positions()
 
     def has_ended(self):
-        return self.env.is_terminal()
+        return self.grid.is_terminal()
 
     def reset(self):
         self.total_reward = 0
-        self.env.reset()
+        self.grid.reset()
 
     def step(self, learn=True):
-        if self.env.is_terminal():
+        if self.grid.is_terminal():
             return
-        state = self.env.get_state()
-        
-        actions = [agent.choose_action(state) for agent in self.agent] # TODO: disable epsilon whent testing
-        results = self.env.move(actions)
+        state = self.grid.get_state()
 
-        for action, (reward, next_state, terminal), agent in zip(actions, results, self.agent):
+        actions = [
+            agent.choose_action(state) for agent in self.agent
+        ]  # TODO: disable epsilon whent testing
+        results = self.grid.move(actions)
+
+        for action, (reward, next_state, terminal), agent in zip(
+            actions, results, self.agent
+        ):
             self.total_reward += reward
             if learn:
                 agent.update_learn(state, action, reward, next_state, terminal)
