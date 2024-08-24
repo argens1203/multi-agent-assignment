@@ -41,9 +41,10 @@ class State:
         return item.taken
 
     def extract_state(self, idx):
-        item_pos = self.get_item_positions()[0]
+        item_pos = self.get_item_positions()
         agent_pos = self.agent_positions[idx]
-        return agent_pos, item_pos, self.has_item()
+        # TODO: remove hardcoded item_pos indices
+        return agent_pos, item_pos[0], self.has_item()
 
     # ----- Information Extraction ----- #
     def get_agent_positions(self):

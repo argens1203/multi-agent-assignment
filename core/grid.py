@@ -84,6 +84,8 @@ class Grid:
         self.lookup.clear()
         used_pos = []
 
+        # TODO: extract repeated code
+
         # Assign goal to set position
         goal_pos = (self.width - 1, self.height - 1)
         goal = Goal(goal_pos)

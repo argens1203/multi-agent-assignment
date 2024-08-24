@@ -11,8 +11,8 @@ debug = False
 class Game:
     def __init__(self):
         # Parameters
-        self.width = 9
-        self.height = 3
+        self.width = 8
+        self.height = 8
 
         # Metrics
         self.total_reward = 0
