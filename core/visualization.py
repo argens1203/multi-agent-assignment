@@ -15,7 +15,7 @@ Coordinates: TypeAlias = Tuple[float, float, float, float]
 # plotly.offline.init_notebook_mode(connected=True)
 
 
-class RegrMagic(object):
+class Controller(object):
     def __init__(self, game):
         self.game = game
         self.timeout = 0.5
@@ -58,7 +58,7 @@ class Visualization:
         self.fig, self.ax = plt.subplots()
         self.add_ui_elements()
         # self.update()
-        self.controller = RegrMagic(self.game)
+        self.controller = Controller(self.game)
         self.fig.canvas.mpl_connect("close_event", self.on_close)
         self.ani = animation.FuncAnimation(
             self.fig, self.draw, frames=self.frames, interval=200, save_count=100
@@ -236,10 +236,6 @@ class Visualization:
 
     def on_close(self, e):
         pass
-
-    def show(self):
-        self.fig.canvas.mpl_connect("close_event", self.on_close)
-        plt.show()
 
     # ----- ----- ----- ----- Plot Metrics  ----- ----- ----- ----- #
     def plot_training(results):

@@ -41,7 +41,6 @@ class Game:
         Visualization.plot_training(training_record)
         vis = Visualization(self)
         vis.on_reset(None)
-        vis.show()
 
     def train_agent(self, episodes):
         training_record = []
