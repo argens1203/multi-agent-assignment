@@ -4,7 +4,7 @@ import threading
 import plotly
 from plotly.offline import iplot
 import plotly.graph_objs as go
-from matplotlib.widgets import Button
+from matplotlib.widgets import Button, Slider
 
 from typing import Tuple, TypeAlias, TYPE_CHECKING
 
@@ -47,6 +47,8 @@ class Visualization:
         # Add button for reset
         self.stop_button = self.add_button([0.85, 0.31, 0.1, 0.075], "Stop", self.stop)
 
+        self.init_slider()
+
         # Add text box for cumulative reward
         self.reward = self.add_text(
             [0.01, 0.01, 0.2, 0.075], f"Reward: {self.game.total_reward}"
@@ -59,6 +61,11 @@ class Visualization:
         )
 
         self.update()
+
+    def init_slider(self):
+        axspeed = plt.axes([0.175, 0.05, 0.65, 0.03])
+        self.sspeed = Slider(axspeed, "Speed", 0.1, 10.0, valinit=1.0)
+        self.sspeed.on_changed(self.on_timeout_update)
 
     def add_button(self, coordinates: Coordinates, text, on_click):
         axis = plt.axes(coordinates)
@@ -153,7 +160,6 @@ class Visualization:
             self.timer.start()
 
     def one_step(self):
-        print("next step")
         self.game.step(learn=False)
         self.update()
 
@@ -168,7 +174,6 @@ class Visualization:
 
     # ----- ----- ----- ----- Event Handlers  ----- ----- ----- ----- #
     def start_animation(self, event):
-        print("pressed")
         self.start_anim()
 
     def stop(self, event):
@@ -186,6 +191,10 @@ class Visualization:
 
     def on_close(self, e):
         self.stop_anim()
+
+    def on_timeout_update(self, val: float | None):
+        if val:
+            self.speed = 1 / val
 
     def show(self):
         self.fig.canvas.mpl_connect("close_event", self.on_close)
