@@ -6,6 +6,7 @@ from .grid import Grid, GridUtil
 from .agent import Agent
 from .visualization import Visualization
 from .state import State
+from .test import Graphing_Tool
 
 debug = False
 
@@ -38,6 +39,11 @@ class Game:
     def run(self):
         training_record = self.train_agent(50000)
         Visualization.plot_training(training_record)
+
+        for _ in range(5000):
+            loss=self.train_once()
+            # g.update([_,loss])
+
         vis = Visualization(self)
         vis.reset(None)
         vis.show()
@@ -59,7 +65,22 @@ class Game:
                 )
             training_record.append([_, max_reward, self.total_reward, loss])
         return training_record
+    
+    def train_once(self):
+        self.grid.reset()
+        self.total_reward = 0
+        max_reward = GridUtil.calculate_max_reward(self.grid)
 
+        while not self.grid.get_state().is_terminal():
+            self.step()
+
+        loss = max_reward - self.total_reward
+        if debug:
+            print(
+                f"Completed with total reward: {self.total_reward},max_reward:{max_reward}, loss:{loss}"
+            )
+        return loss
+    
     # ---- Public Getter Functions (For Visualisation) ----- #
 
     def get_agent_info(self) -> List[Tuple[Tuple[int, int], bool]]:
