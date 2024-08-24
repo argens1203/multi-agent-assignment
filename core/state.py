@@ -1,6 +1,8 @@
 import itertools
+from copy import deepcopy
 
 from .cell import Item
+
 
 class Action:
     NORTH = "N"
@@ -8,10 +10,11 @@ class Action:
     EAST = "E"
     SOUTH = "S"
 
+
 class State:
     def __init__(self, agent_positions, lookup):
         self.agent_positions = agent_positions
-        self.lookup = lookup
+        self.lookup = deepcopy(lookup)
 
     def get_possible_actions():
         # Generate possible actions
@@ -26,7 +29,7 @@ class State:
     # ----- Private Functions ----- #
     def get_items(self):
         return [x for x in self.lookup if isinstance(x, Item)]
-    
+
     def get_item_positions(self):
         return [item.get_pos() for item in self.get_items()]
 
