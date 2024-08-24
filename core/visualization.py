@@ -5,8 +5,11 @@ import plotly
 from plotly.offline import iplot
 import plotly.graph_objs as go
 from matplotlib.widgets import Button, Slider
+import matplotlib.animation as animation
 
 from typing import Tuple, TypeAlias, TYPE_CHECKING
+import time
+import random
 
 if TYPE_CHECKING:
     from .game import Game
@@ -14,6 +17,26 @@ if TYPE_CHECKING:
 Coordinates: TypeAlias = Tuple[float, float, float, float]
 
 plotly.offline.init_notebook_mode(connected=True)
+
+
+class RegrMagic(object):
+    """Mock for function Regr_magic()"""
+
+    def __init__(self):
+        self.x = 0
+
+    def __call__(self):
+        time.sleep(0.01)
+        self.x += 1
+        return self.x, random.random()
+
+
+regr_magic = RegrMagic()
+
+
+def frames():
+    while True:
+        yield regr_magic()
 
 
 class Visualization:
@@ -26,7 +49,33 @@ class Visualization:
 
         self.fig, self.ax = plt.subplots()
         self.add_ui_elements()
-        self.update()
+        # self.update()
+        self.start_anim2()
+        plt.show()
+
+    def start_anim2(self):
+
+        # self.canvas.get_tk_widget().grid()
+
+        # toolbar = NavigationToolbar2Tk(self.canvas, self.master)
+        # toolbar.update()
+        # self.canvas._tkcanvas.pack()
+
+        self.ani = animation.FuncAnimation(
+            self.fig, self.animate, frames=frames, interval=100, save_count=100
+        )
+
+    xs = []
+    ys = []
+
+    def animate(self, args):
+        x, y = args
+        self.xs.append(x)
+        self.ys.append(y)
+        self.ax.clear()
+        self.ax.plot(self.xs, self.ys)
+
+        self.fig.canvas.mpl_connect("close_event", self.on_close)
 
     # ----- ----- ----- ----- Render UI Element  ----- ----- ----- ----- #
 
