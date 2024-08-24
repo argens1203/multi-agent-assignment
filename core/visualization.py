@@ -140,20 +140,20 @@ class Visualization:
     def init_buttons(self):
         # Add button for next step
         self.next_step_button = self.add_button(
-            [0.85, 0.01, 0.1, 0.075], "Next Step", self.on_next
+            [0.85, 0.01, 0.12, 0.075], "Next Step", self.on_next
         )
 
         # Add button for reset
         self.reset_button = self.add_button(
-            [0.85, 0.11, 0.1, 0.075], "Reset", self.on_reset
+            [0.85, 0.11, 0.12, 0.075], "Reset", self.on_reset
         )
         # Add button for reset
         self.animate_button = self.add_button(
-            [0.85, 0.21, 0.1, 0.075], "Animate", self.on_start_anim
+            [0.85, 0.21, 0.12, 0.075], "Animate", self.on_start_anim
         )
         # Add button for reset
         self.stop_button = self.add_button(
-            [0.85, 0.31, 0.1, 0.075], "Stop", self.on_stop_anim
+            [0.85, 0.31, 0.12, 0.075], "Stop Anim", self.on_stop_anim
         )
 
     def init_text(self):

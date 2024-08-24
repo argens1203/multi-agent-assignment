@@ -38,7 +38,7 @@ class Game:
     # This is the main function to be called for external
     def run(self):
         training_record = self.train_agent(10000)
-        # Visualization.plot_training(training_record)
+        Visualization.plot_training(training_record)
         vis = Visualization(self)
         vis.on_reset(None)
         vis.show()
