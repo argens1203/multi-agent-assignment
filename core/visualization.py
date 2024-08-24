@@ -31,12 +31,12 @@ class RegrMagic(object):
         return self.x, random.random()
 
 
-regr_magic = RegrMagic()
+# regr_magic = RegrMagic()
 
 
-def frames():
-    while True:
-        yield regr_magic()
+# def frames():
+#     while True:
+#         yield regr_magic()
 
 
 class Visualization:
@@ -50,6 +50,7 @@ class Visualization:
         self.fig, self.ax = plt.subplots()
         self.add_ui_elements()
         # self.update()
+        self.controller = RegrMagic()
         self.start_anim2()
         plt.show()
 
@@ -62,8 +63,12 @@ class Visualization:
         # self.canvas._tkcanvas.pack()
 
         self.ani = animation.FuncAnimation(
-            self.fig, self.animate, frames=frames, interval=100, save_count=100
+            self.fig, self.animate, frames=self.frames, interval=100, save_count=100
         )
+
+    def frames(self):
+        while True:
+            yield self.controller()
 
     xs = []
     ys = []
