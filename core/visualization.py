@@ -1,5 +1,9 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import threading
+import plotly
+from plotly.offline import iplot
+import plotly.graph_objs as go
 from matplotlib.widgets import Button
 
 from typing import Tuple, TypeAlias, TYPE_CHECKING
@@ -9,11 +13,15 @@ if TYPE_CHECKING:
 
 Coordinates: TypeAlias = Tuple[float, float, float, float]
 
+plotly.offline.init_notebook_mode(connected=True)
+
 
 class Visualization:
     def __init__(self, game: "Game"):
         self.game = game
+        self.is_stopping = False
         self.game.reset()
+        self.speed = 1
 
         self.fig, self.ax = plt.subplots()
         self.add_ui_elements()
@@ -24,13 +32,19 @@ class Visualization:
     def add_ui_elements(self):
         # Add button for next step
         self.next_step_button = self.add_button(
-            [0.8, 0.01, 0.1, 0.075], "Next Step", self.next_step
+            [0.85, 0.01, 0.1, 0.075], "Next Step", self.next_step
         )
 
         # Add button for reset
         self.reset_button = self.add_button(
-            [0.65, 0.01, 0.1, 0.075], "Reset", self.reset
+            [0.85, 0.11, 0.1, 0.075], "Reset", self.reset
         )
+        # Add button for reset
+        self.animate_button = self.add_button(
+            [0.85, 0.21, 0.1, 0.075], "Animate", self.start_animation
+        )
+        # Add button for reset
+        self.stop_button = self.add_button([0.85, 0.31, 0.1, 0.075], "Stop", self.stop)
 
         # Add text box for cumulative reward
         self.reward = self.add_text(
@@ -131,7 +145,19 @@ class Visualization:
             color="red",
         )
 
+    def animate(self):
+        self.next_step(None)
+        if not (self.is_stopping):
+            self.timer = threading.Timer(self.speed, self.animate)
+            self.timer.start()
+
     # ----- ----- ----- ----- Event Handlers  ----- ----- ----- ----- #
+    def start_animation(self, event):
+        print("pressed")
+        self.animate()
+
+    def stop(self, event):
+        self.is_stopping = True
 
     def reset(self, event):
         self.game.reset()
@@ -139,14 +165,15 @@ class Visualization:
         self.update()
 
     def next_step(self, i):
+        print("next step")
         self.game.step(learn=False)
         self.update()
 
-    def animate(self, i):
-        while not self.game.has_ended():
-            self.next_step(1)
+    def on_close(self, e):
+        self.stop(e)
 
     def show(self):
+        self.fig.canvas.mpl_connect("close_event", self.on_close)
         plt.show()
 
     # ----- ----- ----- ----- Plot Metrics  ----- ----- ----- ----- #
