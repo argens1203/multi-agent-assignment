@@ -1,12 +1,7 @@
-import numpy as np
 import random
-from .agent import Agent
 
-class Action:
-    NORTH = "N"
-    WEST = "W"
-    EAST = "E"
-    SOUTH = "S"
+from .state import State, Action
+from .cell import *
 
 class GridFactory:
     def get_random_pos(width, height, exclude = []):
@@ -17,66 +12,6 @@ class GridFactory:
             )
             if position not in exclude:
                 return position
-
-class Empty:
-    def __init__(self, pos):
-        x, y = pos
-        self.x = x
-        self.y = y
-
-    def interact(self, other: Agent):
-        return -1, (self.x, self.y)
-
-class Goal(Empty):
-    def __init__(self, pos):
-        x, y = pos
-        self.x = x
-        self.y = y
-        self.reached = False
-
-    def interact(self, other: Agent):
-        has_item = other.has_item()
-        if has_item:
-            self.reached = True
-            return 50, (self.x, self.y)
-        else:
-            return -1, (self.x, self.y)
-    
-    def has_reached(self):
-        # print('self.has_reached', self.reached)
-        return self.reached
-
-class Item(Empty):
-    def __init__(self, pos):
-        self.taken = False
-        x, y = pos
-        self.x = x
-        self.y = y
-    
-    def interact(self, other: Agent):
-        # print('interacting')
-        if not self.taken:
-            self.taken = True
-            # print('taken')
-            return 50, (self.x, self.y)
-        
-        return -1, (self.x, self.y)
-
-    def get_pos(self):
-        return self.x, self.y
-
-class Wall(Empty):
-    def __init__(self, pos, dimensions):
-        x, y = pos
-        self.x = x
-        self.y = y
-
-        width, height = dimensions
-        self.new_x = min(width - 1, max(0, x))
-        self.new_y = min(height - 1, max(0, y))
-
-    def interact(self, other: Agent):
-        return -10, (self.new_x, self.new_y)
 
 class GridWorld:
     def __init__(self, width = 5, height = 5):
@@ -104,9 +39,8 @@ class GridWorld:
         rewards, new_positions = zip(*reward_new_positions)
         
         self.agent_positions = new_positions
-
-        reward_new_states = [(reward, (new_pos, self.get_item_positions()[0], self.has_item())) for reward, new_pos in reward_new_positions]
-        return [(reward, new_state, self.is_terminal()) for reward, new_state in reward_new_states]
+        
+        return [(reward, self.get_state(), self.is_terminal()) for reward in rewards]
 
     def process_action(self, action, agent_position):
         # Move according to action
@@ -137,10 +71,6 @@ class GridWorld:
         item = next((x for x in self.lookup if isinstance(x, Item)), [None])
         return item.taken
 
-    def update_agent_positions(self, new_position):
-        agent_position, item_position, has_item = self.get_state()
-        return new_position, item_position, has_item
-
     # ----- Public Functions ----- #
     def add_agents(self, agents):
         self.agents = agents
@@ -159,11 +89,13 @@ class GridWorld:
         self.lookup.add(item)
 
         used_pos = []
-        for agent in self.agents:
+        for _ in self.agents:
             agent_pos = GridFactory.get_random_pos(self.width, self.height, [goal_pos] + used_pos)
-            agent.update((agent_pos, item_pos, False))
             used_pos.append(agent_pos)
         self.agent_positions = used_pos
+
+        for agent in self.agents:
+            agent.update(State(self.agent_positions, self.lookup))
 
     def get_agent_positions(self):
         return self.agent_positions
@@ -176,7 +108,8 @@ class GridWorld:
         return [item.get_pos() for item in self.get_items()]
 
     def get_state(self):
-        return (self.get_agent_positions()[0], self.get_item_positions()[0], self.has_item()) # TODO: for multiple agent and items
+        state = State(self.agent_positions, self.lookup)
+        return state
 
     def is_terminal(self):
         goal = self.get_goal()

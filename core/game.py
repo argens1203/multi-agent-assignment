@@ -1,16 +1,16 @@
 import matplotlib.pyplot as plt
-import itertools
 
-from .grid import GridWorld as Environment, Action, GridUtil
+from .grid import GridWorld as Environment, GridUtil
 from .agent import Agent
 from .visualization import Visualization
+from .state import State
 
 debug = False
 
 class Game:
     def __init__(self):
         self.total_reward = 0
-        self.agent = [self.get_agent() for _ in range(1)]
+        self.agent = [Agent(i, State.get_possible_states(), State.get_possible_actions()) for i in range(1)]
         self.env = Environment(8, 8)
         self.env.add_agents(self.agent)
         self.env.reset()
@@ -21,17 +21,6 @@ class Game:
         vis = Visualization(self)
         vis.reset(None)
         vis.show()
-
-    def get_agent(self):
-        # Generate all possible states
-        positions = [(x, y) for x in range(8) for y in range(8)]
-        has_items = [True, False]
-        possible_states = itertools.product(positions, positions, has_items)
-
-        # Generate possible actions
-        possible_actions = [Action.NORTH, Action.SOUTH, Action.EAST, Action.WEST]
-        
-        return Agent(possible_states, possible_actions)
 
     def train_agent(self, episodes):
         training_record = []
@@ -82,12 +71,9 @@ class Game:
         if self.env.is_terminal():
             return
         state = self.env.get_state()
-        # print(self.env.get_state())
         
         actions = [agent.choose_action(state) for agent in self.agent] # TODO: disable epsilon whent testing
-        # print(actions)
         results = self.env.move(actions)
-        # print('results',results)
 
         for action, (reward, next_state, terminal), agent in zip(actions, results, self.agent):
             self.total_reward += reward
