@@ -31,6 +31,12 @@ class Visualization:
     # ----- ----- ----- ----- Render UI Element  ----- ----- ----- ----- #
 
     def add_ui_elements(self):
+        self.init_buttons()
+        self.init_slider()
+        self.init_text()
+        self.update()
+
+    def init_buttons(self):
         # Add button for next step
         self.next_step_button = self.add_button(
             [0.85, 0.01, 0.1, 0.075], "Next Step", self.next
@@ -47,8 +53,13 @@ class Visualization:
         # Add button for reset
         self.stop_button = self.add_button([0.85, 0.31, 0.1, 0.075], "Stop", self.stop)
 
-        self.init_slider()
+    def init_slider(self):
+        plt.subplots_adjust(bottom=0.15)
+        axspeed = plt.axes([0.175, 0.08, 0.6, 0.03])
+        self.sspeed = Slider(axspeed, "Speed", 0.1, 10.0, valinit=1.0)
+        self.sspeed.on_changed(self.on_timeout_update)
 
+    def init_text(self):
         # Add text box for cumulative reward
         self.reward = self.add_text(
             [0.01, 0.01, 0.2, 0.075], f"Reward: {self.game.total_reward}"
@@ -59,13 +70,6 @@ class Visualization:
             [0.25, 0.01, 0.2, 0.075],
             f"Max Reward: {self.game.get_max_reward()}",
         )
-
-        self.update()
-
-    def init_slider(self):
-        axspeed = plt.axes([0.175, 0.05, 0.65, 0.03])
-        self.sspeed = Slider(axspeed, "Speed", 0.1, 10.0, valinit=1.0)
-        self.sspeed.on_changed(self.on_timeout_update)
 
     def add_button(self, coordinates: Coordinates, text, on_click):
         axis = plt.axes(coordinates)
