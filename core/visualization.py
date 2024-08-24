@@ -20,6 +20,7 @@ class Visualization:
     def __init__(self, game: "Game"):
         self.game = game
         self.is_stopping = False
+        self.timer = None
         self.game.reset()
         self.speed = 1
 
@@ -32,7 +33,7 @@ class Visualization:
     def add_ui_elements(self):
         # Add button for next step
         self.next_step_button = self.add_button(
-            [0.85, 0.01, 0.1, 0.075], "Next Step", self.next_step
+            [0.85, 0.01, 0.1, 0.075], "Next Step", self.next
         )
 
         # Add button for reset
@@ -145,32 +146,46 @@ class Visualization:
             color="red",
         )
 
-    def animate(self):
-        self.next_step(None)
+    def foo(self):
+        self.one_step()
         if not (self.is_stopping):
-            self.timer = threading.Timer(self.speed, self.animate)
+            self.timer = threading.Timer(self.speed, self.foo)
             self.timer.start()
 
-    # ----- ----- ----- ----- Event Handlers  ----- ----- ----- ----- #
-    def start_animation(self, event):
-        print("pressed")
-        self.animate()
-
-    def stop(self, event):
-        self.is_stopping = True
-
-    def reset(self, event):
-        self.game.reset()
-        self.max_reward.set_text(f"Max Reward: {self.game.get_max_reward()}")
-        self.update()
-
-    def next_step(self, i):
+    def one_step(self):
         print("next step")
         self.game.step(learn=False)
         self.update()
 
+    def stop_anim(self):
+        self.is_stopping = True
+        if self.timer:
+            self.timer.cancel()
+
+    def start_anim(self):
+        self.is_stopping = False
+        self.foo()
+
+    # ----- ----- ----- ----- Event Handlers  ----- ----- ----- ----- #
+    def start_animation(self, event):
+        print("pressed")
+        self.start_anim()
+
+    def stop(self, event):
+        self.stop_anim()
+
+    def reset(self, event):
+        # self.stop_anim()
+        self.game.reset()
+        self.max_reward.set_text(f"Max Reward: {self.game.get_max_reward()}")
+        self.update()
+
+    def next(self, e):
+        self.stop_anim()
+        self.one_step()
+
     def on_close(self, e):
-        self.stop(e)
+        self.stop_anim()
 
     def show(self):
         self.fig.canvas.mpl_connect("close_event", self.on_close)
