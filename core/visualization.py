@@ -33,10 +33,13 @@ class RegrMagic(object):
     def set_timeout(self, timeout):
         self.timeout = timeout
 
-    def __call__(self):
-        time.sleep(self.timeout)
+    def next(self):
         self.game.step(learn=False)
         return self.get_info()
+
+    def __call__(self):
+        # time.sleep(self.timeout)
+        return self.next()
 
 
 class Visualization:
@@ -52,14 +55,14 @@ class Visualization:
         # self.update()
         self.controller = RegrMagic(self.game)
         self.fig.canvas.mpl_connect("close_event", self.on_close)
-        self.start_anim2()
-        plt.show()
-
-    def start_anim2(self):
         self.ani = animation.FuncAnimation(
             self.fig, self.draw, frames=self.frames, interval=100, save_count=100
         )
+
+        self.animating = False
         self.ani.pause()
+
+        plt.show()
 
     def frames(self):
         while True:
@@ -77,7 +80,8 @@ class Visualization:
         # Check if the environment is terminal
         if self.game.has_ended():
             self.draw_complete()
-        # self.fig.canvas.draw()
+        if not self.animating:
+            self.fig.canvas.draw()
 
     def draw_grid(self):
         # self.ax.clear()
@@ -215,7 +219,7 @@ class Visualization:
     #         self.timer.start()
 
     def one_step(self):
-        self.draw(self.controller())
+        self.draw(self.controller.next())
 
     def stop_anim(self):
         pass
@@ -225,12 +229,16 @@ class Visualization:
 
     # ----- ----- ----- ----- Event Handlers  ----- ----- ----- ----- #
     def start_animation(self, event):
+        self.animating = True
         self.ani.resume()
 
     def stop(self, event):
+        print("stop")
+        self.animating = False
         self.ani.pause()
 
     def reset(self, event):
+        print("reset")
         # self.stop_anim()
         self.game.reset()
         self.draw(self.controller.get_info())
@@ -238,11 +246,13 @@ class Visualization:
         # self.update()
 
     def next(self, e):
-        self.draw(self.controller())
+        print("next")
+        self.draw(self.controller.next())
         # self.stop_anim()
         # self.one_step()
 
     def on_close(self, e):
+        print("on_close")
         pass
         # self.stop_anim()
 
