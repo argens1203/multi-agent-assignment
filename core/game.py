@@ -14,8 +14,8 @@ debug = False
 class Game:
     def __init__(self):
         # Parameters
-        self.width = 8
-        self.height = 8
+        self.width = 5
+        self.height = 5
 
         # Metrics
         self.total_reward = 0
@@ -40,6 +40,7 @@ class Game:
         training_record = self.train_agent(50000)
         Visualization.plot_training(training_record)
 
+    
         for _ in range(5000):
             loss=self.train_once()
             # g.update([_,loss])
