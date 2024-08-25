@@ -15,7 +15,7 @@ Coordinates: TypeAlias = Tuple[float, float, float, float]
 
 # plotly.offline.init_notebook_mode(connected=True)
 
-from .graph import Graph
+from .graph import Graph, TestGraph
 import numpy as np
 from multiprocessing import Process, Queue, shared_memory, Pipe
 
@@ -138,6 +138,14 @@ class Visualization:
         self.train_1000_btn = self.add_button(
             [0.85, 0.41, 0.12, 0.075], "Train 1000", self.on_train_1000
         )
+        # Add button for training
+        self.train_15000_btn = self.add_button(
+            [0.85, 0.51, 0.12, 0.075], "Train 15000", self.on_train_15000
+        )
+        # Add button for training
+        self.test_button = self.add_button(
+            [0.85, 0.61, 0.12, 0.075], "Test", self.on_test
+        )
 
     def init_text(self):
         # Add text box for cumulative reward
@@ -253,11 +261,25 @@ class Visualization:
         existing_shm.unlink()
         return s
 
+    def on_train_15000(self, e):
+        self.before_auto_train()
+        self.controller.train(15000)
+        self.after_auto_train()
+
     def np_to_name(self, np):
         pass
 
     def on_close(self, e):
         pass
+
+    def on_test(self, e):
+        self.before_auto_train()
+        gp, tp = get_test_process(self.controller)
+        gp.start()
+        tp.start()
+        gp.join()
+        tp.join()
+        self.after_auto_train()
 
     # ----- ----- ----- ----- Plot Metrics  ----- ----- ----- ----- #
     def plot_training(results):
@@ -311,3 +333,23 @@ def get_process(game, controller):
     )
     train_p = Process(target=train, args=[controller, conn2, 1000])
     return graph_p, train_p, conn1
+
+
+def test(controller, ep):
+    controller.test(ep)
+
+
+def draw_test_graph(controller):
+    fig, axs = plt.subplots()
+    graph = TestGraph(controller, fig, axs)
+
+
+def get_test_process(controller):
+    graph_p = Process(
+        target=draw_test_graph,
+        args=[
+            controller,
+        ],
+    )
+    test_p = Process(target=test, args=[controller, 1000])
+    return graph_p, test_p
