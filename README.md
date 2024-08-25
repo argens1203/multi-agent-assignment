@@ -9,3 +9,8 @@ python -m venv ./.venv
 
 # To change into venv in terminal
 source .venv/bin/activate
+
+To preview this jupyter notebook md in vscode, launch VS Code Quick Open (Ctrl+P), paste the following command, and press enter.
+```sh
+ext install jithurjacob.nbpreviewer
+```
