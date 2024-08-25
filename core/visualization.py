@@ -54,7 +54,7 @@ class Visualization:
         self.draw_item(items)
 
         self.reward.set_text(f"Reward: {tot_reward}")
-        self.max_reward.set_text(f"Reward: {max_reward}")
+        self.max_reward.set_text(f"Max Reward: {max_reward}")
 
         # Check if the environment is terminal
         if self.game.has_ended():
