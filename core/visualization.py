@@ -6,6 +6,7 @@ from matplotlib.widgets import Button, Slider
 import matplotlib.animation as animation
 from typing import Tuple, TypeAlias, TYPE_CHECKING
 from .controller import Controller
+import json
 
 if TYPE_CHECKING:
     from .game import Game
@@ -13,6 +14,10 @@ if TYPE_CHECKING:
 Coordinates: TypeAlias = Tuple[float, float, float, float]
 
 # plotly.offline.init_notebook_mode(connected=True)
+
+from .graph import Graph
+import numpy as np
+from multiprocessing import Process, Queue, shared_memory, Pipe
 
 
 class Visualization:
@@ -36,6 +41,11 @@ class Visualization:
 
         self.animating = True
         # self.ani.pause()
+
+        # self.tp = tp
+        # self.gp = gp
+        # self.tpi = 0
+        # self.gpi = 0
 
         plt.show()
 
@@ -132,6 +142,10 @@ class Visualization:
         self.toggle_auto_reset_btn = self.add_button(
             [0.85, 0.31, 0.12, 0.075], "Auto Reset\nOn", self.on_auto_reset
         )
+        # Add button for training
+        self.train_1000_btn = self.add_button(
+            [0.85, 0.41, 0.12, 0.075], "Train 1000", self.on_train_1000
+        )
 
     def init_text(self):
         # Add text box for cumulative reward
@@ -206,6 +220,22 @@ class Visualization:
     def on_next(self, e):
         self.draw(self.controller.next())
 
+    def on_train_1000(self, e):
+        gp, tp, conn1 = get_process(self.game, self.controller)
+        gp.start()
+        tp.start()
+        gp.join()
+        tp.join()
+        s = conn1.recv()
+        print(s)
+        existing_shm = shared_memory.SharedMemory(name=s)
+        print(existing_shm.size)
+        q = np.ndarray((5**5, 4), buffer=existing_shm.buf)
+        print(q)
+        self.game.agent[0].Q = np.copy(q)
+        existing_shm.close()
+        existing_shm.unlink()
+
     def on_close(self, e):
         pass
 
@@ -233,3 +263,35 @@ class Visualization:
         # Display the plots
         plt.tight_layout()
         plt.show()
+
+
+def draw_graphs(game, controller):
+    fig, ax = plt.subplots()
+    graph = Graph(controller, fig, ax)
+
+
+def train(controller, connection, ep):
+    controller.train(ep)
+    q = controller.game.agent[0].get_q_table()
+    print(q)
+
+    shm = shared_memory.SharedMemory(create=True, size=q.nbytes)
+    b = np.ndarray(q.shape, dtype=q.dtype, buffer=shm.buf)
+    b[:] = q[:]
+    print(shm.size)
+    print(shm.name)
+    connection.send(shm.name)
+    # shm.close()
+
+
+def get_process(game, controller):
+    conn1, conn2 = Pipe()
+    graph_p = Process(
+        target=draw_graphs,
+        args=[
+            game,
+            controller,
+        ],
+    )
+    train_p = Process(target=train, args=[controller, conn2, 5000])
+    return graph_p, train_p, conn1

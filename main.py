@@ -22,21 +22,31 @@ if __name__ == "__main__":
     game = Game()
     controller = Controller(game)
 
-    graph_p = Process(
-        target=draw_graphs,
-        args=[
-            game,
-            controller,
-        ],
-    )
-    game_p = Process(target=draw_game, args=[game, controller])
-    train_p = Process(target=train, args=[controller, 5000])
+    # tps = []
+    # gps = []
+    # for i in range(100):
+
+    # graph_p = Process(
+    #     target=draw_graphs,
+    #     args=[
+    #         game,
+    #         controller,
+    #     ],
+    # )
+    # train_p = Process(target=train, args=[controller, 5000])
+    # tps.append(train_p)
+    # gps.append(graph_p)
+
+    fig1, ax1 = plt.subplots()
+    vis = Visualization(game, controller, fig1, ax1)
+
+    # game_p = Process(target=draw_game, args=[game, controller])
 
     # controller.train(5000)
-    graph_p.start()
-    game_p.start()
-    train_p.start()
+    # graph_p.start()
+    # train_p.start()
+    # # graph_p.join()
+    # train_p.join()
+    # game_p.start()
 
-    graph_p.join()
-    game_p.join()
-    train_p.join()
+    # game_p.join()

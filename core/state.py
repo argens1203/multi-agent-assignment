@@ -22,6 +22,7 @@ class State:
 
     def get_possible_states(width, height):
         # Generate all possible states
+        return 5**5
         positions = [(x, y) for x in range(width) for y in range(height)]
         has_items = [True, False]
         return itertools.product(positions, positions, has_items)
@@ -41,10 +42,17 @@ class State:
         return item.taken
 
     def extract_state(self, idx):
-        item_pos = self.get_item_positions()
-        agent_pos = self.agent_positions[idx]
+        x, y = self.agent_positions[idx]
+        x2, y2 = self.get_item_positions()[0]
         # TODO: remove hardcoded item_pos indices
-        return agent_pos, item_pos[0], self.has_item()
+        # return agent_pos, item_pos[0], self.has_item()
+        return (
+            x * (5**4)
+            + y * (5**3)
+            + x2 * (5**2)
+            + y2 * (5)
+            + (1 if self.has_item() else 0)
+        )
 
     # ----- Information Extraction ----- #
     def get_agent_positions(self):
