@@ -6,10 +6,10 @@ from multiprocessing import Process
 
 
 class Graph:
-    def __init__(self, controller, fig, ax):
+    def __init__(self, controller, fig, axs):
         self.controller = controller
         self.fig = fig
-        self.ax = ax
+        self.ax1, self.ax2 = axs
 
         self.controller = controller
         self.ani = animation.FuncAnimation(
@@ -24,14 +24,26 @@ class Graph:
 
     def draw(self, args):
         self.plot_losses(
-            self.ax,
+            self.ax1,
             self.controller.iterations,
             self.controller.losses,
         )
+        self.plot_epsilon(
+            self.ax2,
+            self.controller.iterations,
+            self.controller.epsilon,
+        )
 
-    def plot_losses(self, ax, iterations, losses):
+    def plot_losses(self, ax, iterations, loss):
         # Plotting the loss in the first subplot
-        ax.plot(iterations, losses, color="blue", label="Loss")
+        ax.plot(iterations, loss, color="blue", label="Loss")
         ax.set_title("Loss")
         ax.set_xlabel("Iteration")
         ax.set_ylabel("Loss")
+
+    def plot_epsilon(self, ax, iterations, epsilon):
+        # Plotting the loss in the first subplot
+        ax.plot(iterations, epsilon, color="blue", label="Loss")
+        ax.set_title("Epsilon")
+        ax.set_xlabel("Iteration")
+        ax.set_ylabel("Epsilon")

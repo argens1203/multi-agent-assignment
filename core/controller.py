@@ -11,7 +11,7 @@ class Controller(object):
 
         self.iterations = Array("i", range(max_itr))
         self.losses = Array("i", max_itr)
-        self.rewards = Array("i", max_itr)
+        self.epsilon = Array("f", max_itr)
 
     def get_info(self):
         info = self.game.get_agent_info()
@@ -39,11 +39,11 @@ class Controller(object):
             (
                 loss,
                 reward,
-                max_reward,
+                epsilon,
             ) = self.game.train_one_game()
             self.losses[self.itr] = loss
-            self.rewards[self.itr] = reward
+            self.epsilon[self.itr] = epsilon
             self.itr += 1
 
     def get_metrics(self):
-        return self.iterations, self.losses, self.rewards
+        return self.iterations, self.losses, self.epsilon

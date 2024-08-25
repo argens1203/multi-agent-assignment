@@ -31,16 +31,16 @@ class Game:
         self.grid.add_agents(self.agent)
         self.reset()
 
-    def train_one_game(self):
+    def train_one_game(self, learn=True):
         self.reset()
         self.total_reward = 0
         max_reward = GridUtil.calculate_max_reward(self.grid)
 
         while not self.grid.get_state().is_terminal():
-            self.step()
+            self.step(learn)
 
         loss = max_reward - self.total_reward
-        return loss, self.total_reward, max_reward
+        return loss, self.total_reward, self.agent[0].epsilon
 
     # ---- Public Getter Functions (For Visualisation) ----- #
 
@@ -85,7 +85,7 @@ class Game:
             return
         state = self.grid.get_state()
 
-        actions = [agent.choose_action(state, explore=False) for agent in self.agent]
+        actions = [agent.choose_action(state, explore=learn) for agent in self.agent]
         results = self.grid.move(actions)
 
         for action, (reward, next_state, terminal), agent in zip(
