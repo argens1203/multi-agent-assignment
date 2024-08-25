@@ -20,6 +20,7 @@ class Controller(object):
         self.game = game
         self.timeout = 0.5
         self.auto_reset = True
+        self.itr = 0
 
     def get_info(self):
         info = self.game.get_agent_info()
@@ -42,20 +43,28 @@ class Controller(object):
         self.game.step(learn=False)
         return self.get_info()
 
-    def __call__(self):
-        # time.sleep(self.timeout)
-        return self.next()
+    def __call__(self, learning=False):
+        if learning:
+            return self.train_once()
+        else:
+            return self.next()
+
+    def train_once(self):
+        max_reward, total_reward, loss = self.game.train_agent_once()
+        self.itr += 1
+        return self.itr, loss, total_reward
 
 
 class Visualization:
-    def __init__(self, game: "Game"):
+    def __init__(self, game: "Game", fig, ax):
         self.game = game
         self.is_stopping = False
         self.timer = None
         self.game.reset()
         self.speed = 1
+        self.fig = fig
+        self.ax = ax
 
-        self.fig, self.ax = plt.subplots()
         self.add_ui_elements()
         # self.update()
         self.controller = Controller(self.game)
@@ -71,7 +80,7 @@ class Visualization:
 
     def frames(self):
         while True:
-            yield self.controller()
+            yield self.controller(learning=False)
 
     def draw(self, args):
         info, items, tot_reward, max_reward = args
@@ -176,14 +185,16 @@ class Visualization:
         )
 
     def add_button(self, coordinates: Coordinates, text, on_click):
-        axis = plt.axes(coordinates)
+        # axis = plt.axes(coordinates)
+        axis = self.ax
         button = Button(axis, text)
         button.on_clicked(on_click)
 
         return button
 
     def add_text(self, coordinates: Coordinates, text):
-        axis = plt.axes(coordinates)
+        # axis = plt.axes(coordinates)
+        axis = self.ax
         textbox = axis.text(
             0.5,
             0.5,
@@ -238,28 +249,28 @@ class Visualization:
         pass
 
     # ----- ----- ----- ----- Plot Metrics  ----- ----- ----- ----- #
-    def plot_training(results):
-        iterations = [t[0] for t in results]
-        losses = [t[3] for t in results]
-        total_rewards = [t[2] for t in results]
+    # def plot_training(results):
+    #     iterations = [t[0] for t in results]
+    #     losses = [t[3] for t in results]
+    #     total_rewards = [t[2] for t in results]
 
-        # Create a figure with 1 row and 2 columns of subplots
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+    #     # Create a figure with 1 row and 2 columns of subplots
+    #     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
-        # Plotting the loss in the first subplot
-        ax1.plot(iterations, losses, marker="o", label="Loss")
-        ax1.set_title("Iteration vs Loss")
-        ax1.set_xlabel("Iteration Number")
-        ax1.set_ylabel("Loss")
+    #     # Plotting the loss in the first subplot
+    #     ax1.plot(iterations, losses, marker="o", label="Loss")
+    #     ax1.set_title("Iteration vs Loss")
+    #     ax1.set_xlabel("Iteration Number")
+    #     ax1.set_ylabel("Loss")
 
-        # Plotting the total rewards in the second subplot
-        ax2.plot(
-            iterations, total_rewards, label="Total Reward", color="orange", marker="o"
-        )
-        ax2.set_title("Iteration vs Total Reward")
-        ax2.set_xlabel("Iteration Number")
-        ax2.set_ylabel("Total Reward")
+    #     # Plotting the total rewards in the second subplot
+    #     ax2.plot(
+    #         iterations, total_rewards, label="Total Reward", color="orange", marker="o"
+    #     )
+    #     ax2.set_title("Iteration vs Total Reward")
+    #     ax2.set_xlabel("Iteration Number")
+    #     ax2.set_ylabel("Total Reward")
 
-        # Display the plots
-        plt.tight_layout()
-        plt.show()
+    #     # Display the plots
+    #     plt.tight_layout()
+    #     plt.show()

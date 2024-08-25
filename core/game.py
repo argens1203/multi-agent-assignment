@@ -42,22 +42,26 @@ class Game:
         vis = Visualization(self)
         vis.on_reset(None)
 
+    def train_agent_once(self):
+        self.grid.reset()
+        self.total_reward = 0
+        max_reward = GridUtil.calculate_max_reward(self.grid)
+
+        while not self.grid.get_state().is_terminal():
+            self.step()
+
+        loss = max_reward - self.total_reward
+        if debug:
+            print(
+                f"Episode {_} completed with total reward: {self.total_reward},max_reward:{max_reward}, loss:{loss}"
+            )
+        return max_reward, self.total_reward, loss
+
     def train_agent(self, episodes):
         training_record = []
         for _ in range(episodes):
-            self.grid.reset()
-            self.total_reward = 0
-            max_reward = GridUtil.calculate_max_reward(self.grid)
-
-            while not self.grid.get_state().is_terminal():
-                self.step()
-
-            loss = max_reward - self.total_reward
-            if debug:
-                print(
-                    f"Episode {_} completed with total reward: {self.total_reward},max_reward:{max_reward}, loss:{loss}"
-                )
-            training_record.append([_, max_reward, self.total_reward, loss])
+            max_reward, total_reward, loss = self.train_agent_once()
+            training_record.append([_, max_reward, total_reward, loss])
         return training_record
 
     # ---- Public Getter Functions (For Visualisation) ----- #
