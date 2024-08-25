@@ -113,6 +113,7 @@ class Grid:
 
     # ----- Public Functions ----- #
     def reset(self):
+        self.init_environment()
         self.set_interactive_tiles()
 
     def add_agents(self, agents):

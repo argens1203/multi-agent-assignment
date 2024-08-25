@@ -4,15 +4,11 @@ from typing import List, Tuple
 
 from .grid import Grid, GridUtil
 from .agent import Agent
-from .visualization import Visualization
 from .state import State
-
-debug = False
 
 
 class Game:
     def __init__(self):
-        print("new game")
         # Parameters
         self.width = 5
         self.height = 5
@@ -33,11 +29,10 @@ class Game:
         # Grid
         self.grid = Grid(self.width, self.height)
         self.grid.add_agents(self.agent)
-        self.grid.reset()
-        self.max_reward = GridUtil.calculate_max_reward(self.grid)
+        self.reset()
 
     def train_one_game(self):
-        self.grid.reset()
+        self.reset()
         self.total_reward = 0
         max_reward = GridUtil.calculate_max_reward(self.grid)
 
@@ -45,18 +40,7 @@ class Game:
             self.step()
 
         loss = max_reward - self.total_reward
-        if debug:
-            print(
-                f"Episode {_} completed with total reward: {self.total_reward},max_reward:{max_reward}, loss:{loss}"
-            )
         return loss, self.total_reward, max_reward
-
-    def train_agent(self, episodes):
-        training_record = []
-        for i in range(episodes):
-            loss, total_reward, max_reward = self.train_one_game()
-            training_record.append([i, loss, total_reward])
-        return zip(*training_record)
 
     # ---- Public Getter Functions (For Visualisation) ----- #
 

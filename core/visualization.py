@@ -31,21 +31,13 @@ class Visualization:
         self.ax = ax
 
         self.add_ui_elements()
-        # self.update()
         self.controller = controller
-        # self.controller = Controller(self.game)
         self.fig.canvas.mpl_connect("close_event", self.on_close)
         self.ani = animation.FuncAnimation(
             self.fig, self.draw, frames=self.frames, interval=200, save_count=100
         )
 
         self.animating = True
-        # self.ani.pause()
-
-        # self.tp = tp
-        # self.gp = gp
-        # self.tpi = 0
-        # self.gpi = 0
 
         plt.show()
 
@@ -221,40 +213,54 @@ class Visualization:
         self.draw(self.controller.next())
 
     def on_train_1000(self, e):
-        self.game.reset()
-        self.draw(self.controller.get_info())
-        self.ani.pause()
-        self.toggle_anim_btn.label.set_text("Anim\nOff")
-        self.animating = False
+        self.before_auto_train()
 
+        s = self.auto_train()
+
+        self.game.agent[0].Q = self.get_np_from_name(s)
+
+        self.after_auto_train()
+
+    def before_auto_train(self):
+        self.ani.pause()
+        self.animating = False
+        self.controller.game.reset()
+
+        self.toggle_anim_btn.label.set_text("Anim\nOff")
+        self.draw(self.controller.get_info())
+
+    def auto_train(self):
         gp, tp, conn1 = get_process(self.game, self.controller)
         gp.start()
         tp.start()
         gp.join()
         tp.join()
-        s = conn1.recv()
+        return conn1.recv()
 
-        print(s)
-        existing_shm = shared_memory.SharedMemory(name=s)
-        print(existing_shm.size)
+    def after_auto_train(self):
+        self.ani.resume()
+        self.animating = True
+        self.controller.game.reset()
+
+        self.toggle_anim_btn.label.set_text("Anim\nOn")
+        self.draw(self.controller.get_info())
+
+    def get_np_from_name(self, name):
+        existing_shm = shared_memory.SharedMemory(name=name)
         q = np.ndarray((5**5, 4), buffer=existing_shm.buf)
-        print(q)
-        self.game.agent[0].Q = np.copy(q)
+        s = np.copy(q)
         existing_shm.close()
         existing_shm.unlink()
+        return s
 
-        self.game.reset()
-        self.draw(self.controller.get_info())
-        self.ani.resume()
-        self.toggle_anim_btn.label.set_text("Anim\nOn")
-        self.animating = True
+    def np_to_name(self, np):
+        pass
 
     def on_close(self, e):
         pass
 
     # ----- ----- ----- ----- Plot Metrics  ----- ----- ----- ----- #
     def plot_training(results):
-        # print(results)
         iterations, losses, total_rewards = results
         # Create a figure with 1 row and 2 columns of subplots
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
@@ -286,15 +292,12 @@ def draw_graphs(game, controller):
 def train(controller, connection, ep):
     controller.train(ep)
     q = controller.game.agent[0].get_q_table()
-    print(q)
 
     shm = shared_memory.SharedMemory(create=True, size=q.nbytes)
     b = np.ndarray(q.shape, dtype=q.dtype, buffer=shm.buf)
     b[:] = q[:]
-    print(shm.size)
-    print(shm.name)
     connection.send(shm.name)
-    # shm.close()
+    shm.close()
 
 
 def get_process(game, controller):
@@ -306,5 +309,5 @@ def get_process(game, controller):
             controller,
         ],
     )
-    train_p = Process(target=train, args=[controller, conn2, 500])
+    train_p = Process(target=train, args=[controller, conn2, 1000])
     return graph_p, train_p, conn1

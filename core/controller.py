@@ -34,14 +34,13 @@ class Controller(object):
         return self.get_info()
 
     def train(self, itr=1):
+        self.game.reset()
         for _ in range(itr):
             (
                 loss,
                 reward,
                 max_reward,
             ) = self.game.train_one_game()
-            # print(self.itr)
-            # print(self.itr, loss, reward)
             self.losses[self.itr] = loss
             self.rewards[self.itr] = reward
             self.itr += 1
