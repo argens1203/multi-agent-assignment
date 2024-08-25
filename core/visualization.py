@@ -221,6 +221,8 @@ class Visualization:
         self.draw(self.controller.next())
 
     def on_train_1000(self, e):
+        self.game.reset()
+        self.draw(self.controller.get_info())
         self.ani.pause()
         self.toggle_anim_btn.label.set_text("Anim\nOff")
         self.animating = False
@@ -231,6 +233,7 @@ class Visualization:
         gp.join()
         tp.join()
         s = conn1.recv()
+
         print(s)
         existing_shm = shared_memory.SharedMemory(name=s)
         print(existing_shm.size)
@@ -239,6 +242,12 @@ class Visualization:
         self.game.agent[0].Q = np.copy(q)
         existing_shm.close()
         existing_shm.unlink()
+
+        self.game.reset()
+        self.draw(self.controller.get_info())
+        self.ani.resume()
+        self.toggle_anim_btn.label.set_text("Anim\nOn")
+        self.animating = True
 
     def on_close(self, e):
         pass

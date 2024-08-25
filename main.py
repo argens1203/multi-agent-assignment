@@ -20,33 +20,14 @@ def train(controller, ep):
 
 if __name__ == "__main__":
     game = Game()
-    controller = Controller(game)
-
-    # tps = []
-    # gps = []
-    # for i in range(100):
-
-    # graph_p = Process(
-    #     target=draw_graphs,
-    #     args=[
-    #         game,
-    #         controller,
-    #     ],
-    # )
-    # train_p = Process(target=train, args=[controller, 5000])
-    # tps.append(train_p)
-    # gps.append(graph_p)
+    controller = Controller(game, 1000)
 
     fig1, ax1 = plt.subplots()
     vis = Visualization(game, controller, fig1, ax1)
 
-    # game_p = Process(target=draw_game, args=[game, controller])
-
+    # game = Game()
+    # controller = Controller(game, 5000)
     # controller.train(5000)
-    # graph_p.start()
-    # train_p.start()
-    # # graph_p.join()
-    # train_p.join()
-    # game_p.start()
-
-    # game_p.join()
+    # fig1, ax1 = plt.subplots()
+    # vis = Visualization(game, controller, fig1, ax1)
+    # Visualization.plot_training(controller.get_metrics())
