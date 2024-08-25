@@ -221,6 +221,10 @@ class Visualization:
         self.draw(self.controller.next())
 
     def on_train_1000(self, e):
+        self.ani.pause()
+        self.toggle_anim_btn.label.set_text("Anim\nOff")
+        self.animating = False
+
         gp, tp, conn1 = get_process(self.game, self.controller)
         gp.start()
         tp.start()
@@ -293,5 +297,5 @@ def get_process(game, controller):
             controller,
         ],
     )
-    train_p = Process(target=train, args=[controller, conn2, 5000])
+    train_p = Process(target=train, args=[controller, conn2, 500])
     return graph_p, train_p, conn1
