@@ -35,7 +35,7 @@ class Game:
         self.grid.reset()
         self.max_reward = GridUtil.calculate_max_reward(self.grid)
 
-    def train_agent_once(self):
+    def train_one_game(self):
         self.grid.reset()
         self.total_reward = 0
         max_reward = GridUtil.calculate_max_reward(self.grid)
@@ -53,7 +53,7 @@ class Game:
     def train_agent(self, episodes):
         training_record = []
         for i in range(episodes):
-            loss, total_reward, max_reward = self.train_agent_once()
+            loss, total_reward, max_reward = self.train_one_game()
             training_record.append([i, loss, total_reward])
         return zip(*training_record)
 
@@ -91,6 +91,8 @@ class Game:
     def reset(self):
         self.total_reward = 0
         self.grid.reset()
+        for agent in self.agent:
+            agent.reset()
         self.max_reward = GridUtil.calculate_max_reward(self.grid)
 
     def step(self, learn=True):

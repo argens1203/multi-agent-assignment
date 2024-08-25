@@ -41,7 +41,7 @@ class Visualization:
 
     def frames(self):
         while True:
-            yield self.controller(learning=False)
+            yield self.controller.next()
 
     def draw(self, args):
         info, items, tot_reward, max_reward = args

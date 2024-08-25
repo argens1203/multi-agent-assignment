@@ -23,7 +23,9 @@ def draw_graphs(game, controller):
 if __name__ == "__main__":
     game = Game()
     controller = Controller(game)
-    training_record = game.train_agent(50000)
+    controller.train(10000)
+    training_record = controller.get_metrics()
+    # training_record = game.train_agent(50000)
     Visualization.plot_training(training_record)
 
     p1 = Process(
