@@ -6,13 +6,10 @@ from multiprocessing import Process
 
 
 class Graph:
-    def __init__(self, game, fig, axs):
+    def __init__(self, game, fig, ax):
         self.game = game
         self.fig = fig
-        if type(axs) == tuple:
-            self.ax1, self.ax2 = axs
-        else:
-            self.ax1, self.ax2 = axs, None
+        self.ax = ax
 
         # self.ani.resume()
         self.controller = Controller(self.game)
@@ -25,11 +22,6 @@ class Graph:
             self.fig, self.draw, frames=self.frames, interval=100, save_count=100
         )
 
-        self.iteration = 0
-        self.iterations = []
-        self.losses = []
-        self.total_rewards = []
-
         plt.show()
 
     def frames(self):
@@ -37,16 +29,11 @@ class Graph:
             yield None
 
     def draw(self, args):
-        self.plot_training(
+        self.plot_losses(
+            self.ax,
             self.controller.iterations,
             self.controller.losses,
-            self.controller.total_reward,
         )
-
-    def plot_training(self, iterations, losses, rewards):
-        self.plot_losses(self.ax1, iterations, losses)
-        if self.ax2 is not None:
-            self.plot_rewards(self.ax2, iterations, rewards)
 
     def plot_losses(self, ax, iterations, losses):
         # Plotting the loss in the first subplot
@@ -54,16 +41,3 @@ class Graph:
         ax.set_title("Loss")
         ax.set_xlabel("Iteration")
         ax.set_ylabel("Loss")
-
-    def plot_rewards(self, ax, iterations, rewards):
-        # Plotting the total rewards in the second subplot
-        ax.plot(
-            iterations,
-            rewards,
-            label="Reward",
-            color="orange",
-            marker=",",
-        )
-        ax.set_title("Reward per game")
-        ax.set_xlabel("Iteration")
-        ax.set_ylabel("Reward")

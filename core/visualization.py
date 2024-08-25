@@ -24,7 +24,6 @@ class Controller(object):
 
         self.iterations = Array("i", range(50000))
         self.losses = Array("i", 50000)
-        self.total_reward = Array("i", 50000)
 
     def get_info(self):
         info = self.game.get_agent_info()
@@ -53,20 +52,15 @@ class Controller(object):
         else:
             return self.next()
 
-    def get_stats(self):
-        return self.iterations, self.losses, self.total_reward
-
     def train_once(self, itr=1):
-        print("training")
         for i in range(itr):
-            print("iteration", i)
-            max_reward, reward, loss = self.game.train_agent_once()
-            # self.iterations[i].append(self.itr)
+            (
+                loss,
+                reward,
+                max_reward,
+            ) = self.game.train_agent_once()
             self.losses[self.itr] = loss
-            self.total_reward[self.itr] = reward
             self.itr += 1
-        # print(self.iterations, self.losses, self.total_reward)
-        # return iterations, losses, total_reward
 
 
 class Visualization:
@@ -263,28 +257,29 @@ class Visualization:
         pass
 
     # ----- ----- ----- ----- Plot Metrics  ----- ----- ----- ----- #
-    # def plot_training(results):
-    #     iterations = [t[0] for t in results]
-    #     losses = [t[3] for t in results]
-    #     total_rewards = [t[2] for t in results]
+    def plot_training(results):
+        # print(results)
+        iterations = [t[0] for t in results]
+        losses = [t[1] for t in results]
+        total_rewards = [t[2] for t in results]
 
-    #     # Create a figure with 1 row and 2 columns of subplots
-    #     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+        # Create a figure with 1 row and 2 columns of subplots
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
-    #     # Plotting the loss in the first subplot
-    #     ax1.plot(iterations, losses, marker="o", label="Loss")
-    #     ax1.set_title("Iteration vs Loss")
-    #     ax1.set_xlabel("Iteration Number")
-    #     ax1.set_ylabel("Loss")
+        # Plotting the loss in the first subplot
+        ax1.plot(iterations, losses, marker="o", label="Loss")
+        ax1.set_title("Iteration vs Loss")
+        ax1.set_xlabel("Iteration Number")
+        ax1.set_ylabel("Loss")
 
-    #     # Plotting the total rewards in the second subplot
-    #     ax2.plot(
-    #         iterations, total_rewards, label="Total Reward", color="orange", marker="o"
-    #     )
-    #     ax2.set_title("Iteration vs Total Reward")
-    #     ax2.set_xlabel("Iteration Number")
-    #     ax2.set_ylabel("Total Reward")
+        # Plotting the total rewards in the second subplot
+        ax2.plot(
+            iterations, total_rewards, label="Total Reward", color="orange", marker="o"
+        )
+        ax2.set_title("Iteration vs Total Reward")
+        ax2.set_xlabel("Iteration Number")
+        ax2.set_ylabel("Total Reward")
 
-    #     # Display the plots
-    #     plt.tight_layout()
-    #     plt.show()
+        # Display the plots
+        plt.tight_layout()
+        plt.show()

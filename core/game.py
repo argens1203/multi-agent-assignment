@@ -55,13 +55,13 @@ class Game:
             print(
                 f"Episode {_} completed with total reward: {self.total_reward},max_reward:{max_reward}, loss:{loss}"
             )
-        return max_reward, self.total_reward, loss
+        return loss, self.total_reward, max_reward
 
     def train_agent(self, episodes):
         training_record = []
-        for _ in range(episodes):
-            max_reward, total_reward, loss = self.train_agent_once()
-            training_record.append([_, max_reward, total_reward, loss])
+        for i in range(episodes):
+            loss, total_reward, max_reward = self.train_agent_once()
+            training_record.append([i, loss, total_reward, max_reward])
         return training_record
 
     # ---- Public Getter Functions (For Visualisation) ----- #
