@@ -6,20 +6,12 @@ from multiprocessing import Process
 
 
 class Graph:
-    def __init__(self, game, controller, fig, ax):
-        self.game = game
+    def __init__(self, controller, fig, ax):
         self.controller = controller
         self.fig = fig
         self.ax = ax
 
-        # self.ani.resume()
-        # self.controller = Controller(self.game)
         self.controller = controller
-        # self.controller.train_once(10000)
-
-        p = Process(target=self.controller.train, args=[50000])
-        p.start()
-
         self.ani = animation.FuncAnimation(
             self.fig, self.draw, frames=self.frames, interval=100, save_count=100
         )

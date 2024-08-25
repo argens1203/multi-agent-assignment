@@ -40,6 +40,8 @@ class Controller(object):
                 reward,
                 max_reward,
             ) = self.game.train_one_game()
+            # print(self.itr)
+            # print(self.itr, loss, reward)
             self.losses[self.itr] = loss
             self.rewards[self.itr] = reward
             self.itr += 1

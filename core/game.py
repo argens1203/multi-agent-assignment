@@ -12,6 +12,7 @@ debug = False
 
 class Game:
     def __init__(self):
+        print("new game")
         # Parameters
         self.width = 5
         self.height = 5
