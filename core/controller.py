@@ -3,15 +3,15 @@ from multiprocessing import Array
 
 class Controller(object):
     # Iterate by number of games
-    def __init__(self, game):
+    def __init__(self, game, max_itr):
         self.game = game
         self.timeout = 0.5
         self.auto_reset = True
         self.itr = 0
 
-        self.iterations = Array("i", range(50000))
-        self.losses = Array("i", 50000)
-        self.rewards = Array("i", 50000)
+        self.iterations = Array("i", range(max_itr))
+        self.losses = Array("i", max_itr)
+        self.rewards = Array("i", max_itr)
 
     def get_info(self):
         info = self.game.get_agent_info()

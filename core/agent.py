@@ -11,9 +11,9 @@ class Agent:
         self.idx = idx
 
         # Initialize Q Table for all state-action to be 0
-        self.Q = {}
-        for state in all_states:
-            self.Q[state] = np.zeros(len(actions))
+        self.Q = np.zeros((all_states, len(actions)))
+        # for state in all_states:
+        # self.Q[state] = [0 for i in actions]
 
         # Initialize Learning param
         self.epsilon = 1
@@ -65,3 +65,6 @@ class Agent:
     # Extract immutable information from State object
     def massage(self, state):
         return state.extract_state(self.idx)
+
+    def get_q_table(self):
+        return self.Q
