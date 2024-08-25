@@ -297,9 +297,9 @@ class Visualization:
         ax2.plot(
             iterations, total_rewards, label="Total Reward", color="orange", marker="o"
         )
-        ax2.set_title("Iteration vs Total Reward")
+        ax2.set_title("Epsilon decay across iteration")
         ax2.set_xlabel("Iteration Number")
-        ax2.set_ylabel("Total Reward")
+        ax2.set_ylabel("Epsilon")
 
         # Display the plots
         plt.tight_layout()
