@@ -1,7 +1,7 @@
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 
-from .visualization import Controller
+from .controller import Controller
 from multiprocessing import Process
 
 
@@ -15,7 +15,7 @@ class Graph:
         self.controller = Controller(self.game)
         # self.controller.train_once(10000)
 
-        p = Process(target=self.controller.train_once, args=[50000])
+        p = Process(target=self.controller.train, args=[50000])
         p.start()
 
         self.ani = animation.FuncAnimation(

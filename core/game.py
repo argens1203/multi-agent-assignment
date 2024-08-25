@@ -35,13 +35,6 @@ class Game:
         self.grid.reset()
         self.max_reward = GridUtil.calculate_max_reward(self.grid)
 
-    # This is the main function to be called for external
-    def run(self):
-        training_record = self.train_agent(10000)
-        Visualization.plot_training(training_record)
-        vis = Visualization(self)
-        vis.on_reset(None)
-
     def train_agent_once(self):
         self.grid.reset()
         self.total_reward = 0
@@ -61,8 +54,8 @@ class Game:
         training_record = []
         for i in range(episodes):
             loss, total_reward, max_reward = self.train_agent_once()
-            training_record.append([i, loss, total_reward, max_reward])
-        return training_record
+            training_record.append([i, loss, total_reward])
+        return zip(*training_record)
 
     # ---- Public Getter Functions (For Visualisation) ----- #
 

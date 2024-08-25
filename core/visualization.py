@@ -4,8 +4,8 @@ import matplotlib.patches as patches
 # import plotly
 from matplotlib.widgets import Button, Slider
 import matplotlib.animation as animation
-from multiprocessing import Array
 from typing import Tuple, TypeAlias, TYPE_CHECKING
+from .controller import Controller
 
 if TYPE_CHECKING:
     from .game import Game
@@ -13,54 +13,6 @@ if TYPE_CHECKING:
 Coordinates: TypeAlias = Tuple[float, float, float, float]
 
 # plotly.offline.init_notebook_mode(connected=True)
-
-
-class Controller(object):
-    def __init__(self, game):
-        self.game = game
-        self.timeout = 0.5
-        self.auto_reset = True
-        self.itr = 0
-
-        self.iterations = Array("i", range(50000))
-        self.losses = Array("i", 50000)
-
-    def get_info(self):
-        info = self.game.get_agent_info()
-        items = self.game.get_untaken_items()
-        tot_reward = self.game.get_total_reward()
-        max_reward = self.game.get_max_reward()
-        return info, items, tot_reward, max_reward
-
-    def set_timeout(self, timeout):
-        self.timeout = timeout
-
-    def toggle_auto_reset(self):
-        self.auto_reset = not self.auto_reset
-        return self.auto_reset
-
-    def next(self):
-        if self.game.has_ended() and self.auto_reset:
-            self.game.reset()
-            # self.game.step(learn=False)
-        self.game.step(learn=False)
-        return self.get_info()
-
-    def __call__(self, learning=False):
-        if learning:
-            return self.train_once()
-        else:
-            return self.next()
-
-    def train_once(self, itr=1):
-        for i in range(itr):
-            (
-                loss,
-                reward,
-                max_reward,
-            ) = self.game.train_agent_once()
-            self.losses[self.itr] = loss
-            self.itr += 1
 
 
 class Visualization:
@@ -259,10 +211,7 @@ class Visualization:
     # ----- ----- ----- ----- Plot Metrics  ----- ----- ----- ----- #
     def plot_training(results):
         # print(results)
-        iterations = [t[0] for t in results]
-        losses = [t[1] for t in results]
-        total_rewards = [t[2] for t in results]
-
+        iterations, losses, total_rewards = results
         # Create a figure with 1 row and 2 columns of subplots
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
