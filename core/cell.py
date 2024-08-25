@@ -25,8 +25,7 @@ class Goal(Empty):
         self.reached = False
 
     def interact(self, other: Agent):
-        has_item = other.has_item()
-        if has_item:
+        if other.has_item() and not self.reached:
             self.reached = True
             return 50, (self.x, self.y)
         else:
@@ -52,7 +51,7 @@ class Item(Empty):
         self.y = y
 
     def interact(self, other: Agent):
-        if not self.taken:
+        if not self.taken and not other.has_item():
             self.taken = True
             return 50, (self.x, self.y)
 

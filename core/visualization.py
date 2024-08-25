@@ -15,7 +15,7 @@ Coordinates: TypeAlias = Tuple[float, float, float, float]
 
 # plotly.offline.init_notebook_mode(connected=True)
 
-from .graph import Graph
+from .graph import Graph, TestGraph
 import numpy as np
 from multiprocessing import Process, Queue, shared_memory, Pipe
 
@@ -31,21 +31,13 @@ class Visualization:
         self.ax = ax
 
         self.add_ui_elements()
-        # self.update()
         self.controller = controller
-        # self.controller = Controller(self.game)
         self.fig.canvas.mpl_connect("close_event", self.on_close)
         self.ani = animation.FuncAnimation(
             self.fig, self.draw, frames=self.frames, interval=200, save_count=100
         )
 
         self.animating = True
-        # self.ani.pause()
-
-        # self.tp = tp
-        # self.gp = gp
-        # self.tpi = 0
-        # self.gpi = 0
 
         plt.show()
 
@@ -62,7 +54,7 @@ class Visualization:
         self.draw_item(items)
 
         self.reward.set_text(f"Reward: {tot_reward}")
-        self.max_reward.set_text(f"Reward: {max_reward}")
+        self.max_reward.set_text(f"Max Reward: {max_reward}")
 
         # Check if the environment is terminal
         if self.game.has_ended():
@@ -146,6 +138,14 @@ class Visualization:
         self.train_1000_btn = self.add_button(
             [0.85, 0.41, 0.12, 0.075], "Train 1000", self.on_train_1000
         )
+        # Add button for training
+        self.train_15000_btn = self.add_button(
+            [0.85, 0.51, 0.12, 0.075], "Train 15000", self.on_train_15000
+        )
+        # Add button for training
+        self.test_button = self.add_button(
+            [0.85, 0.61, 0.12, 0.075], "Test", self.on_test
+        )
 
     def init_text(self):
         # Add text box for cumulative reward
@@ -221,40 +221,68 @@ class Visualization:
         self.draw(self.controller.next())
 
     def on_train_1000(self, e):
-        self.game.reset()
-        self.draw(self.controller.get_info())
-        self.ani.pause()
-        self.toggle_anim_btn.label.set_text("Anim\nOff")
-        self.animating = False
+        self.before_auto_train()
 
+        s = self.auto_train()
+
+        self.game.agent[0].Q = self.get_np_from_name(s)
+
+        self.after_auto_train()
+
+    def before_auto_train(self):
+        self.ani.pause()
+        self.animating = False
+        self.controller.game.reset()
+
+        self.toggle_anim_btn.label.set_text("Anim\nOff")
+        self.draw(self.controller.get_info())
+
+    def auto_train(self):
         gp, tp, conn1 = get_process(self.game, self.controller)
         gp.start()
         tp.start()
         gp.join()
         tp.join()
-        s = conn1.recv()
+        return conn1.recv()
 
-        print(s)
-        existing_shm = shared_memory.SharedMemory(name=s)
-        print(existing_shm.size)
+    def after_auto_train(self):
+        self.ani.resume()
+        self.animating = True
+        self.controller.game.reset()
+
+        self.toggle_anim_btn.label.set_text("Anim\nOn")
+        self.draw(self.controller.get_info())
+
+    def get_np_from_name(self, name):
+        existing_shm = shared_memory.SharedMemory(name=name)
         q = np.ndarray((5**5, 4), buffer=existing_shm.buf)
-        print(q)
-        self.game.agent[0].Q = np.copy(q)
+        s = np.copy(q)
         existing_shm.close()
         existing_shm.unlink()
+        return s
 
-        self.game.reset()
-        self.draw(self.controller.get_info())
-        self.ani.resume()
-        self.toggle_anim_btn.label.set_text("Anim\nOn")
-        self.animating = True
+    def on_train_15000(self, e):
+        self.before_auto_train()
+        self.controller.train(15000)
+        self.after_auto_train()
+
+    def np_to_name(self, np):
+        pass
 
     def on_close(self, e):
         pass
 
+    def on_test(self, e):
+        self.before_auto_train()
+        gp, tp = get_test_process(self.controller)
+        gp.start()
+        tp.start()
+        gp.join()
+        tp.join()
+        self.after_auto_train()
+
     # ----- ----- ----- ----- Plot Metrics  ----- ----- ----- ----- #
     def plot_training(results):
-        # print(results)
         iterations, losses, total_rewards = results
         # Create a figure with 1 row and 2 columns of subplots
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
@@ -269,9 +297,9 @@ class Visualization:
         ax2.plot(
             iterations, total_rewards, label="Total Reward", color="orange", marker="o"
         )
-        ax2.set_title("Iteration vs Total Reward")
+        ax2.set_title("Epsilon decay across iteration")
         ax2.set_xlabel("Iteration Number")
-        ax2.set_ylabel("Total Reward")
+        ax2.set_ylabel("Epsilon")
 
         # Display the plots
         plt.tight_layout()
@@ -279,22 +307,19 @@ class Visualization:
 
 
 def draw_graphs(game, controller):
-    fig, ax = plt.subplots()
-    graph = Graph(controller, fig, ax)
+    fig, axs = plt.subplots(1, 2, figsize=(12, 5))
+    graph = Graph(controller, fig, axs)
 
 
 def train(controller, connection, ep):
     controller.train(ep)
     q = controller.game.agent[0].get_q_table()
-    print(q)
 
     shm = shared_memory.SharedMemory(create=True, size=q.nbytes)
     b = np.ndarray(q.shape, dtype=q.dtype, buffer=shm.buf)
     b[:] = q[:]
-    print(shm.size)
-    print(shm.name)
     connection.send(shm.name)
-    # shm.close()
+    shm.close()
 
 
 def get_process(game, controller):
@@ -306,5 +331,25 @@ def get_process(game, controller):
             controller,
         ],
     )
-    train_p = Process(target=train, args=[controller, conn2, 500])
+    train_p = Process(target=train, args=[controller, conn2, 1000])
     return graph_p, train_p, conn1
+
+
+def test(controller, ep):
+    controller.test(ep)
+
+
+def draw_test_graph(controller):
+    fig, axs = plt.subplots()
+    graph = TestGraph(controller, fig, axs)
+
+
+def get_test_process(controller):
+    graph_p = Process(
+        target=draw_test_graph,
+        args=[
+            controller,
+        ],
+    )
+    test_p = Process(target=test, args=[controller, 1000])
+    return graph_p, test_p
