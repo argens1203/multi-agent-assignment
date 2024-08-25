@@ -14,29 +14,29 @@ def draw_graphs(game, controller):
     graph = Graph(controller, fig, ax)
 
 
-def train_in_parallel(controller, ep):
-    return Process(target=controller.train, args=[ep])
+def train(controller, ep):
+    controller.train(ep)
 
 
 if __name__ == "__main__":
     game = Game()
     controller = Controller(game)
 
-    p1 = Process(
+    graph_p = Process(
         target=draw_graphs,
         args=[
             game,
             controller,
         ],
     )
-    p2 = Process(target=draw_game, args=[game, controller])
-    p3 = train_in_parallel(controller, 5000)
+    game_p = Process(target=draw_game, args=[game, controller])
+    train_p = Process(target=train, args=[controller, 5000])
 
-    controller.train(5000)
-    p1.start()
-    p3.start()
-    p2.start()
+    # controller.train(5000)
+    graph_p.start()
+    game_p.start()
+    train_p.start()
 
-    p1.join()
-    p2.join()
-    p3.join()
+    graph_p.join()
+    game_p.join()
+    train_p.join()
