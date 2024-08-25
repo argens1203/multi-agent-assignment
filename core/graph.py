@@ -33,19 +33,10 @@ class Graph:
         plt.show()
 
     def frames(self):
-        # print("frame")
         while True:
-            yield self.controller.get_stats()
+            yield None
 
     def draw(self, args):
-        # print("draw")
-        # print(args)
-        # iterations, losses, rewards = args
-        # self.iaterations = self.controller.iterations
-        # self.losses = self.controller.losses
-        # self.total_rewards = self.controller.total_reward
-
-        # self.ax.clear()
         self.plot_training(
             self.controller.iterations,
             self.controller.losses,
@@ -53,7 +44,6 @@ class Graph:
         )
 
     def plot_training(self, iterations, losses, rewards):
-        # print(iterations, losses, rewards)
         self.plot_losses(self.ax1, iterations, losses)
         if self.ax2 is not None:
             self.plot_rewards(self.ax2, iterations, rewards)
