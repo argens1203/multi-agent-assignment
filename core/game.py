@@ -6,13 +6,13 @@ from .grid import Grid, GridUtil
 from .agent import Agent
 from .visualization import Visualization
 from .state import State
-from .test import Graphing_Tool
 
 debug = False
 
 
 class Game:
     def __init__(self):
+        print("new game")
         # Parameters
         self.width = 5
         self.height = 5
@@ -34,40 +34,9 @@ class Game:
         self.grid = Grid(self.width, self.height)
         self.grid.add_agents(self.agent)
         self.grid.reset()
+        self.max_reward = GridUtil.calculate_max_reward(self.grid)
 
-    # This is the main function to be called for external
-    def run(self):
-        training_record = self.train_agent(50000)
-        Visualization.plot_training(training_record)
-
-    
-        for _ in range(5000):
-            loss=self.train_once()
-            # g.update([_,loss])
-
-        vis = Visualization(self)
-        vis.reset(None)
-        vis.show()
-
-    def train_agent(self, episodes):
-        training_record = []
-        for _ in range(episodes):
-            self.grid.reset()
-            self.total_reward = 0
-            max_reward = GridUtil.calculate_max_reward(self.grid)
-
-            while not self.grid.get_state().is_terminal():
-                self.step()
-
-            loss = max_reward - self.total_reward
-            if debug:
-                print(
-                    f"Episode {_} completed with total reward: {self.total_reward},max_reward:{max_reward}, loss:{loss}"
-                )
-            training_record.append([_, max_reward, self.total_reward, loss])
-        return training_record
-    
-    def train_once(self):
+    def train_one_game(self):
         self.grid.reset()
         self.total_reward = 0
         max_reward = GridUtil.calculate_max_reward(self.grid)
@@ -78,10 +47,17 @@ class Game:
         loss = max_reward - self.total_reward
         if debug:
             print(
-                f"Completed with total reward: {self.total_reward},max_reward:{max_reward}, loss:{loss}"
+                f"Episode {_} completed with total reward: {self.total_reward},max_reward:{max_reward}, loss:{loss}"
             )
-        return loss
-    
+        return loss, self.total_reward, max_reward
+
+    def train_agent(self, episodes):
+        training_record = []
+        for i in range(episodes):
+            loss, total_reward, max_reward = self.train_one_game()
+            training_record.append([i, loss, total_reward])
+        return zip(*training_record)
+
     # ---- Public Getter Functions (For Visualisation) ----- #
 
     def get_agent_info(self) -> List[Tuple[Tuple[int, int], bool]]:
@@ -98,7 +74,7 @@ class Game:
         return self.grid.get_state().get_untaken_item_pos()
 
     def get_max_reward(self):
-        return GridUtil.calculate_max_reward(self.grid)
+        return self.max_reward
 
     def get_size(self):
         return self.width, self.height
@@ -109,10 +85,16 @@ class Game:
     def has_ended(self):
         return self.grid.get_state().is_terminal()
 
+    def get_total_reward(self):
+        return self.total_reward
+
     # ---- Public Control Functions ----- #
     def reset(self):
         self.total_reward = 0
         self.grid.reset()
+        for agent in self.agent:
+            agent.reset()
+        self.max_reward = GridUtil.calculate_max_reward(self.grid)
 
     def step(self, learn=True):
         if self.grid.get_state().is_terminal():

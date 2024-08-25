@@ -59,8 +59,7 @@ class Agent:
         self.is_having_item = state.has_item()
 
     def reset(self):
-        # TODO: possible undo of learnt progress?
-        pass
+        self.is_having_item = False
 
     # ----- Private Functions ----- #
     # Extract immutable information from State object
