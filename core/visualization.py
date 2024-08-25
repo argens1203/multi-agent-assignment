@@ -4,7 +4,7 @@ import matplotlib.patches as patches
 # import plotly
 from matplotlib.widgets import Button, Slider
 import matplotlib.animation as animation
-
+from multiprocessing import Array
 from typing import Tuple, TypeAlias, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -21,6 +21,10 @@ class Controller(object):
         self.timeout = 0.5
         self.auto_reset = True
         self.itr = 0
+
+        self.iterations = Array("i", range(50000))
+        self.losses = Array("i", 50000)
+        self.total_reward = Array("i", 50000)
 
     def get_info(self):
         info = self.game.get_agent_info()
@@ -49,10 +53,20 @@ class Controller(object):
         else:
             return self.next()
 
-    def train_once(self):
-        max_reward, total_reward, loss = self.game.train_agent_once()
-        self.itr += 1
-        return self.itr, loss, total_reward
+    def get_stats(self):
+        return self.iterations, self.losses, self.total_reward
+
+    def train_once(self, itr=1):
+        print("training")
+        for i in range(itr):
+            print("iteration", i)
+            max_reward, reward, loss = self.game.train_agent_once()
+            # self.iterations[i].append(self.itr)
+            self.losses[self.itr] = loss
+            self.total_reward[self.itr] = reward
+            self.itr += 1
+        # print(self.iterations, self.losses, self.total_reward)
+        # return iterations, losses, total_reward
 
 
 class Visualization:
@@ -185,16 +199,16 @@ class Visualization:
         )
 
     def add_button(self, coordinates: Coordinates, text, on_click):
-        # axis = plt.axes(coordinates)
-        axis = self.ax
+        axis = plt.axes(coordinates)
+        # axis = self.ax
         button = Button(axis, text)
         button.on_clicked(on_click)
 
         return button
 
     def add_text(self, coordinates: Coordinates, text):
-        # axis = plt.axes(coordinates)
-        axis = self.ax
+        axis = plt.axes(coordinates)
+        # axis = self.ax
         textbox = axis.text(
             0.5,
             0.5,

@@ -4,14 +4,11 @@ from core import Game, Visualization, Graph
 from multiprocessing import Process
 
 
-def f(name):
-    print("hello", name)
-
-
 ## ## ## ## ##
 def draw_game(game):
     fig1, ax1 = plt.subplots()
     vis = Visualization(game, fig1, ax1)
+    # pass
 
 
 # vis.on_reset(None)
@@ -20,6 +17,8 @@ def draw_graphs(game):
     # graph = Graph(game, fig, (ax1, ax2))
     fig, ax = plt.subplots()
     graph = Graph(game, fig, ax)
+
+    # graph.controller.train_once(10000)
 
 
 if __name__ == "__main__":
@@ -34,6 +33,7 @@ if __name__ == "__main__":
         ],
     )
     p1.start()
-    draw_game(game)
-    # p2 = Process(target=draw_two)
+    p2 = Process(target=draw_game, args=[game])
+    p2.start()
     p1.join()
+    p2.join()
