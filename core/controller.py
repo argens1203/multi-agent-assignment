@@ -8,10 +8,13 @@ class Controller(object):
         self.timeout = 0.5
         self.auto_reset = True
         self.itr = 0
+        self.max_itr = max_itr
 
         self.iterations = Array("i", range(max_itr))
         self.losses = Array("i", max_itr)
         self.epsilon = Array("f", max_itr)
+
+        self.test_loss = Array("f", max_itr)
 
     def get_info(self):
         info = self.game.get_agent_info()
@@ -41,8 +44,25 @@ class Controller(object):
                 reward,
                 epsilon,
             ) = self.game.train_one_game()
+            if self.itr >= self.max_itr:
+                self.itr = 0
             self.losses[self.itr] = loss
             self.epsilon[self.itr] = epsilon
+            self.itr += 1
+
+    def test(self, itr=1):
+        self.game.reset()
+        for i in range(self.max_itr):
+            self.test_loss[i] = 0
+        for _ in range(itr):
+            (
+                loss,
+                reward,
+                epsilon,
+            ) = self.game.train_one_game(learn=False)
+            if self.itr >= self.max_itr:
+                self.itr = 0
+            self.test_loss[self.itr] = loss
             self.itr += 1
 
     def get_metrics(self):

@@ -12,7 +12,6 @@ class Game:
         # Parameters
         self.width = 5
         self.height = 5
-
         # Metrics
         self.total_reward = 0
 
@@ -36,8 +35,11 @@ class Game:
         self.total_reward = 0
         max_reward = GridUtil.calculate_max_reward(self.grid)
 
-        while not self.grid.get_state().is_terminal():
+        max_step_count = 10000 if learn else 100
+        step_count = 0
+        while not self.grid.get_state().is_terminal() and step_count < max_step_count:
             self.step(learn)
+            step_count += 1
 
         loss = max_reward - self.total_reward
         return loss, self.total_reward, self.agent[0].epsilon
