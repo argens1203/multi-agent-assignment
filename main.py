@@ -1,13 +1,33 @@
-from simulate import Sim
-from schelling import SchellingWorld
-from a1 import A1World
+import matplotlib.pyplot as plt
+from core import Game, Visualization, Graph, Controller
 
-# world = SchellingWorld(0.8, 0.7, 50, 50)
-# metrics = Sim(world).run()
-
-# # To actually see the plot, "Run Current File in Interative Window"
-# world.plot_metrics()
+from multiprocessing import Process, Queue
 
 
-world = A1World(5, 5)
-Sim(world).run()
+def draw_game(game, controller):
+    fig1, ax1 = plt.subplots()
+    vis = Visualization(game, controller, fig1, ax1)
+
+
+def draw_graphs(game, controller):
+    fig, ax = plt.subplots()
+    graph = Graph(controller, fig, ax)
+
+
+def train(controller, ep):
+    controller.train(ep)
+
+
+if __name__ == "__main__":
+    game = Game()
+    controller = Controller(game, 1000)
+
+    fig1, ax1 = plt.subplots()
+    vis = Visualization(game, controller, fig1, ax1)
+
+    # game = Game()
+    # controller = Controller(game, 1000)
+    # controller.train(1000)
+    # fig1, ax1 = plt.subplots()
+    # vis = Visualization(game, controller, fig1, ax1)
+    # Visualization.plot_training(controller.get_metrics())
