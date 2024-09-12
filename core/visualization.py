@@ -10,6 +10,7 @@ import json
 
 if TYPE_CHECKING:
     from .game import Game
+    from .controller import Controller
 
 Coordinates: TypeAlias = Tuple[float, float, float, float]
 
@@ -21,7 +22,7 @@ from multiprocessing import Process, Queue, shared_memory, Pipe
 
 
 class Visualization:
-    def __init__(self, game: "Game", controller, fig, ax):
+    def __init__(self, game: "Game", controller: "Controller", fig, ax):
         self.game = game
         self.is_stopping = False
         self.timer = None
@@ -41,10 +42,18 @@ class Visualization:
 
         plt.show()
 
+    def get_info(self):
+        info = self.game.get_agent_info()
+        items = self.game.get_untaken_items()
+        tot_reward = self.game.get_total_reward()
+        max_reward = self.game.get_max_reward()
+        return info, items, tot_reward, max_reward
+
     def frames(self):
         while True:
             if self.animating:
-                yield self.controller.next()
+                self.controller.next()
+                yield self.get_info()
             else:
                 yield
 
@@ -62,6 +71,8 @@ class Visualization:
         # Check if the environment is terminal
         if self.game.has_ended():
             self.draw_complete()
+
+        # Refresh canvas
         if not self.animating:
             self.fig.canvas.draw()
 
@@ -231,10 +242,11 @@ class Visualization:
 
     def on_reset(self, event):
         self.game.reset()
-        self.draw(self.controller.get_info())
+        self.draw(self.get_info())
 
     def on_next(self, e):
-        self.draw(self.controller.next())
+        self.controller.next()
+        self.draw(self.get_info())
 
     # ----- ----- ----- ----- Helper Functions  ----- ----- ----- ----- #
 
@@ -243,7 +255,7 @@ class Visualization:
         self.controller.game.reset()
 
         self.toggle_anim_btn.label.set_text("Anim\nOff")
-        self.draw(self.controller.get_info())
+        self.draw(self.get_info())
 
     def auto_train(self):
         gp, tp, conn1 = get_process(self.game, self.controller)
@@ -258,7 +270,7 @@ class Visualization:
         self.controller.game.reset()
 
         self.toggle_anim_btn.label.set_text("Anim\nOn")
-        self.draw(self.controller.get_info())
+        self.draw(self.get_info())
 
     def get_np_from_name(self, name):
         existing_shm = shared_memory.SharedMemory(name=name)

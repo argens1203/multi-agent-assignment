@@ -1,9 +1,14 @@
 from multiprocessing import Array
+from typing import Tuple, TypeAlias, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .game import Game
+    from .controller import Controller
 
 
 class Controller(object):
     # Iterate by number of games
-    def __init__(self, game, max_itr):
+    def __init__(self, game: "Game", max_itr):
         self.game = game
         self.timeout = 0.5
         self.auto_reset = True
@@ -16,13 +21,6 @@ class Controller(object):
 
         self.test_loss = Array("f", max_itr)
 
-    def get_info(self):
-        info = self.game.get_agent_info()
-        items = self.game.get_untaken_items()
-        tot_reward = self.game.get_total_reward()
-        max_reward = self.game.get_max_reward()
-        return info, items, tot_reward, max_reward
-
     def set_timeout(self, timeout):
         self.timeout = timeout
 
@@ -34,7 +32,7 @@ class Controller(object):
         if self.game.has_ended() and self.auto_reset:
             self.game.reset()
         self.game.step(learn=False)
-        return self.get_info()
+        return
 
     def train(self, itr=1):
         self.game.reset()
