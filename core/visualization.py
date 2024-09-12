@@ -43,7 +43,10 @@ class Visualization:
 
     def frames(self):
         while True:
-            yield self.controller.next()
+            if self.animating:
+                yield self.controller.next()
+            else:
+                yield
 
     def draw(self, args):
         info, items, tot_reward, max_reward = args
@@ -219,10 +222,8 @@ class Visualization:
 
     def on_toggle_anim(self, event):
         if self.animating:
-            self.ani.pause()
             self.toggle_anim_btn.label.set_text("Anim\nOff")
         else:
-            self.ani.resume()
             self.toggle_anim_btn.label.set_text("Anim\nOn")
 
         self.animating = not self.animating
@@ -238,7 +239,6 @@ class Visualization:
     # ----- ----- ----- ----- Helper Functions  ----- ----- ----- ----- #
 
     def before_auto_train(self):
-        self.ani.pause()
         self.animating = False
         self.controller.game.reset()
 
@@ -254,7 +254,6 @@ class Visualization:
         return conn1.recv()
 
     def after_auto_train(self):
-        self.ani.resume()
         self.animating = True
         self.controller.game.reset()
 
