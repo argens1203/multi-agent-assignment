@@ -1,14 +1,9 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.animation as animation
-import numpy as np
 
 from matplotlib.widgets import Button
 from typing import Tuple, TypeAlias, TYPE_CHECKING
-from multiprocessing import shared_memory
-
-from .multithread import get_process, get_test_process
-from .controller import Controller
 
 if TYPE_CHECKING:
     from .model import Model
@@ -164,7 +159,7 @@ class Visualization:
     def init_text(self):
         # Add text box for cumulative reward
         self.reward = self.add_text(
-            [0.01, 0.01, 0.2, 0.075], f"Reward: {self.model.total_reward}"
+            [0.01, 0.01, 0.2, 0.075], f"Reward: {self.model.get_total_reward()}"
         )
 
         # Add text box for max reward
@@ -248,14 +243,14 @@ class Visualization:
 
     def before_auto_train(self):
         self.animating = False
-        self.controller.model.reset()
+        self.controller.reset()
 
         self.toggle_anim_btn.label.set_text("Anim\nOff")
         self.draw(self.get_info())
 
     def after_auto_train(self):
         self.animating = True
-        self.controller.model.reset()
+        self.controller.reset()
 
         self.toggle_anim_btn.label.set_text("Anim\nOn")
         self.draw(self.get_info())

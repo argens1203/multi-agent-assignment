@@ -61,6 +61,9 @@ class Controller(object):
             self.test_loss[self.itr] = loss
             self.itr += 1
 
+    def reset(self):
+        self.model.reset()
+
     def get_metrics(self):
         return self.iterations, self.losses, self.epsilon
 

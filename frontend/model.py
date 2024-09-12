@@ -50,7 +50,6 @@ class Model(IVisual):
 
     def train_one_game(self, learn=True):
         self.reset()
-        self.total_reward = 0
         max_reward = GridUtil.calculate_max_reward(self.grid)
 
         max_step_count = 10000 if learn else 100
