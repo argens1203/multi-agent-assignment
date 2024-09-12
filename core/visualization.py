@@ -57,6 +57,8 @@ class Visualization:
             else:
                 yield
 
+    # ----- ----- ----- ----- Drawing Functions  ----- ----- ----- ----- #
+
     def draw(self, args):
         info, items, tot_reward, max_reward = args
 
@@ -72,9 +74,11 @@ class Visualization:
         if self.game.has_ended():
             self.draw_complete()
 
-        # Refresh canvas
-        if not self.animating:
-            self.fig.canvas.draw()
+        # Early return if animating, since animation automatically refreshes canvas
+        if self.animating:
+            return
+
+        self.fig.canvas.draw()
 
     def draw_grid(self):
         width, height = self.game.get_size()
