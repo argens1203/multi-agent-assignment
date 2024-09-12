@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .controller import Controller, Storage
+    from .controller import Storage
 
 
 class Graph:
@@ -24,6 +24,7 @@ class Graph:
         while True:
             yield None
 
+    # Compulsory unused argument
     def draw(self, args):
         self.plot_losses(
             self.ax1,

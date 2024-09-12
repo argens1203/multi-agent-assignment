@@ -111,6 +111,7 @@ class Visualization:
             self.ax.add_patch(item_patch)
 
     def draw_complete(self):
+        # TODO: cater multiple goals
         self.ax.text(
             0.5,
             0.5,

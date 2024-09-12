@@ -21,6 +21,18 @@ class IVisual(ABC):
     def get_max_reward(self) -> int:
         pass
 
+    @abstractmethod
+    def get_size(self) -> Tuple[int, int]:
+        pass
+
+    @abstractmethod
+    def get_target_location(self) -> List[Tuple[int, int]]:
+        pass
+
+    @abstractmethod
+    def has_ended(self) -> bool:
+        pass
+
 
 class Model(IVisual):
     def __init__(self):
@@ -53,6 +65,9 @@ class Model(IVisual):
     def get_untaken_items(self):
         return self.grid.get_state().get_untaken_item_pos()
 
+    def get_total_reward(self):
+        return sum(map(lambda a: a.get_total_reward(), self.agents))
+
     def get_max_reward(self):
         return self.grid.get_max_reward()
 
@@ -64,9 +79,6 @@ class Model(IVisual):
 
     def has_ended(self):
         return self.grid.get_state().is_terminal()
-
-    def get_total_reward(self):
-        return sum(map(lambda a: a.get_total_reward(), self.agents))
 
     # ---- Public Control Functions ----- #
     def reset(self):

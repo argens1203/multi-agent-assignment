@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING, List
 
-from core import GridUtil
-
 from .multithread import get_process, get_test_process, get_np_from_name
 
 if TYPE_CHECKING:
@@ -46,7 +44,7 @@ class Trainer:
 
     def train_one_game(self, learn=True):
         self.model.reset()
-        max_reward = GridUtil.calculate_max_reward(self.grid)
+        max_reward = self.grid.get_max_reward()
 
         max_step_count = 10000 if learn else 100
         step_count = 0
@@ -89,5 +87,6 @@ class Trainer:
         tp.join()
 
         name = conn1.recv()
+        # TODO: return array of trained_Q
         trained_Q = get_np_from_name(name)
         return trained_Q

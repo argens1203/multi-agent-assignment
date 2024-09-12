@@ -1,30 +1,34 @@
-from .agent import Agent
+from typing import Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .agent import Agent
 
 
-class Empty:
+class Cell:
     def __init__(self, pos):
         x, y = pos
         self.x = x
         self.y = y
 
-    def interact(self, other: Agent):
+    # returns: score delta, (new_coordinate_x, new_coordinate_y)
+    def interact(self, other: "Agent") -> Tuple[int, Tuple[int, int]]:
         return -1, (self.x, self.y)
 
     def __copy__(self):
-        return Empty((self.x, self.y))
+        return Cell((self.x, self.y))
 
     def __deepcopy__(self, memo):
         return self.__copy__()
 
 
-class Goal(Empty):
+class Goal(Cell):
     def __init__(self, pos):
         x, y = pos
         self.x = x
         self.y = y
         self.reached = False
 
-    def interact(self, other: Agent):
+    def interact(self, other: "Agent"):
         if other.has_item() and not self.reached:
             self.reached = True
             return 50, (self.x, self.y)
@@ -43,15 +47,16 @@ class Goal(Empty):
         return self.__copy__()
 
 
-class Item(Empty):
+class Item(Cell):
     def __init__(self, pos):
         self.taken = False
         x, y = pos
         self.x = x
         self.y = y
 
-    def interact(self, other: Agent):
+    def interact(self, other: "Agent"):
         if not self.taken and not other.has_item():
+            # agent update is done in agent.update(...)
             self.taken = True
             return 50, (self.x, self.y)
 
@@ -69,7 +74,7 @@ class Item(Empty):
         return self.__copy__()
 
 
-class Wall(Empty):
+class Wall(Cell):
     def __init__(self, pos, dimensions):
         x, y = pos
         self.x = x
@@ -79,7 +84,7 @@ class Wall(Empty):
         self.new_x = min(width - 1, max(0, x))
         self.new_y = min(height - 1, max(0, y))
 
-    def interact(self, other: Agent):
+    def interact(self, other: "Agent"):
         return -10, (self.new_x, self.new_y)
 
     def __copy__(self):

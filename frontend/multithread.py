@@ -7,8 +7,7 @@ from multiprocessing import Process, shared_memory, Pipe
 from .v_graph import Graph, TestGraph
 
 if TYPE_CHECKING:
-    from .controller import Controller, Storage, Trainer
-    from .model import Model
+    from .controller import Storage, Trainer
 
 
 def draw_graphs(storage: "Storage"):
@@ -18,6 +17,7 @@ def draw_graphs(storage: "Storage"):
 
 def train(trainer: "Trainer", connection, ep):
     trainer.train(ep)
+    # TODO: remove hardcode
     q = trainer.model.agents[0].get_q_table()
 
     shm = shared_memory.SharedMemory(create=True, size=q.nbytes)
@@ -35,6 +35,7 @@ def get_process(storage: "Storage", trainer: "Trainer"):
             storage,
         ],
     )
+    # TODO: remove hardcode
     train_p = Process(target=train, args=[trainer, conn2, 1000])
     return graph_p, train_p, conn1
 
@@ -59,6 +60,7 @@ def get_test_process(storage: "Storage", trainer: "Trainer", ep=1000):
 
 def get_np_from_name(name):
     existing_shm = shared_memory.SharedMemory(name=name)
+    # TODO: remove hardcode
     q = np.ndarray((5**5, 4), buffer=existing_shm.buf)
     s = np.copy(q)
     existing_shm.close()
