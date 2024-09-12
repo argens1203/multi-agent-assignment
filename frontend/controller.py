@@ -1,87 +1,10 @@
-from multiprocessing import Array
 from typing import TYPE_CHECKING
 
-from .multithread import get_process, get_test_process, get_np_from_name
+from .c_storage import Storage
+from .c_trainer import Trainer
 
 if TYPE_CHECKING:
     from .model import Model
-
-
-class Storage:
-    def __init__(self, max_itr):
-        self.itr = 0
-        self.max_itr = max_itr
-
-        self.iterations = Array("i", range(max_itr))
-        self.losses = Array("i", max_itr)
-        self.epsilon = Array("f", max_itr)
-        self.test_loss = Array("f", max_itr)
-
-    def reset_counter(self):
-        self.itr = 0
-
-    def append_loss_epsilon(self, loss, epsilon):
-        if self.itr >= self.max_itr:
-            self.itr = 0
-        self.losses[self.itr] = loss
-        self.epsilon[self.itr] = epsilon
-        self.itr += 1
-
-    def append_test_loss(self, test_loss):
-        if self.itr >= self.max_itr:
-            self.itr = 0
-        self.test_loss[self.itr] = test_loss
-        self.itr += 1
-
-    def get_all(self):
-        return self.iterations, self.losses, self.epsilon, self.test_loss
-
-
-class Trainer:
-    def __init__(self, model: "Model", storage: "Storage", max_itr):
-        self.model = model
-        self.max_itr = max_itr
-        self.storage = storage
-
-    def train(self, itr=1):
-        self.model.reset()
-        for _ in range(itr):
-            (
-                loss,
-                reward,
-                epsilon,
-            ) = self.model.train_one_game()
-            self.storage.append_loss_epsilon(loss, epsilon)
-
-    def test(self, itr=1):
-        self.model.reset()
-        for i in range(self.max_itr):
-            self.storage.test_loss[i] = 0
-        for _ in range(itr):
-            (
-                loss,
-                reward,
-                epsilon,
-            ) = self.model.train_one_game(learn=False)
-            self.storage.append_test_loss(loss)
-
-    def test_in_background(self, ep=1000):
-        gp, tp = get_test_process(self.storage, self, ep)
-        gp.start()
-        tp.start()
-        gp.join()
-        tp.join()
-
-    def train_in_background(self):
-        gp, tp, conn1 = get_process(self.storage, self)
-        gp.start()
-        tp.start()
-        gp.join()
-        tp.join()
-
-        name = conn1.recv()
-        trained_Q = get_np_from_name(name)
-        return trained_Q
 
 
 class Controller:
