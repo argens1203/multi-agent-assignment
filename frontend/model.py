@@ -1,10 +1,7 @@
-import matplotlib.pyplot as plt
-
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from core import Grid, GridUtil, Agent
-from shared import State
+from core import Grid, Agent
 
 
 class IVisual(ABC):
@@ -27,16 +24,13 @@ class IVisual(ABC):
 
 class Model(IVisual):
     def __init__(self):
-        # Metrics
-        self.total_reward = 0
-
         # Agents
         self.agents = []
 
         # Grid
-        self.grid = None
+        self.grid: "Grid" = None
 
-    def bind(self, grid: "Grid"):
+    def set_grid(self, grid: "Grid"):
         self.grid = grid
         return self
 
@@ -60,7 +54,7 @@ class Model(IVisual):
         return self.grid.get_state().get_untaken_item_pos()
 
     def get_max_reward(self):
-        return self.max_reward
+        return self.grid.get_max_reward()
 
     def get_size(self):
         return self.grid.get_size()
@@ -76,8 +70,6 @@ class Model(IVisual):
 
     # ---- Public Control Functions ----- #
     def reset(self):
-        self.total_reward = 0
         self.grid.reset()
         for agent in self.agents:
             agent.reset()
-        self.max_reward = GridUtil.calculate_max_reward(self.grid)

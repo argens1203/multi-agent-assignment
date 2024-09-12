@@ -7,12 +7,12 @@ from shared import State
 if __name__ == "__main__":
     fig1, ax1 = plt.subplots()
     width, height = 5, 5
+    max_itr = 1000
 
     vis = Visualization(fig1, ax1)
     model = Model()
     controller = Controller()
 
-    max_itr = 1000
     storage = Storage(max_itr)
     trainer = Trainer(max_itr)
 
@@ -26,8 +26,8 @@ if __name__ == "__main__":
 
     trainer.bind(model, storage, grid, [agent])
 
-    model.bind(grid).add_agent(agent).reset()
-    controller.bind(model, storage, trainer)
+    model.set_grid(grid).add_agent(agent).reset()
+    controller.bind(model).add_helper(storage, trainer)
     vis.bind(model, controller).show()
 
     # game = Game()

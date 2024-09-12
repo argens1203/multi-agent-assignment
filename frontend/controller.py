@@ -12,11 +12,13 @@ class Controller:
     def __init__(self):
         self.auto_reset = True
 
-    def bind(self, model: "Model", storage: "Storage", trainer: "Trainer"):
+    def bind(self, model: "Model"):
+        self.model = model
+        return self
+
+    def add_helper(self, storage: "Storage", trainer: "Trainer"):
         self.storage = storage
         self.trainer = trainer
-        self.model = model
-
         return self
 
     def toggle_auto_reset(self):

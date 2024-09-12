@@ -24,6 +24,7 @@ class Grid:
     def __init__(self, width=5, height=5):
         self.width = width
         self.height = height
+        self.max_reward = 0
 
         self.state = {}  # TODO: multiple entities in one cell
         self.lookup = set()  # Interactive tiles
@@ -119,6 +120,7 @@ class Grid:
     def reset(self):
         self.init_environment()
         self.set_interactive_tiles()
+        self.max_reward = GridUtil.calculate_max_reward(self)
 
     def add_agent(self, agent):
         self.agents.append(agent)
@@ -128,6 +130,9 @@ class Grid:
 
     def get_size(self):
         return self.width, self.height
+
+    def get_max_reward(self):
+        return self.max_reward
 
 
 class GridUtil:
