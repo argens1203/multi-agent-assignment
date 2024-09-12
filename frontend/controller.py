@@ -21,9 +21,6 @@ class Controller(object):
 
         self.test_loss = Array("f", max_itr)
 
-    def set_timeout(self, timeout):
-        self.timeout = timeout
-
     def toggle_auto_reset(self):
         self.auto_reset = not self.auto_reset
         return self.auto_reset

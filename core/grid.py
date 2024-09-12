@@ -1,6 +1,6 @@
 import random
 
-from .state import State, Action
+from shared import State, Action
 from .cell import *
 
 

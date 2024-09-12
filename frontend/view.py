@@ -1,24 +1,20 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-
-# import plotly
-from matplotlib.widgets import Button, Slider
 import matplotlib.animation as animation
+import numpy as np
+
+from matplotlib.widgets import Button
 from typing import Tuple, TypeAlias, TYPE_CHECKING
+from multiprocessing import Process, shared_memory, Pipe
+
 from .controller import Controller
-import json
+from .view_graph import Graph, TestGraph
 
 if TYPE_CHECKING:
     from .game import Game
     from .controller import Controller
 
 Coordinates: TypeAlias = Tuple[float, float, float, float]
-
-# plotly.offline.init_notebook_mode(connected=True)
-
-from .graph import Graph, TestGraph
-import numpy as np
-from multiprocessing import Process, Queue, shared_memory, Pipe
 
 
 class Visualization:
@@ -55,7 +51,7 @@ class Visualization:
                 self.controller.next()
                 yield self.get_info()
             else:
-                yield
+                yield self.get_info()
 
     # ----- ----- ----- ----- Drawing Functions  ----- ----- ----- ----- #
 

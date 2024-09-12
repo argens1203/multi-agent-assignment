@@ -3,9 +3,8 @@ import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from .grid import Grid, GridUtil
-from .agent import Agent
-from .state import State
+from core import Grid, GridUtil, Agent
+from shared import State
 
 
 class IVisual(ABC):
