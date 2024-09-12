@@ -1,9 +1,6 @@
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 
-from .controller import Controller
-from multiprocessing import Process
-
 
 class Graph:
     def __init__(self, controller, fig, axs):

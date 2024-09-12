@@ -1,25 +1,9 @@
 import matplotlib.pyplot as plt
-from core import Game, Visualization, Graph, Controller
 
-from multiprocessing import Process, Queue
-
-
-def draw_game(game, controller):
-    fig1, ax1 = plt.subplots()
-    vis = Visualization(game, controller, fig1, ax1)
-
-
-def draw_graphs(game, controller):
-    fig, ax = plt.subplots()
-    graph = Graph(controller, fig, ax)
-
-
-def train(controller, ep):
-    controller.train(ep)
-
+from frontend import Visualization, Controller, Model
 
 if __name__ == "__main__":
-    game = Game()
+    game = Model()
     controller = Controller(game, 1000)
 
     fig1, ax1 = plt.subplots()

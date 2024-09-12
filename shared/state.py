@@ -1,14 +1,9 @@
 import itertools
+
 from copy import deepcopy
 
-from .cell import Item, Goal
-
-
-class Action:
-    NORTH = "N"
-    WEST = "W"
-    EAST = "E"
-    SOUTH = "S"
+from core import Item, Goal
+from .action import Action
 
 
 class State:

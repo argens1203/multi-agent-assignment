@@ -1,13 +1,31 @@
 import matplotlib.pyplot as plt
 
+from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from .grid import Grid, GridUtil
-from .agent import Agent
-from .state import State
+from core import Grid, GridUtil, Agent
+from shared import State
 
 
-class Game:
+class IVisual(ABC):
+    @abstractmethod
+    def get_agent_info(self) -> List[Tuple[Tuple[int, int], bool]]:
+        pass
+
+    @abstractmethod
+    def get_untaken_items(self) -> List[Tuple[int, int]]:
+        pass
+
+    @abstractmethod
+    def get_total_reward(self) -> int:
+        pass
+
+    @abstractmethod
+    def get_max_reward(self) -> int:
+        pass
+
+
+class Model(IVisual):
     def __init__(self):
         # Parameters
         self.width = 5
