@@ -182,17 +182,40 @@ class Visualization:
         axis.axis("off")
         return textbox
 
-    # ----- ----- ----- ----- Render Main Board  ----- ----- ----- ----- #
-    def one_step(self):
-        self.draw(self.controller.next())
-
-    def stop_anim(self):
-        pass
-
-    def start_anim(self):
-        pass
-
     # ----- ----- ----- ----- Event Handlers  ----- ----- ----- ----- #
+
+    def on_close(self, e):
+        pass
+
+    def on_test(self, e):
+        self.before_auto_train()
+        gp, tp = get_test_process(self.controller)
+        gp.start()
+        tp.start()
+        gp.join()
+        tp.join()
+        self.after_auto_train()
+
+    def on_train_15000(self, e):
+        self.before_auto_train()
+        self.controller.train(15000)
+        self.after_auto_train()
+
+    def on_train_1000(self, e):
+        self.before_auto_train()
+
+        s = self.auto_train()
+        self.game.agent[0].Q = self.get_np_from_name(s)
+
+        self.after_auto_train()
+
+    def on_auto_reset(self, event):
+        auto_reset_is_on = self.controller.toggle_auto_reset()
+        if auto_reset_is_on:
+            self.toggle_auto_reset_btn.label.set_text("Auto Reset\nOn")
+        else:
+            self.toggle_auto_reset_btn.label.set_text("Auto Reset\nOff")
+        plt.show()
 
     def on_toggle_anim(self, event):
         if self.animating:
@@ -205,14 +228,6 @@ class Visualization:
         self.animating = not self.animating
         plt.show()
 
-    def on_auto_reset(self, event):
-        auto_reset_is_on = self.controller.toggle_auto_reset()
-        if auto_reset_is_on:
-            self.toggle_auto_reset_btn.label.set_text("Auto Reset\nOn")
-        else:
-            self.toggle_auto_reset_btn.label.set_text("Auto Reset\nOff")
-        plt.show()
-
     def on_reset(self, event):
         self.game.reset()
         self.draw(self.controller.get_info())
@@ -220,14 +235,7 @@ class Visualization:
     def on_next(self, e):
         self.draw(self.controller.next())
 
-    def on_train_1000(self, e):
-        self.before_auto_train()
-
-        s = self.auto_train()
-
-        self.game.agent[0].Q = self.get_np_from_name(s)
-
-        self.after_auto_train()
+    # ----- ----- ----- ----- Helper Functions  ----- ----- ----- ----- #
 
     def before_auto_train(self):
         self.ani.pause()
@@ -260,26 +268,6 @@ class Visualization:
         existing_shm.close()
         existing_shm.unlink()
         return s
-
-    def on_train_15000(self, e):
-        self.before_auto_train()
-        self.controller.train(15000)
-        self.after_auto_train()
-
-    def np_to_name(self, np):
-        pass
-
-    def on_close(self, e):
-        pass
-
-    def on_test(self, e):
-        self.before_auto_train()
-        gp, tp = get_test_process(self.controller)
-        gp.start()
-        tp.start()
-        gp.join()
-        tp.join()
-        self.after_auto_train()
 
     # ----- ----- ----- ----- Plot Metrics  ----- ----- ----- ----- #
     def plot_training(results):
