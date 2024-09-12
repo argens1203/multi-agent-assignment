@@ -1,20 +1,32 @@
 import matplotlib.pyplot as plt
 
 from frontend import Visualization, Controller, Model, Storage, Trainer
+from core import Agent, Grid
+from shared import State
 
 if __name__ == "__main__":
+    fig1, ax1 = plt.subplots()
+    width, height = 5, 5
+
+    vis = Visualization(fig1, ax1)
     model = Model()
+    controller = Controller()
 
     max_itr = 1000
     storage = Storage(max_itr)
     trainer = Trainer(max_itr)
-    controller = Controller()
-
-    fig1, ax1 = plt.subplots()
-    vis = Visualization(fig1, ax1)
 
     trainer.bind(model, storage)
 
+    agent = Agent(
+        0,
+        State.get_possible_states(width, height),
+        State.get_possible_actions(),
+    )
+    grid = Grid(width, height)
+    grid.add_agent(agent)
+
+    model.bind(grid).add_agent(agent).reset()
     controller.bind(model, storage, trainer)
     vis.bind(model, controller).show()
 

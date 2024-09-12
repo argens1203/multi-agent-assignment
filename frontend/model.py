@@ -34,19 +34,18 @@ class Model(IVisual):
         self.total_reward = 0
 
         # Agents
-        self.agent = [
-            Agent(
-                idx,
-                State.get_possible_states(self.width, self.height),
-                State.get_possible_actions(),
-            )
-            for idx in range(1)
-        ]
+        self.agent = []
 
         # Grid
-        self.grid = Grid(self.width, self.height)
-        self.grid.add_agents(self.agent)
-        self.reset()
+        self.grid = None
+
+    def bind(self, grid: "Grid"):
+        self.grid = grid
+        return self
+
+    def add_agent(self, agent: "Agent"):
+        self.agent.append(agent)
+        return self
 
     def train_one_game(self, learn=True):
         self.reset()

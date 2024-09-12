@@ -116,8 +116,8 @@ class Grid:
         self.init_environment()
         self.set_interactive_tiles()
 
-    def add_agents(self, agents):
-        self.agents = agents
+    def add_agent(self, agent):
+        self.agents.append(agent)
 
     def get_state(self):
         return State(self.agent_positions, self.lookup)
