@@ -19,16 +19,14 @@ Coordinates: TypeAlias = Tuple[float, float, float, float]
 
 class Visualization:
     def __init__(self, game: "Game", controller: "Controller", fig, ax):
+        self.controller = controller
         self.game = game
-        self.is_stopping = False
-        self.timer = None
         self.game.reset()
-        self.speed = 1
+
         self.fig = fig
         self.ax = ax
 
         self.add_ui_elements()
-        self.controller = controller
         self.fig.canvas.mpl_connect("close_event", self.on_close)
         self.ani = animation.FuncAnimation(
             self.fig, self.draw, frames=self.frames, interval=200, save_count=100
