@@ -1,3 +1,3 @@
 from .agent import Agent
 from .cell import *
-from .grid import Grid, GridUtil
+from .grid import Grid

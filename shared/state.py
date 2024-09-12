@@ -15,6 +15,7 @@ class State:
         # Generate possible actions
         return [Action.NORTH, Action.SOUTH, Action.EAST, Action.WEST]
 
+    # TODO: fix hardcode
     def get_possible_states(width, height):
         # Generate all possible states
         return 5**5
@@ -32,6 +33,7 @@ class State:
     def get_item_positions(self):
         return [item.get_pos() for item in self.get_items()]
 
+    # TODO: fix hardcode
     def has_item(self):
         item = next((x for x in self.lookup if isinstance(x, Item)), [None])
         return item.taken
@@ -53,6 +55,7 @@ class State:
     def get_agent_positions(self):
         return self.agent_positions
 
+    # TODO: fix hardcode
     def get_goal_positions(self):
         goal = self.get_goal()
         return goal.x, goal.y
@@ -60,6 +63,7 @@ class State:
     def get_item_positions(self):
         return [item.get_pos() for item in self.get_items()]
 
+    # TODO: fix hardcode
     def is_terminal(self):
         goal = self.get_goal()
         return goal.has_reached()
