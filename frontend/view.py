@@ -5,10 +5,10 @@ import numpy as np
 
 from matplotlib.widgets import Button
 from typing import Tuple, TypeAlias, TYPE_CHECKING
-from multiprocessing import Process, shared_memory, Pipe
+from multiprocessing import shared_memory
 
+from .multithread import get_process, get_test_process
 from .controller import Controller
-from .view_graph import Graph, TestGraph
 
 if TYPE_CHECKING:
     from .model import Model
@@ -203,11 +203,7 @@ class Visualization:
 
     def on_test(self, e):
         self.before_auto_train()
-        gp, tp = get_test_process(self.controller)
-        gp.start()
-        tp.start()
-        gp.join()
-        tp.join()
+        self.controller.test_in_background()
         self.after_auto_train()
 
     def on_train(self, episodes, blocking=False):
@@ -218,10 +214,7 @@ class Visualization:
 
         def non_blocking_train(e):
             self.before_auto_train()
-
-            s = self.auto_train()
-            self.model.agent[0].Q = self.get_np_from_name(s)
-
+            self.controller.train_in_background()
             self.after_auto_train()
 
         return blocking_train if blocking else non_blocking_train
@@ -260,28 +253,12 @@ class Visualization:
         self.toggle_anim_btn.label.set_text("Anim\nOff")
         self.draw(self.get_info())
 
-    def auto_train(self):
-        gp, tp, conn1 = get_process(self.model, self.controller)
-        gp.start()
-        tp.start()
-        gp.join()
-        tp.join()
-        return conn1.recv()
-
     def after_auto_train(self):
         self.animating = True
         self.controller.model.reset()
 
         self.toggle_anim_btn.label.set_text("Anim\nOn")
         self.draw(self.get_info())
-
-    def get_np_from_name(self, name):
-        existing_shm = shared_memory.SharedMemory(name=name)
-        q = np.ndarray((5**5, 4), buffer=existing_shm.buf)
-        s = np.copy(q)
-        existing_shm.close()
-        existing_shm.unlink()
-        return s
 
     # ----- ----- ----- ----- Plot Metrics  ----- ----- ----- ----- #
     def plot_training(results):
@@ -306,52 +283,3 @@ class Visualization:
         # Display the plots
         plt.tight_layout()
         plt.show()
-
-
-def draw_graphs(game, controller):
-    fig, axs = plt.subplots(1, 2, figsize=(12, 5))
-    graph = Graph(controller, fig, axs)
-
-
-def train(controller, connection, ep):
-    controller.train(ep)
-    q = controller.model.agent[0].get_q_table()
-
-    shm = shared_memory.SharedMemory(create=True, size=q.nbytes)
-    b = np.ndarray(q.shape, dtype=q.dtype, buffer=shm.buf)
-    b[:] = q[:]
-    connection.send(shm.name)
-    shm.close()
-
-
-def get_process(game, controller):
-    conn1, conn2 = Pipe()
-    graph_p = Process(
-        target=draw_graphs,
-        args=[
-            game,
-            controller,
-        ],
-    )
-    train_p = Process(target=train, args=[controller, conn2, 1000])
-    return graph_p, train_p, conn1
-
-
-def test(controller, ep):
-    controller.test(ep)
-
-
-def draw_test_graph(controller):
-    fig, axs = plt.subplots()
-    graph = TestGraph(controller, fig, axs)
-
-
-def get_test_process(controller):
-    graph_p = Process(
-        target=draw_test_graph,
-        args=[
-            controller,
-        ],
-    )
-    test_p = Process(target=test, args=[controller, 1000])
-    return graph_p, test_p

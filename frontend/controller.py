@@ -1,9 +1,10 @@
 from multiprocessing import Array
-from typing import Tuple, TypeAlias, TYPE_CHECKING
+from typing import TYPE_CHECKING
+
+from .multithread import get_process, get_test_process, get_np_from_name
 
 if TYPE_CHECKING:
     from .model import Model
-    from .controller import Controller
 
 
 class Controller(object):
@@ -62,3 +63,21 @@ class Controller(object):
 
     def get_metrics(self):
         return self.iterations, self.losses, self.epsilon
+
+    def test_in_background(self):
+        gp, tp = get_test_process(self)
+        gp.start()
+        tp.start()
+        gp.join()
+        tp.join()
+
+    def train_in_background(self):
+        gp, tp, conn1 = get_process(self.model, self)
+        gp.start()
+        tp.start()
+        gp.join()
+        tp.join()
+
+        name = conn1.recv()
+        trained_Q = get_np_from_name(name)
+        self.model.agent[0].Q = trained_Q
