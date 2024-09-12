@@ -1,14 +1,19 @@
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .controller import Controller, Storage
+
 
 class Graph:
-    def __init__(self, controller, fig, axs):
-        self.controller = controller
+    def __init__(self, storage: "Storage", fig, axs):
+        self.storage = storage
         self.fig = fig
         self.ax1, self.ax2 = axs
 
-        self.controller = controller
+        self.storage = storage
         self.ani = animation.FuncAnimation(
             self.fig, self.draw, frames=self.frames, interval=100, save_count=100
         )
@@ -22,13 +27,13 @@ class Graph:
     def draw(self, args):
         self.plot_losses(
             self.ax1,
-            self.controller.iterations,
-            self.controller.losses,
+            self.storage.iterations,
+            self.storage.losses,
         )
         self.plot_epsilon(
             self.ax2,
-            self.controller.iterations,
-            self.controller.epsilon,
+            self.storage.iterations,
+            self.storage.epsilon,
         )
 
     def plot_losses(self, ax, iterations, loss):

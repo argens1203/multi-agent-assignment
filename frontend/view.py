@@ -198,7 +198,7 @@ class Visualization:
 
     def on_test(self, e):
         self.before_auto_train()
-        self.controller.test_in_background()
+        self.controller.test_in_background(1000)
         self.after_auto_train()
 
     def on_train(self, episodes, blocking=False):
