@@ -154,11 +154,13 @@ class Visualization:
         )
         # Add button for training
         self.train_1000_btn = self.add_button(
-            [0.85, 0.41, 0.12, 0.075], "Train 1000", self.on_train_1000
+            [0.85, 0.41, 0.12, 0.075], "Train 1000", self.on_train(1000, blocking=False)
         )
         # Add button for training
         self.train_15000_btn = self.add_button(
-            [0.85, 0.51, 0.12, 0.075], "Train 15000", self.on_train_15000
+            [0.85, 0.51, 0.12, 0.075],
+            "Train 15000",
+            self.on_train(15000, blocking=True),
         )
         # Add button for training
         self.test_button = self.add_button(
@@ -214,18 +216,21 @@ class Visualization:
         tp.join()
         self.after_auto_train()
 
-    def on_train_15000(self, e):
-        self.before_auto_train()
-        self.controller.train(15000)
-        self.after_auto_train()
+    def on_train(self, episodes, blocking=False):
+        def blocking_train(e):
+            self.before_auto_train()
+            self.controller.train(episodes)
+            self.after_auto_train()
 
-    def on_train_1000(self, e):
-        self.before_auto_train()
+        def non_blocking_train(e):
+            self.before_auto_train()
 
-        s = self.auto_train()
-        self.game.agent[0].Q = self.get_np_from_name(s)
+            s = self.auto_train()
+            self.game.agent[0].Q = self.get_np_from_name(s)
 
-        self.after_auto_train()
+            self.after_auto_train()
+
+        return blocking_train if blocking else non_blocking_train
 
     def on_auto_reset(self, event):
         auto_reset_is_on = self.controller.toggle_auto_reset()
