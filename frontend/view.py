@@ -13,22 +13,26 @@ Coordinates: TypeAlias = Tuple[float, float, float, float]
 
 
 class Visualization:
-    def __init__(self, model: "Model", controller: "Controller", fig, ax):
-        self.controller = controller
-        self.model = model
-        # self.game.reset()
-
+    def __init__(self, fig, ax):
         self.fig = fig
         self.ax = ax
+        self.animating = False
+
+    def bind(self, model: "Model", controller: "Controller"):
+        self.model = model
+        self.controller = controller
+        return self
+
+    def show(self):
+        assert self.model is not None
+        assert self.controller is not None
 
         self.add_ui_elements()
         self.fig.canvas.mpl_connect("close_event", self.on_close)
         self.ani = animation.FuncAnimation(
             self.fig, self.draw, frames=self.frames, interval=200, save_count=100
         )
-
         self.animating = True
-
         plt.show()
 
     def get_info(self):

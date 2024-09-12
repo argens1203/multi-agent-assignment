@@ -8,9 +8,11 @@ if TYPE_CHECKING:
 
 
 class Trainer:
-    def __init__(self, model: "Model", storage: "Storage", max_itr):
-        self.model = model
+    def __init__(self, max_itr):
         self.max_itr = max_itr
+
+    def bind(self, model: "Model", storage: "Storage"):
+        self.model = model
         self.storage = storage
 
     def train(self, itr=1):

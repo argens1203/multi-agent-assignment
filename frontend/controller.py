@@ -1,20 +1,23 @@
 from typing import TYPE_CHECKING
 
-from .c_storage import Storage
-from .c_trainer import Trainer
 
 if TYPE_CHECKING:
     from .model import Model
+    from .c_storage import Storage
+    from .c_trainer import Trainer
 
 
 class Controller:
     # Iterate by number of games
-    def __init__(self, model: "Model", max_itr):
-        self.model = model
+    def __init__(self):
         self.auto_reset = True
 
-        self.storage = Storage(max_itr)
-        self.trainer = Trainer(self.model, self.storage, max_itr)
+    def bind(self, model: "Model", storage: "Storage", trainer: "Trainer"):
+        self.storage = storage
+        self.trainer = trainer
+        self.model = model
+
+        return self
 
     def toggle_auto_reset(self):
         self.auto_reset = not self.auto_reset
