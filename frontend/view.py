@@ -11,17 +11,17 @@ from .controller import Controller
 from .view_graph import Graph, TestGraph
 
 if TYPE_CHECKING:
-    from .game import Game
+    from .model import Model
     from .controller import Controller
 
 Coordinates: TypeAlias = Tuple[float, float, float, float]
 
 
 class Visualization:
-    def __init__(self, game: "Game", controller: "Controller", fig, ax):
+    def __init__(self, model: "Model", controller: "Controller", fig, ax):
         self.controller = controller
-        self.game = game
-        self.game.reset()
+        self.model = model
+        # self.game.reset()
 
         self.fig = fig
         self.ax = ax
@@ -37,10 +37,10 @@ class Visualization:
         plt.show()
 
     def get_info(self):
-        info = self.game.get_agent_info()
-        items = self.game.get_untaken_items()
-        tot_reward = self.game.get_total_reward()
-        max_reward = self.game.get_max_reward()
+        info = self.model.get_agent_info()
+        items = self.model.get_untaken_items()
+        tot_reward = self.model.get_total_reward()
+        max_reward = self.model.get_max_reward()
         return info, items, tot_reward, max_reward
 
     def frames(self):
@@ -65,7 +65,7 @@ class Visualization:
         self.max_reward.set_text(f"Max Reward: {max_reward}")
 
         # Check if the environment is terminal
-        if self.game.has_ended():
+        if self.model.has_ended():
             self.draw_complete()
 
         # Early return if animating, since animation automatically refreshes canvas
@@ -75,7 +75,7 @@ class Visualization:
         self.fig.canvas.draw()
 
     def draw_grid(self):
-        width, height = self.game.get_size()
+        width, height = self.model.get_size()
         for x in range(width):
             for y in range(height):
                 rect = patches.Rectangle(
@@ -91,7 +91,7 @@ class Visualization:
         self.ax.xaxis.tick_top()
 
         # Draw target
-        tx, ty = self.game.get_target_location()
+        tx, ty = self.model.get_target_location()
         target_patch = patches.Rectangle(
             (tx, ty), 1, 1, linewidth=1, edgecolor="black", facecolor="green"
         )
@@ -164,13 +164,13 @@ class Visualization:
     def init_text(self):
         # Add text box for cumulative reward
         self.reward = self.add_text(
-            [0.01, 0.01, 0.2, 0.075], f"Reward: {self.game.total_reward}"
+            [0.01, 0.01, 0.2, 0.075], f"Reward: {self.model.total_reward}"
         )
 
         # Add text box for max reward
         self.max_reward = self.add_text(
             [0.25, 0.01, 0.2, 0.075],
-            f"Max Reward: {self.game.get_max_reward()}",
+            f"Max Reward: {self.model.get_max_reward()}",
         )
 
     def add_button(self, coordinates: Coordinates, text, on_click):
@@ -220,7 +220,7 @@ class Visualization:
             self.before_auto_train()
 
             s = self.auto_train()
-            self.game.agent[0].Q = self.get_np_from_name(s)
+            self.model.agent[0].Q = self.get_np_from_name(s)
 
             self.after_auto_train()
 
@@ -244,7 +244,7 @@ class Visualization:
         plt.show()
 
     def on_reset(self, event):
-        self.game.reset()
+        self.model.reset()
         self.draw(self.get_info())
 
     def on_next(self, e):
@@ -255,13 +255,13 @@ class Visualization:
 
     def before_auto_train(self):
         self.animating = False
-        self.controller.game.reset()
+        self.controller.model.reset()
 
         self.toggle_anim_btn.label.set_text("Anim\nOff")
         self.draw(self.get_info())
 
     def auto_train(self):
-        gp, tp, conn1 = get_process(self.game, self.controller)
+        gp, tp, conn1 = get_process(self.model, self.controller)
         gp.start()
         tp.start()
         gp.join()
@@ -270,7 +270,7 @@ class Visualization:
 
     def after_auto_train(self):
         self.animating = True
-        self.controller.game.reset()
+        self.controller.model.reset()
 
         self.toggle_anim_btn.label.set_text("Anim\nOn")
         self.draw(self.get_info())
@@ -315,7 +315,7 @@ def draw_graphs(game, controller):
 
 def train(controller, connection, ep):
     controller.train(ep)
-    q = controller.game.agent[0].get_q_table()
+    q = controller.model.agent[0].get_q_table()
 
     shm = shared_memory.SharedMemory(create=True, size=q.nbytes)
     b = np.ndarray(q.shape, dtype=q.dtype, buffer=shm.buf)

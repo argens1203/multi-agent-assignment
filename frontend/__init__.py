@@ -1,3 +1,3 @@
 from .controller import Controller
-from .game import Game
+from .model import Model
 from .view import Visualization

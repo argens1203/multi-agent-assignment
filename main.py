@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 
-from frontend import Visualization, Controller, Game
+from frontend import Visualization, Controller, Model
 
 if __name__ == "__main__":
-    game = Game()
+    game = Model()
     controller = Controller(game, 1000)
 
     fig1, ax1 = plt.subplots()
