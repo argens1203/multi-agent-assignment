@@ -49,4 +49,5 @@ class Controller:
 
     def train_in_background(self):
         trained_Q = self.trainer.train_in_background()
+        # TODO: fix hardcode
         self.model.agents[0].Q = trained_Q
