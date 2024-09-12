@@ -1,7 +1,11 @@
 import random
 
+from typing import TYPE_CHECKING, List
 from shared import State, Action
 from .cell import *
+
+if TYPE_CHECKING:
+    from .agent import Agent
 
 
 class GridFactory:
@@ -23,7 +27,7 @@ class Grid:
 
         self.state = {}  # TODO: multiple entities in one cell
         self.lookup = set()  # Interactive tiles
-        self.agents = []
+        self.agents: List[Agent] = []
         self.agent_positions = []
 
         self.init_environment()
@@ -121,6 +125,9 @@ class Grid:
 
     def get_state(self):
         return State(self.agent_positions, self.lookup)
+
+    def get_size(self):
+        return self.width, self.height
 
 
 class GridUtil:

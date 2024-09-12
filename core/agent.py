@@ -6,6 +6,7 @@ class Agent:
     def __init__(self, idx, all_states, actions):
         # Agent property (for illustration purposes)
         self.is_having_item = False
+        self.total_reward = 0
 
         self.actions = actions  # TODO: encode different action for different state. How to initialize Q-Table
         self.idx = idx
@@ -32,7 +33,7 @@ class Agent:
             return self.actions[np.argmax(self.Q[state_i])]
 
     def update_learn(self, state, action, reward, next_state, is_terminal, learn=True):
-        self.update(next_state)
+        self.update(next_state, reward)
 
         # Extract immutable state information
         state_i = self.massage(state)
@@ -55,11 +56,16 @@ class Agent:
     def has_item(self):
         return self.is_having_item
 
-    def update(self, state):
+    def get_total_reward(self):
+        return self.total_reward
+
+    def update(self, state, reward=0):
         self.is_having_item = state.has_item()
+        self.total_reward += reward
 
     def reset(self):
         self.is_having_item = False
+        self.total_reward = 0
 
     # ----- Private Functions ----- #
     # Extract immutable information from State object

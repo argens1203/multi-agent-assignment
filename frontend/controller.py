@@ -26,7 +26,7 @@ class Controller:
     def next(self):
         if self.model.has_ended() and self.auto_reset:
             self.model.reset()
-        self.model.step(learn=False)
+        self.trainer.step(learn=False)
         return
 
     def train(self, itr=1):
@@ -47,4 +47,4 @@ class Controller:
 
     def train_in_background(self):
         trained_Q = self.trainer.train_in_background()
-        self.model.agent[0].Q = trained_Q
+        self.model.agents[0].Q = trained_Q

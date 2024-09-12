@@ -16,8 +16,6 @@ if __name__ == "__main__":
     storage = Storage(max_itr)
     trainer = Trainer(max_itr)
 
-    trainer.bind(model, storage)
-
     agent = Agent(
         0,
         State.get_possible_states(width, height),
@@ -25,6 +23,8 @@ if __name__ == "__main__":
     )
     grid = Grid(width, height)
     grid.add_agent(agent)
+
+    trainer.bind(model, storage, grid, [agent])
 
     model.bind(grid).add_agent(agent).reset()
     controller.bind(model, storage, trainer)
