@@ -4,6 +4,7 @@ import numpy as np
 import random
 import torch
 from .given import *
+from constants import state_size
 
 if TYPE_CHECKING:
     from shared import State, Action
@@ -13,32 +14,33 @@ class ExpBuffer:
     def __init__(self):
         self.max = 1000
         self.itr = 0
-        self.states = []
-        self.actions = []
-        self.targets = []
+        self.has_reached = False
+
+        self.states = np.empty((self.max, state_size))
+        self.actions = np.empty((self.max,))
+        self.targets = np.empty((self.max,))
         pass
 
     def insert(self, state, action, target):
-        if len(self.states) < self.max:
-            self.states.append(state)
-            self.actions.append(action)
-            self.targets.append(target.item())
-            self.itr += 1
-        else:
-            self.states[self.itr] = state
-            self.actions[self.itr] = action
-            self.targets[self.itr] = target.item()
-            self.itr += 1
         self.itr %= self.max
+        self.states[self.itr] = state
+        self.actions[self.itr] = action
+        self.targets[self.itr] = target.item()
+        self.itr += 1
+
+        if self.itr >= self.max:
+            self.has_reached = True
 
     def extract(self, batch_size) -> Tuple[List[List[int]], List[int], List[float]]:
-        indices = np.random.randint(0, len(self.states), batch_size)
-        print(len(self.states))
-        print(indices)
+        indices = np.random.randint(
+            0, self.max if self.has_reached else self.itr, batch_size
+        )
+        # print(len(self.states))
+        # print(indices)
         return (
-            np.array(self.states)[indices],
-            np.array(self.actions)[indices],
-            np.array(self.targets)[indices],
+            self.states[indices],
+            self.actions[indices],
+            self.targets[indices],
         )
 
     def __len__(self):

@@ -101,7 +101,8 @@ class Grid:
         # TODO: extract repeated code
 
         # Assign goal to set position
-        goal_pos = (self.width - 1, self.height - 1)
+        goal_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
+        # goal_pos = (self.width - 1, self.height - 1)
         goal = Goal(goal_pos)
         self.state[goal_pos] = goal
         self.lookup.add(goal)
