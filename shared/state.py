@@ -1,9 +1,14 @@
 import itertools
+import numpy as np
 
+from typing import TYPE_CHECKING
 from copy import deepcopy
 
 from core import Item, Goal
 from .action import Action
+
+if TYPE_CHECKING:
+    from core import Goal
 
 
 class State:
@@ -18,13 +23,13 @@ class State:
     # TODO: fix hardcode
     def get_possible_states(width, height):
         # Generate all possible states
-        return 5**5
+        return 25 + 25 + 25 + 1
         positions = [(x, y) for x in range(width) for y in range(height)]
         has_items = [True, False]
         return itertools.product(positions, positions, has_items)
 
     # ----- Private Functions ----- #
-    def get_goal(self):
+    def get_goal(self) -> "Goal":
         return next((x for x in self.lookup if isinstance(x, Goal)), [None])
 
     def get_items(self):
@@ -41,15 +46,16 @@ class State:
     def extract_state(self, idx):
         x, y = self.agent_positions[idx]
         x2, y2 = self.get_item_positions()[0]
+        x3, y3 = self.get_goal_positions()
+        has_item = self.has_item()
         # TODO: remove hardcoded item_pos indices
         # return agent_pos, item_pos[0], self.has_item()
-        return (
-            x * (5**4)
-            + y * (5**3)
-            + x2 * (5**2)
-            + y2 * (5)
-            + (1 if self.has_item() else 0)
-        )
+        state = np.zeros(76)
+        state[0] = 1 if has_item else 0
+        state[1 + x * 5 + y] = 1
+        state[26 + x2 * 5 + y2] = 1
+        state[51 + x3 * 5 + y3] = 1
+        return state
 
     # ----- Information Extraction ----- #
     def get_agent_positions(self):

@@ -154,7 +154,7 @@ class Visualization:
         self.train_15000_btn = self.add_button(
             [0.85, 0.51, 0.12, 0.075],
             "Train 15000",
-            self.on_train(15000, blocking=True),
+            self.on_train(50, blocking=True),
         )
         # Add button for training
         self.test_button = self.add_button(
