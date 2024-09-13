@@ -90,6 +90,7 @@ class Visualization:
         self.ax.xaxis.tick_top()
 
         # Draw target
+        # TODO: cater multiple goals
         tx, ty = self.model.get_target_location()
         target_patch = patches.Rectangle(
             (tx, ty), 1, 1, linewidth=1, edgecolor="black", facecolor="green"
@@ -111,7 +112,6 @@ class Visualization:
             self.ax.add_patch(item_patch)
 
     def draw_complete(self):
-        # TODO: cater multiple goals
         self.ax.text(
             0.5,
             0.5,
