@@ -1,12 +1,19 @@
+from typing import TYPE_CHECKING, List, Tuple, Dict, Set
+
 import random
 
-from .state import State, Action
+from shared import State, Action
 from .cell import *
+
+if TYPE_CHECKING:
+    from .agent import Agent
 
 
 class GridFactory:
     # Getting a random location in a grid, excluding certain locations
-    def get_random_pos(width, height, exclude=[]):
+    def get_random_pos(
+        width: int, height: int, exclude: List[Tuple[int, int]] = []
+    ) -> Tuple[int, int]:
         while True:
             position = (
                 random.randint(0, width - 1),
@@ -17,14 +24,17 @@ class GridFactory:
 
 
 class Grid:
-    def __init__(self, width=5, height=5):
+    def __init__(self, width: int, height: int):
         self.width = width
         self.height = height
+        self.max_reward = 0
 
-        self.state = {}  # TODO: multiple entities in one cell
-        self.lookup = set()  # Interactive tiles
-        self.agents = []
-        self.agent_positions = []
+        self.state: Dict[Tuple[int, int], Cell] = (
+            {}
+        )  # TODO: multiple entities in one cell
+        self.lookup: set[Cell] = set()  # Interactive tiles
+        self.agents: List["Agent"] = []
+        self.agent_positions: List[Tuple[int, int]] = []
 
         self.init_environment()
 
@@ -37,10 +47,12 @@ class Grid:
                 elif y < 0 or y >= self.height:
                     self.state[(x, y)] = Wall((x, y), (self.width, self.height))
                 else:
-                    self.state[(x, y)] = Empty((x, y))
+                    self.state[(x, y)] = Cell((x, y))
 
     # ----- Core Functions ----- #
-    def move(self, actions):  # List of actions, in the same order as self.agents
+    def move(
+        self, actions: List["Action"]
+    ):  # List of actions, in the same order as self.agents
         # Update agent to temporary location according to move
         temp_positions = [
             self.process_action(action, agent_pos)
@@ -64,13 +76,15 @@ class Grid:
         ]
 
     # ----- Private Functions ----- #
-    def process_action(self, action, agent_position):
+    def process_action(
+        self, action: List["Action"], agent_position: List[Tuple[int, int]]
+    ):
         # Move according to action
         x, y = agent_position
         dx, dy = self.interpret_action(action)
         return x + dx, y + dy
 
-    def interpret_action(self, action):
+    def interpret_action(self, action: "Action"):
         if action == Action.NORTH:
             return 0, -1
         if action == Action.SOUTH:
@@ -111,20 +125,28 @@ class Grid:
         for agent in self.agents:
             agent.update(State(self.agent_positions, self.lookup))
 
+        self.max_reward = GridUtil.calculate_max_reward(self)
+
     # ----- Public Functions ----- #
     def reset(self):
         self.init_environment()
         self.set_interactive_tiles()
 
-    def add_agents(self, agents):
-        self.agents = agents
+    def add_agent(self, agent: "Agent"):
+        self.agents.append(agent)
 
     def get_state(self):
         return State(self.agent_positions, self.lookup)
 
+    def get_size(self):
+        return self.width, self.height
+
+    def get_max_reward(self):
+        return self.max_reward
+
 
 class GridUtil:
-    def calculate_max_reward(grid):
+    def calculate_max_reward(grid: Grid):
         # TODO: can only work with one agent and one item ATM
         x1, y1 = grid.get_state().get_agent_positions()[0]
         x2, y2 = grid.get_state().get_item_positions()[0]

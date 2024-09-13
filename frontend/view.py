@@ -1,49 +1,56 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-
-# import plotly
-from matplotlib.widgets import Button, Slider
 import matplotlib.animation as animation
+
+from matplotlib.widgets import Button
 from typing import Tuple, TypeAlias, TYPE_CHECKING
-from .controller import Controller
-import json
 
 if TYPE_CHECKING:
-    from .game import Game
+    from .model import Model
+    from .controller import Controller
 
 Coordinates: TypeAlias = Tuple[float, float, float, float]
 
-# plotly.offline.init_notebook_mode(connected=True)
-
-from .graph import Graph, TestGraph
-import numpy as np
-from multiprocessing import Process, Queue, shared_memory, Pipe
-
 
 class Visualization:
-    def __init__(self, game: "Game", controller, fig, ax):
-        self.game = game
-        self.is_stopping = False
-        self.timer = None
-        self.game.reset()
-        self.speed = 1
+    def __init__(self, fig, ax):
         self.fig = fig
         self.ax = ax
+        self.animating = False
+
+    def bind(self, model: "Model", controller: "Controller"):
+        self.model = model
+        self.controller = controller
+        return self
+
+    def show(self):
+        assert self.model is not None
+        assert self.controller is not None
 
         self.add_ui_elements()
-        self.controller = controller
         self.fig.canvas.mpl_connect("close_event", self.on_close)
         self.ani = animation.FuncAnimation(
             self.fig, self.draw, frames=self.frames, interval=200, save_count=100
         )
-
         self.animating = True
-
         plt.show()
+
+    def get_info(self):
+        info = self.model.get_agent_info()
+        items = self.model.get_untaken_items()
+        tot_reward = self.model.get_total_reward()
+        max_reward = self.model.get_max_reward()
+        return info, items, tot_reward, max_reward
 
     def frames(self):
         while True:
-            yield self.controller.next()
+            if self.animating:
+                self.controller.next()
+                yield self.get_info()
+            else:
+                yield self.get_info()
+
+    # ----- ----- ----- ----- Drawing Functions  ----- ----- ----- ----- #
 
     def draw(self, args):
         info, items, tot_reward, max_reward = args
@@ -57,13 +64,17 @@ class Visualization:
         self.max_reward.set_text(f"Max Reward: {max_reward}")
 
         # Check if the environment is terminal
-        if self.game.has_ended():
+        if self.model.has_ended():
             self.draw_complete()
-        if not self.animating:
-            self.fig.canvas.draw()
+
+        # Early return if animating, since animation automatically refreshes canvas
+        if self.animating:
+            return
+
+        self.fig.canvas.draw()
 
     def draw_grid(self):
-        width, height = self.game.get_size()
+        width, height = self.model.get_size()
         for x in range(width):
             for y in range(height):
                 rect = patches.Rectangle(
@@ -79,7 +90,7 @@ class Visualization:
         self.ax.xaxis.tick_top()
 
         # Draw target
-        tx, ty = self.game.get_target_location()
+        tx, ty = self.model.get_target_location()
         target_patch = patches.Rectangle(
             (tx, ty), 1, 1, linewidth=1, edgecolor="black", facecolor="green"
         )
@@ -100,6 +111,7 @@ class Visualization:
             self.ax.add_patch(item_patch)
 
     def draw_complete(self):
+        # TODO: cater multiple goals
         self.ax.text(
             0.5,
             0.5,
@@ -136,11 +148,13 @@ class Visualization:
         )
         # Add button for training
         self.train_1000_btn = self.add_button(
-            [0.85, 0.41, 0.12, 0.075], "Train 1000", self.on_train_1000
+            [0.85, 0.41, 0.12, 0.075], "Train 1000", self.on_train(1000, blocking=False)
         )
         # Add button for training
         self.train_15000_btn = self.add_button(
-            [0.85, 0.51, 0.12, 0.075], "Train 15000", self.on_train_15000
+            [0.85, 0.51, 0.12, 0.075],
+            "Train 15000",
+            self.on_train(15000, blocking=True),
         )
         # Add button for training
         self.test_button = self.add_button(
@@ -150,13 +164,13 @@ class Visualization:
     def init_text(self):
         # Add text box for cumulative reward
         self.reward = self.add_text(
-            [0.01, 0.01, 0.2, 0.075], f"Reward: {self.game.total_reward}"
+            [0.01, 0.01, 0.2, 0.075], f"Reward: {self.model.get_total_reward()}"
         )
 
         # Add text box for max reward
         self.max_reward = self.add_text(
             [0.25, 0.01, 0.2, 0.075],
-            f"Max Reward: {self.game.get_max_reward()}",
+            f"Max Reward: {self.model.get_max_reward()}",
         )
 
     def add_button(self, coordinates: Coordinates, text, on_click):
@@ -182,28 +196,28 @@ class Visualization:
         axis.axis("off")
         return textbox
 
-    # ----- ----- ----- ----- Render Main Board  ----- ----- ----- ----- #
-    def one_step(self):
-        self.draw(self.controller.next())
-
-    def stop_anim(self):
-        pass
-
-    def start_anim(self):
-        pass
-
     # ----- ----- ----- ----- Event Handlers  ----- ----- ----- ----- #
 
-    def on_toggle_anim(self, event):
-        if self.animating:
-            self.ani.pause()
-            self.toggle_anim_btn.label.set_text("Anim\nOff")
-        else:
-            self.ani.resume()
-            self.toggle_anim_btn.label.set_text("Anim\nOn")
+    def on_close(self, e):
+        pass
 
-        self.animating = not self.animating
-        plt.show()
+    def on_test(self, e):
+        self.before_auto_train()
+        self.controller.test_in_background(1000)
+        self.after_auto_train()
+
+    def on_train(self, episodes, blocking=False):
+        def blocking_train(e):
+            self.before_auto_train()
+            self.controller.train(episodes)
+            self.after_auto_train()
+
+        def non_blocking_train(e):
+            self.before_auto_train()
+            self.controller.train_in_background()
+            self.after_auto_train()
+
+        return blocking_train if blocking else non_blocking_train
 
     def on_auto_reset(self, event):
         auto_reset_is_on = self.controller.toggle_auto_reset()
@@ -213,73 +227,38 @@ class Visualization:
             self.toggle_auto_reset_btn.label.set_text("Auto Reset\nOff")
         plt.show()
 
+    def on_toggle_anim(self, event):
+        if self.animating:
+            self.toggle_anim_btn.label.set_text("Anim\nOff")
+        else:
+            self.toggle_anim_btn.label.set_text("Anim\nOn")
+
+        self.animating = not self.animating
+        plt.show()
+
     def on_reset(self, event):
-        self.game.reset()
-        self.draw(self.controller.get_info())
+        self.model.reset()
+        self.draw(self.get_info())
 
     def on_next(self, e):
-        self.draw(self.controller.next())
+        self.controller.next()
+        self.draw(self.get_info())
 
-    def on_train_1000(self, e):
-        self.before_auto_train()
-
-        s = self.auto_train()
-
-        self.game.agent[0].Q = self.get_np_from_name(s)
-
-        self.after_auto_train()
+    # ----- ----- ----- ----- Helper Functions  ----- ----- ----- ----- #
 
     def before_auto_train(self):
-        self.ani.pause()
         self.animating = False
-        self.controller.game.reset()
+        self.controller.reset()
 
         self.toggle_anim_btn.label.set_text("Anim\nOff")
-        self.draw(self.controller.get_info())
-
-    def auto_train(self):
-        gp, tp, conn1 = get_process(self.game, self.controller)
-        gp.start()
-        tp.start()
-        gp.join()
-        tp.join()
-        return conn1.recv()
+        self.draw(self.get_info())
 
     def after_auto_train(self):
-        self.ani.resume()
         self.animating = True
-        self.controller.game.reset()
+        self.controller.reset()
 
         self.toggle_anim_btn.label.set_text("Anim\nOn")
-        self.draw(self.controller.get_info())
-
-    def get_np_from_name(self, name):
-        existing_shm = shared_memory.SharedMemory(name=name)
-        q = np.ndarray((5**5, 4), buffer=existing_shm.buf)
-        s = np.copy(q)
-        existing_shm.close()
-        existing_shm.unlink()
-        return s
-
-    def on_train_15000(self, e):
-        self.before_auto_train()
-        self.controller.train(15000)
-        self.after_auto_train()
-
-    def np_to_name(self, np):
-        pass
-
-    def on_close(self, e):
-        pass
-
-    def on_test(self, e):
-        self.before_auto_train()
-        gp, tp = get_test_process(self.controller)
-        gp.start()
-        tp.start()
-        gp.join()
-        tp.join()
-        self.after_auto_train()
+        self.draw(self.get_info())
 
     # ----- ----- ----- ----- Plot Metrics  ----- ----- ----- ----- #
     def plot_training(results):
@@ -304,52 +283,3 @@ class Visualization:
         # Display the plots
         plt.tight_layout()
         plt.show()
-
-
-def draw_graphs(game, controller):
-    fig, axs = plt.subplots(1, 2, figsize=(12, 5))
-    graph = Graph(controller, fig, axs)
-
-
-def train(controller, connection, ep):
-    controller.train(ep)
-    q = controller.game.agent[0].get_q_table()
-
-    shm = shared_memory.SharedMemory(create=True, size=q.nbytes)
-    b = np.ndarray(q.shape, dtype=q.dtype, buffer=shm.buf)
-    b[:] = q[:]
-    connection.send(shm.name)
-    shm.close()
-
-
-def get_process(game, controller):
-    conn1, conn2 = Pipe()
-    graph_p = Process(
-        target=draw_graphs,
-        args=[
-            game,
-            controller,
-        ],
-    )
-    train_p = Process(target=train, args=[controller, conn2, 1000])
-    return graph_p, train_p, conn1
-
-
-def test(controller, ep):
-    controller.test(ep)
-
-
-def draw_test_graph(controller):
-    fig, axs = plt.subplots()
-    graph = TestGraph(controller, fig, axs)
-
-
-def get_test_process(controller):
-    graph_p = Process(
-        target=draw_test_graph,
-        args=[
-            controller,
-        ],
-    )
-    test_p = Process(target=test, args=[controller, 1000])
-    return graph_p, test_p
