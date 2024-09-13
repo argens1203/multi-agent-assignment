@@ -52,7 +52,7 @@ class State:
         x, y = self.agent_positions[idx]
         x2, y2 = self.get_item_positions()[0]
         x3, y3 = self.get_goal_positions()
-        print(x, y, x2, y2, x3, y3)
+        # print(x, y, x2, y2, x3, y3)
         has_item = self.has_item()
         # TODO: remove hardcoded item_pos indices
         # return agent_pos, item_pos[0], self.has_item()

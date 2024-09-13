@@ -18,14 +18,18 @@ class ExpBuffer:
 
         self.states = torch.empty((self.max, state_size), dtype=dtype)
         self.actions = torch.empty((self.max,), dtype=dtype)
-        self.targets = torch.empty((self.max,), dtype=dtype)
+        self.rewards = torch.empty((self.max,), dtype=dtype)
+        self.next_states = torch.empty((self.max, state_size), dtype=dtype)
+        self.is_terminals = torch.empty((self.max,), dtype=torch.bool)
         pass
 
-    def insert(self, state, action, target):
+    def insert(self, state, action, reward, next_state, is_terminal):
         self.itr %= self.max
         self.states[self.itr] = state
         self.actions[self.itr] = action
-        self.targets[self.itr] = target
+        self.rewards[self.itr] = reward
+        self.next_states[self.itr] = next_state
+        self.is_terminals[self.itr] = is_terminal
         self.itr += 1
 
         if self.itr >= self.max:
@@ -40,7 +44,9 @@ class ExpBuffer:
         return (
             self.states[indices],
             self.actions[indices],
-            self.targets[indices],
+            self.rewards[indices],
+            self.next_states[indices],
+            self.is_terminals[indices],
         )
 
     def __len__(self):
@@ -111,16 +117,26 @@ class Agent:
         # )
 
         state_i = self.massage(state)
-        # current_qa = get_qvals(state_i)
         nxt_state_i = self.massage(next_state)
-        target_val = self.gamma * get_maxQ(nxt_state_i) + reward
-        if is_terminal:
-            target_val = torch.tensor(reward)
+        # target_val = self.gamma * get_maxQ(nxt_state_i) + reward
+        # if is_terminal:
+        #     target_val = torch.tensor(reward)
+
         # next_qa = np.copy(current_qa)
         # next_qa[np.argmax(next_qa)] = target_val
-        self.buffer.insert(state_i, self.actions.index(action), target_val)
+        self.buffer.insert(
+            state_i, self.actions.index(action), reward, nxt_state_i, is_terminal
+        )
         if len(self.buffer) >= self.min_buffer:
-            states, actions, targets = self.buffer.extract(200)
+            states, actions, rewards, next_states, is_terminals = self.buffer.extract(
+                200
+            )
+            rewards = rewards.to(device)
+            indices = is_terminals.nonzero().to(device)
+            targets = self.gamma * get_maxQ(next_states.to(device)) + rewards
+            targets[indices] = rewards[
+                indices
+            ]  # For terminal states, target_val is reward
             # print(states, actions, targets)
             # print(states.shape, actions.shape, targets.shape)
             train_one_step(states, actions, targets)

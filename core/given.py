@@ -47,7 +47,8 @@ def get_qvals(state):
 
 # The function "get_maxQ" returns the maximum q-value for the state given by the argument _based on the target network_.
 def get_maxQ(s):
-    return torch.max(model_hat(s)).float()
+    maxxed = torch.max(model_hat(s), dim=1)
+    return torch.max(model_hat(s), dim=1).values.float()
 
 
 # The function "train_one_step_new" performs a single training step. It returns the current loss (only needed for debugging purposes). Its parameters are three parallel lists: a minibatch of states, a minibatch of actions, a minibatch of the corresponding TD targets and the discount factor.

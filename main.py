@@ -29,7 +29,7 @@ if __name__ == "__main__":
     model.set_grid(grid).add_agent(agent).reset()
     controller.bind(model).add_helper(storage, trainer)
 
-    trainer.train(100)
+    trainer.train(1000)
     vis.bind(model, controller).show()
 
     # game = Game()
