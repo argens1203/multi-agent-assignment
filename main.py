@@ -6,7 +6,7 @@ from shared import State
 
 if __name__ == "__main__":
     fig1, ax1 = plt.subplots()
-    width, height = 5, 5
+    width, height = 4, 4
     max_itr = 1000
 
     vis = Visualization(fig1, ax1)

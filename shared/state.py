@@ -10,6 +10,9 @@ from .action import Action
 if TYPE_CHECKING:
     from core import Goal
 
+size = 4
+state_size = 4 * 4 * 3 + 1
+
 
 class State:
     def __init__(self, agent_positions, lookup):
@@ -23,7 +26,7 @@ class State:
     # TODO: fix hardcode
     def get_possible_states(width, height):
         # Generate all possible states
-        return 25 + 25 + 25 + 1
+        return state_size
         positions = [(x, y) for x in range(width) for y in range(height)]
         has_items = [True, False]
         return itertools.product(positions, positions, has_items)
@@ -47,14 +50,15 @@ class State:
         x, y = self.agent_positions[idx]
         x2, y2 = self.get_item_positions()[0]
         x3, y3 = self.get_goal_positions()
+        print(x, y, x2, y2, x3, y3)
         has_item = self.has_item()
         # TODO: remove hardcoded item_pos indices
         # return agent_pos, item_pos[0], self.has_item()
-        state = np.zeros(76)
+        state = np.zeros(state_size)
         state[0] = 1 if has_item else 0
-        state[1 + x * 5 + y] = 1
-        state[26 + x2 * 5 + y2] = 1
-        state[51 + x3 * 5 + y3] = 1
+        state[1 + x * size + y] = 1
+        state[1 + size**2 + x2 * size + y2] = 1
+        state[1 + (size**2) * 2 + x3 * size + y3] = 1
         return state
 
     # ----- Information Extraction ----- #
