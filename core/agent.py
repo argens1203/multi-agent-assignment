@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Tuple, List
 
 import numpy as np
 import random
+import torch
 from .given import *
 
 if TYPE_CHECKING:
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
 
 class ExpBuffer:
     def __init__(self):
-        self.max = 10000
+        self.max = 1000
         self.itr = 0
         self.states = []
         self.actions = []
@@ -32,6 +33,8 @@ class ExpBuffer:
 
     def extract(self, batch_size) -> Tuple[List[List[int]], List[int], List[float]]:
         indices = np.random.randint(0, len(self.states), batch_size)
+        print(len(self.states))
+        print(indices)
         return (
             np.array(self.states)[indices],
             np.array(self.actions)[indices],
@@ -54,15 +57,18 @@ class Agent:
         # Initialize Q Table for all state-action to be 0
         # TODO: use multi-D np array
         self.min_buffer = 200
+        self.step_count = 0
+        self.C = 500
         self.Q = np.zeros((all_states, len(actions)))
 
         # Initialize Learning param
         # TODO: fix resetting epsilon
-        self.epsilon = 1
-        self.epsilon_decay = 0.995  # TODO: reduce the decay (ie. increase the number)
-        self.epsilon_min = -1
-        self.gamma = 0.8
-        self.alpha = 0.1
+        self.epsilon = 1.0
+        self.epsilon_decay = 0.997  # TODO: reduce the decay (ie. increase the number)
+        self.epsilon_min = 0.1
+        self.gamma = 0.997
+
+        # self.alpha = 0.1
 
         self.buffer = ExpBuffer()
 
@@ -106,15 +112,22 @@ class Agent:
         # current_qa = get_qvals(state_i)
         nxt_state_i = self.massage(next_state)
         target_val = self.gamma * get_maxQ(nxt_state_i) + reward
+        if is_terminal:
+            target_val = torch.tensor(reward)
         # next_qa = np.copy(current_qa)
         # next_qa[np.argmax(next_qa)] = target_val
         self.buffer.insert(state_i, self.actions.index(action), target_val)
         if len(self.buffer) >= self.min_buffer:
-            states, actions, targets = self.buffer.extract(32)
+            states, actions, targets = self.buffer.extract(200)
             # print(states, actions, targets)
             # print(states.shape, actions.shape, targets.shape)
             train_one_step(states, actions, targets)
+
+        if self.step_count >= self.C:
             update_target()
+            self.step_count = 0
+        else:
+            self.step_count += 1
 
         # Epsilon decay
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)

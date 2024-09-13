@@ -28,7 +28,7 @@ class Controller:
     def next(self):
         if self.model.has_ended() and self.auto_reset:
             self.model.reset()
-        self.trainer.step(learn=False)
+        self.trainer.step(learn=True)
         return
 
     def train(self, itr=1):
