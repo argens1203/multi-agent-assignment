@@ -1,9 +1,11 @@
 import itertools
 import numpy as np
+import torch
 
 from typing import TYPE_CHECKING
 from copy import deepcopy
 
+from constants import dtype
 from core import Item, Goal
 from .action import Action
 
@@ -54,7 +56,7 @@ class State:
         has_item = self.has_item()
         # TODO: remove hardcoded item_pos indices
         # return agent_pos, item_pos[0], self.has_item()
-        state = np.zeros(state_size)
+        state = torch.empty(state_size, dtype=dtype)
         state[0] = 1 if has_item else 0
         state[1 + x * size + y] = 1
         state[1 + size**2 + x2 * size + y2] = 1

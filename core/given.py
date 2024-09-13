@@ -1,5 +1,7 @@
 import torch
 import copy
+from constants import device
+import numpy as np
 
 # from core import state_size
 
@@ -22,8 +24,8 @@ def prepare_torch():
         torch.nn.Linear(l2, l3),
         torch.nn.ReLU(),
         torch.nn.Linear(l3, l4),
-    )
-    model_hat = copy.deepcopy(model)
+    ).to(device)
+    model_hat = copy.deepcopy(model).to(device)
     model_hat.load_state_dict(model.state_dict())
     loss_fn = torch.nn.MSELoss()
     learning_rate = 1e-3
@@ -40,15 +42,12 @@ def update_target():
 
 # The function "get_qvals" returns a numpy list of qvals for the state given by the argument _based on the prediction network_.
 def get_qvals(state):
-    state1 = torch.from_numpy(state).float()
-    qvals_torch = model(state1)
-    qvals = qvals_torch.data.numpy()
-    return qvals
+    return model(state).to(device)
 
 
 # The function "get_maxQ" returns the maximum q-value for the state given by the argument _based on the target network_.
 def get_maxQ(s):
-    return torch.max(model_hat(torch.from_numpy(s).float())).float()
+    return torch.max(model_hat(s)).float()
 
 
 # The function "train_one_step_new" performs a single training step. It returns the current loss (only needed for debugging purposes). Its parameters are three parallel lists: a minibatch of states, a minibatch of actions, a minibatch of the corresponding TD targets and the discount factor.
@@ -60,13 +59,13 @@ def train_one_step(states, actions, targets):
     # pass to this function: state1_batch, action_batch, TD_batch
     global model, model_hat
     # state1_batch = torch.cat([torch.from_numpy(s).float() for s in states])
-    state1_batch = torch.from_numpy(states).float()
-    action_batch = torch.Tensor(actions)
+    state1_batch = states.to(device)
+    action_batch = actions.to(device)
     # print(action_batch.shape)
     # print(state1_batch.shape)
     Q1 = model(state1_batch)
     X = Q1.gather(dim=1, index=action_batch.long().unsqueeze(dim=1)).squeeze()
-    Y = torch.tensor(targets).float()
+    Y = torch.tensor(targets).to(device).float()
     loss = loss_fn(X, Y)
     print(loss)
     optimizer.zero_grad()

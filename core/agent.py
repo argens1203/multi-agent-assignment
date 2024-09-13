@@ -4,7 +4,7 @@ import numpy as np
 import random
 import torch
 from .given import *
-from constants import state_size
+from constants import state_size, device, dtype
 
 if TYPE_CHECKING:
     from shared import State, Action
@@ -16,16 +16,16 @@ class ExpBuffer:
         self.itr = 0
         self.has_reached = False
 
-        self.states = np.empty((self.max, state_size))
-        self.actions = np.empty((self.max,))
-        self.targets = np.empty((self.max,))
+        self.states = torch.empty((self.max, state_size), dtype=dtype)
+        self.actions = torch.empty((self.max,), dtype=dtype)
+        self.targets = torch.empty((self.max,), dtype=dtype)
         pass
 
     def insert(self, state, action, target):
         self.itr %= self.max
         self.states[self.itr] = state
         self.actions[self.itr] = action
-        self.targets[self.itr] = target.item()
+        self.targets[self.itr] = target
         self.itr += 1
 
         if self.itr >= self.max:
@@ -83,7 +83,7 @@ class Agent:
         else:
             # Extract immutable state information
             state_i = self.massage(state)
-            idx = np.argmax(get_qvals(state_i))
+            idx = torch.argmax(get_qvals(state_i))
             return self.actions[idx]
 
     def update_learn(
@@ -155,4 +155,4 @@ class Agent:
     # ----- Private Functions ----- #
     # Extract immutable information from State object
     def massage(self, state: "State"):
-        return state.extract_state(self.idx)
+        return state.extract_state(self.idx).to(device).float()
