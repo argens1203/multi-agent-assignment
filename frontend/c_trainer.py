@@ -47,7 +47,7 @@ class Trainer:
         self.model.reset()
         max_reward = self.grid.get_max_reward()
 
-        max_step_count = 10000 if learn else 100
+        max_step_count = 50 if learn else 50
         step_count = 0
         while not self.grid.get_state().is_terminal() and step_count < max_step_count:
             self.step(learn)

@@ -1,11 +1,11 @@
 import torch
 import copy
-from constants import device
+from constants import device, state_size
 import numpy as np
 
 # from core import state_size
 
-statespace_size = 4 * 4 * 3 + 1
+statespace_size = state_size
 
 
 # The function "prepare_torch" needs to be called once and only once at the start of your program to initialise PyTorch and generate the two Q-networks. It returns the target model (for testing).

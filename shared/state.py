@@ -5,15 +5,12 @@ import torch
 from typing import TYPE_CHECKING
 from copy import deepcopy
 
-from constants import dtype
+from constants import dtype, state_size, side
 from core import Item, Goal
 from .action import Action
 
 if TYPE_CHECKING:
     from core import Goal
-
-size = 4
-state_size = 4 * 4 * 3 + 1
 
 
 class State:
@@ -44,7 +41,7 @@ class State:
         return [item.get_pos() for item in self.get_items()]
 
     # TODO: fix hardcode
-    def has_item(self):
+    def item_taken(self):
         item = next((x for x in self.lookup if isinstance(x, Item)), [None])
         return item.taken
 
@@ -53,14 +50,14 @@ class State:
         x2, y2 = self.get_item_positions()[0]
         x3, y3 = self.get_goal_positions()
         # print(x, y, x2, y2, x3, y3)
-        has_item = self.has_item()
         # TODO: remove hardcoded item_pos indices
         # return agent_pos, item_pos[0], self.has_item()
         state = torch.empty(state_size, dtype=dtype)
-        state[0] = 1 if has_item else 0
-        state[1 + x * size + y] = 1
-        state[1 + size**2 + x2 * size + y2] = 1
-        state[1 + (size**2) * 2 + x3 * size + y3] = 1
+        state[x * side + y] = 1
+        if not self.item_taken():
+            state[side**2 + x2 * side + y2] = 1
+        state[side**2 * 2 + x3 * side + y3] = 1
+
         return state
 
     # ----- Information Extraction ----- #

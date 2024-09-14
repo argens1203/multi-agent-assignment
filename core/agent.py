@@ -158,7 +158,7 @@ class Agent:
         return self.total_reward
 
     def update(self, state: "State", reward=0):
-        self.is_having_item = state.has_item()
+        self.is_having_item = state.item_taken()
         self.total_reward += reward
 
     def reset(self):
@@ -171,4 +171,6 @@ class Agent:
     # ----- Private Functions ----- #
     # Extract immutable information from State object
     def massage(self, state: "State"):
-        return state.extract_state(self.idx).to(device).float()
+        state_i = state.extract_state(self.idx).to(device).float()
+        return state_i + 0.001
+        return state_i + torch.rand(state_size) / 100.0
