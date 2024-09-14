@@ -82,3 +82,19 @@ class TestGraph:
         ax.set_title("Loss")
         ax.set_xlabel("Iteration")
         ax.set_ylabel("Loss")
+
+
+class MLGraph:
+    def __init__(self, ml_losses, fig, ax):
+        ax.plot(range(len(ml_losses)), ml_losses, label="Loss")
+        # ax.set_title("Loss")
+        ax.set_xlabel("Iteration")
+        ax.set_ylabel("Loss")
+        pass
+
+    def show(self):
+
+        # Display the plots
+        plt.tight_layout()
+        plt.show()
+        pass

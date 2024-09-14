@@ -32,10 +32,10 @@ class Controller:
         return
 
     def train(self, itr=1):
-        self.trainer.train(itr)
+        return self.trainer.train(itr)
 
     def test(self, itr=1):
-        self.trainer.test(itr)
+        return self.trainer.test(itr)
 
     def reset(self):
         self.model.reset()

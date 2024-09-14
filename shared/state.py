@@ -1,9 +1,16 @@
 import itertools
+import numpy as np
+import torch
 
+from typing import TYPE_CHECKING
 from copy import deepcopy
 
+from constants import dtype, state_size, side
 from core import Item, Goal
 from .action import Action
+
+if TYPE_CHECKING:
+    from core import Goal
 
 
 class State:
@@ -18,13 +25,13 @@ class State:
     # TODO: fix hardcode
     def get_possible_states(width, height):
         # Generate all possible states
-        return 5**5
+        return state_size
         positions = [(x, y) for x in range(width) for y in range(height)]
         has_items = [True, False]
         return itertools.product(positions, positions, has_items)
 
     # ----- Private Functions ----- #
-    def get_goal(self):
+    def get_goal(self) -> "Goal":
         return next((x for x in self.lookup if isinstance(x, Goal)), [None])
 
     def get_items(self):
@@ -34,22 +41,24 @@ class State:
         return [item.get_pos() for item in self.get_items()]
 
     # TODO: fix hardcode
-    def has_item(self):
+    def item_taken(self):
         item = next((x for x in self.lookup if isinstance(x, Item)), [None])
         return item.taken
 
     def extract_state(self, idx):
         x, y = self.agent_positions[idx]
         x2, y2 = self.get_item_positions()[0]
+        x3, y3 = self.get_goal_positions()
+        # print(x, y, x2, y2, x3, y3)
         # TODO: remove hardcoded item_pos indices
         # return agent_pos, item_pos[0], self.has_item()
-        return (
-            x * (5**4)
-            + y * (5**3)
-            + x2 * (5**2)
-            + y2 * (5)
-            + (1 if self.has_item() else 0)
-        )
+        state = torch.empty(state_size, dtype=dtype)
+        state[x * side + y] = 1
+        if not self.item_taken():
+            state[side**2 + x2 * side + y2] = 1
+        state[side**2 * 2 + x3 * side + y3] = 1
+
+        return state
 
     # ----- Information Extraction ----- #
     def get_agent_positions(self):
