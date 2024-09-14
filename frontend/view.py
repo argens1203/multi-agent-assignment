@@ -5,9 +5,12 @@ import matplotlib.animation as animation
 from matplotlib.widgets import Button
 from typing import Tuple, TypeAlias, TYPE_CHECKING
 
+from .v_graph import MLGraph
+
 if TYPE_CHECKING:
     from .model import Model
     from .controller import Controller
+    from .c_storage import Storage
 
 Coordinates: TypeAlias = Tuple[float, float, float, float]
 
@@ -18,9 +21,10 @@ class Visualization:
         self.ax = ax
         self.animating = False
 
-    def bind(self, model: "Model", controller: "Controller"):
+    def bind(self, model: "Model", controller: "Controller", storage: "Storage"):
         self.model = model
         self.controller = controller
+        self.storage = storage
         return self
 
     def show(self):
@@ -146,19 +150,23 @@ class Visualization:
         self.toggle_auto_reset_btn = self.add_button(
             [0.85, 0.31, 0.12, 0.075], "Auto Reset\nOn", self.on_auto_reset
         )
+        # # Add button for training
+        # self.bg_train_btn = self.add_button(
+        #     [0.85, 0.41, 0.12, 0.075], "Train 1000", self.on_train(1000, blocking=False)
+        # )
         # Add button for training
-        self.train_1000_btn = self.add_button(
-            [0.85, 0.41, 0.12, 0.075], "Train 1000", self.on_train(1000, blocking=False)
+        self.block_train_btn = self.add_button(
+            [0.85, 0.41, 0.12, 0.075],
+            "Train 2500",
+            self.on_train(2500, blocking=True),
         )
-        # Add button for training
-        self.train_15000_btn = self.add_button(
-            [0.85, 0.51, 0.12, 0.075],
-            "Train 15000",
-            self.on_train(50, blocking=True),
+        # Add button for training grpah
+        self.show_graph_button = self.add_button(
+            [0.85, 0.51, 0.12, 0.075], "Train Graph", self.on_show_graph
         )
-        # Add button for training
+        # Add button for testing
         self.test_button = self.add_button(
-            [0.85, 0.61, 0.12, 0.075], "Test", self.on_test
+            [0.85, 0.61, 0.12, 0.075], "Test", self.on_test(100, blocking=True)
         )
 
     def init_text(self):
@@ -201,16 +209,28 @@ class Visualization:
     def on_close(self, e):
         pass
 
-    def on_test(self, e):
-        self.before_auto_train()
-        self.controller.test_in_background(1000)
-        self.after_auto_train()
+    def on_show_graph(self, e):
+        fig2, ax2 = plt.subplots()
+        MLGraph(self.storage.ml_losses, fig2, ax2).show()
+
+    def on_test(self, episodes, blocking=False):
+        def non_blocking_test(e):
+            self.before_auto_train()
+            self.controller.test_in_background(episodes)
+            self.after_auto_train()
+
+        def blocking_test(e):
+            losses = self.controller.test(episodes)
+            fig2, ax2 = plt.subplots()
+            MLGraph(losses, fig2, ax2).show()
+
+        return blocking_test if blocking else non_blocking_test
 
     def on_train(self, episodes, blocking=False):
         def blocking_train(e):
-            self.before_auto_train()
-            self.controller.train(episodes)
-            self.after_auto_train()
+            ml_losses = self.controller.train(episodes)
+            fig2, ax2 = plt.subplots()
+            MLGraph(ml_losses, fig2, ax2).show()
 
         def non_blocking_train(e):
             self.before_auto_train()

@@ -11,7 +11,7 @@ class Storage:
         self.iterations = Array("i", range(max_itr))
         self.losses = Array("i", max_itr)
         self.epsilon = Array("f", max_itr)
-        self.test_loss = Array("f", max_itr)
+        self.test_loss = []
         self.ml_losses = []
 
     def reset_counter(self):
@@ -25,10 +25,10 @@ class Storage:
         self.itr += 1
 
     def append_test_loss(self, test_loss: int):
-        if self.itr >= self.max_itr:
-            self.itr = 0
-        self.test_loss[self.itr] = test_loss
-        self.itr += 1
+        self.test_loss.append(test_loss)
+
+    def reset_test_loss(self):
+        self.test_loss = []
 
     def append_ml_losses(self, ml_losses: List[float]):
         self.ml_losses += ml_losses

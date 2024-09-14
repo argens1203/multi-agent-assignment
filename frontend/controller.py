@@ -28,14 +28,14 @@ class Controller:
     def next(self):
         if self.model.has_ended() and self.auto_reset:
             self.model.reset()
-        self.trainer.step(learn=True)
+        self.trainer.step(learn=False)
         return
 
     def train(self, itr=1):
-        self.trainer.train(itr)
+        return self.trainer.train(itr)
 
     def test(self, itr=1):
-        self.trainer.test(itr)
+        return self.trainer.test(itr)
 
     def reset(self):
         self.model.reset()

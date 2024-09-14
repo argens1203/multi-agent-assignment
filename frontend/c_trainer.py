@@ -34,15 +34,18 @@ class Trainer:
                 print(
                     f"Epoch: {i+1}/{itr} -- Time Elapsed: {datetime.datetime.now() - start}"
                 )
+        return self.storage.ml_losses
 
     def test(self, itr=1):
         self.model.reset()
-        for i in range(self.max_itr):
-            self.storage.test_loss[i] = 0
+        self.storage.reset_test_loss()
+        # for i in range(self.max_itr):
+        #     self.storage.test_loss[i] = 0
         for _ in range(itr):
-            (loss, reward, epsilon, ml_losses) = self.train_one_game(learn=False)
+            (loss, reward, epsilon, _) = self.train_one_game(learn=False)
             # self.storage.append_test_loss(loss)
-            self.storage.append_ml_losses(ml_losses)
+            self.storage.append_test_loss(loss)
+        return self.storage.test_loss
 
     def train_one_game(self, learn=True):
         self.model.reset()

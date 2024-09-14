@@ -28,19 +28,13 @@ if __name__ == "__main__":
     model.set_grid(grid).add_agent(agent).reset()
     controller.bind(model).add_helper(storage, trainer)
 
-    trainer.train(5000)
-    fig2, ax2 = plt.subplots()
-    MLGraph(storage.ml_losses, fig2, ax2).show()
+    # trainer.train(5000)
+    # fig2, ax2 = plt.subplots()
+    # MLGraph(storage.ml_losses, fig2, ax2).show()
 
-    # ax2.plot(range(len(ml_losses)), ml_losses, marker="o", label="Loss")
-    # # ax.set_title("Loss")
-    # ax2.set_xlabel("Iteration")
-    # ax2.set_ylabel("Loss")
-    # plt.tight_layout()
-    # plt.show()
     fig1, ax1 = plt.subplots()
     vis = Visualization(fig1, ax1)
-    vis.bind(model, controller).show()
+    vis.bind(model, controller, storage).show()
 
     # game = Game()
     # controller = Controller(game, 1000)

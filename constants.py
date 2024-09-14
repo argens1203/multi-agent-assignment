@@ -7,4 +7,5 @@ device = torch.device(
     if torch.cuda.is_available()
     else "mps" if torch.backends.mps.is_available() else "cpu"
 )
-dtype = torch.float32 if device.type == "mps" else torch.float64
+dtype = torch.float32
+# if device.type == "mps" else torch.float64
