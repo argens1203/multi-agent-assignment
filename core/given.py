@@ -35,7 +35,6 @@ def prepare_torch():
 
 # The function "update_target" copies the state of the prediction network to the target network. You need to use this in regular intervals.
 def update_target():
-    print("updating")
     global model, model_hat
     model_hat.load_state_dict(model.state_dict())
 
@@ -66,10 +65,10 @@ def train_one_step(states, actions, targets):
     # print(state1_batch.shape)
     Q1 = model(state1_batch)
     X = Q1.gather(dim=1, index=action_batch.long().unsqueeze(dim=1)).squeeze()
-    Y = torch.tensor(targets).to(device).float()
+    Y = targets.clone().detach().to(device).float()
     loss = loss_fn(X, Y)
     # print(loss)
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
-    return loss.item()
+    return loss.item() / len(X)

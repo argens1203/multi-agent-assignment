@@ -1,4 +1,5 @@
 from multiprocessing import Array
+from typing import List
 
 
 class Storage:
@@ -11,6 +12,7 @@ class Storage:
         self.losses = Array("i", max_itr)
         self.epsilon = Array("f", max_itr)
         self.test_loss = Array("f", max_itr)
+        self.ml_losses = []
 
     def reset_counter(self):
         self.itr = 0
@@ -27,6 +29,9 @@ class Storage:
             self.itr = 0
         self.test_loss[self.itr] = test_loss
         self.itr += 1
+
+    def append_ml_losses(self, ml_losses: List[float]):
+        self.ml_losses += ml_losses
 
     def get_all(self):
         return self.iterations, self.losses, self.epsilon, self.test_loss

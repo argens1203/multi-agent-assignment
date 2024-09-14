@@ -139,7 +139,7 @@ class Agent:
             ]  # For terminal states, target_val is reward
             # print(states, actions, targets)
             # print(states.shape, actions.shape, targets.shape)
-            train_one_step(states, actions, targets)
+            loss = train_one_step(states, actions, targets)
 
         if self.step_count >= self.C:
             update_target()
@@ -149,6 +149,7 @@ class Agent:
 
         # Epsilon decay
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+        return loss
 
     # ----- Public Functions ----- #
     def has_item(self):

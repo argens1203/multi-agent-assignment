@@ -1,17 +1,14 @@
 import matplotlib.pyplot as plt
 
-from frontend import Visualization, Controller, Model, Storage, Trainer
+from frontend import Visualization, Controller, Model, Storage, Trainer, MLGraph
 from core import Agent, Grid
 from shared import State
 
-import datetime
 
 if __name__ == "__main__":
-    fig1, ax1 = plt.subplots()
     width, height = 4, 4
     max_itr = 1000
 
-    vis = Visualization(fig1, ax1)
     model = Model()
     controller = Controller()
 
@@ -31,9 +28,18 @@ if __name__ == "__main__":
     model.set_grid(grid).add_agent(agent).reset()
     controller.bind(model).add_helper(storage, trainer)
 
-    print(datetime.datetime.now())
     trainer.train(5000)
-    print(datetime.datetime.now())
+    fig2, ax2 = plt.subplots()
+    MLGraph(storage.ml_losses, fig2, ax2).show()
+
+    # ax2.plot(range(len(ml_losses)), ml_losses, marker="o", label="Loss")
+    # # ax.set_title("Loss")
+    # ax2.set_xlabel("Iteration")
+    # ax2.set_ylabel("Loss")
+    # plt.tight_layout()
+    # plt.show()
+    fig1, ax1 = plt.subplots()
+    vis = Visualization(fig1, ax1)
     vis.bind(model, controller).show()
 
     # game = Game()
