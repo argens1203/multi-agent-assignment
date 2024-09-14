@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, List
+import datetime
 
 from .multithread import get_process, get_test_process, get_np_from_name
 
@@ -21,40 +22,47 @@ class Trainer:
         self.agents = agents
 
     def train(self, itr=1):
+        start = datetime.datetime.now()
+        print(f"Start Time: {start}")
         self.model.reset()
-        for _ in range(itr):
-            (
-                loss,
-                reward,
-                epsilon,
-            ) = self.train_one_game()
-            self.storage.append_loss_epsilon(loss, epsilon)
+        for i in range(itr):
+            (loss, reward, epsilon, ml_losses) = self.train_one_game()
+            # self.storage.append_loss_epsilon(loss, epsilon)
+
+            self.storage.append_ml_losses(ml_losses)
+            if (i + 1) % 100 == 0:
+                print(
+                    f"Epoch: {i+1}/{itr} -- Time Elapsed: {datetime.datetime.now() - start}"
+                )
+        return self.storage.ml_losses
 
     def test(self, itr=1):
         self.model.reset()
-        for i in range(self.max_itr):
-            self.storage.test_loss[i] = 0
+        self.storage.reset_test_loss()
+        # for i in range(self.max_itr):
+        #     self.storage.test_loss[i] = 0
         for _ in range(itr):
-            (
-                loss,
-                reward,
-                epsilon,
-            ) = self.train_one_game(learn=False)
+            (loss, reward, epsilon, _) = self.train_one_game(learn=False)
+            # self.storage.append_test_loss(loss)
             self.storage.append_test_loss(loss)
+        return self.storage.test_loss
 
     def train_one_game(self, learn=True):
         self.model.reset()
         max_reward = self.grid.get_max_reward()
 
-        max_step_count = 10000 if learn else 100
+        max_step_count = 50 if learn else 50
         step_count = 0
+        ml_losses = []
         while not self.grid.get_state().is_terminal() and step_count < max_step_count:
-            self.step(learn)
+            ml_loss = self.step(learn)
+            if ml_loss is not None:
+                ml_losses.append(ml_loss)
             step_count += 1
 
         total_reward = sum(map(lambda a: a.get_total_reward(), self.agents))
         loss = max_reward - total_reward
-        return loss, total_reward, self.agents[0].epsilon  # TODO: 0
+        return loss, total_reward, self.agents[0].epsilon, ml_losses  # TODO: 0
 
     def step(self, learn=True):
         if self.grid.get_state().is_terminal():
@@ -63,14 +71,16 @@ class Trainer:
         state = self.grid.get_state()
         actions = [agent.choose_action(state, explore=learn) for agent in self.agents]
         results = self.grid.move(actions)
+        loss = None
 
         for action, (reward, next_state, terminal), agent in zip(
             actions, results, self.agents
         ):
             if learn:
-                agent.update_learn(state, action, reward, next_state, terminal)
+                loss = agent.update_learn(state, action, reward, next_state, terminal)
             else:
                 agent.update(next_state, reward)
+        return loss
 
     def test_in_background(self, ep=1000):
         gp, tp = get_test_process(self.storage, self, ep)
