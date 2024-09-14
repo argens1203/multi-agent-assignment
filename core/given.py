@@ -68,7 +68,7 @@ def train_one_step(states, actions, targets):
     X = Q1.gather(dim=1, index=action_batch.long().unsqueeze(dim=1)).squeeze()
     Y = torch.tensor(targets).to(device).float()
     loss = loss_fn(X, Y)
-    print(loss)
+    # print(loss)
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()

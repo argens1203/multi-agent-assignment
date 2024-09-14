@@ -172,5 +172,5 @@ class Agent:
     # Extract immutable information from State object
     def massage(self, state: "State"):
         state_i = state.extract_state(self.idx).to(device).float()
-        return state_i + 0.001
-        return state_i + torch.rand(state_size) / 100.0
+        return state_i + 0.001  # 5 Minutes
+        # return state_i + torch.rand(state_size).to(device) / 100.0  # 15 Minutes

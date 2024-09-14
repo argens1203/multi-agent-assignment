@@ -29,7 +29,7 @@ class Trainer:
                 epsilon,
             ) = self.train_one_game()
             # self.storage.append_loss_epsilon(loss, epsilon)
-            print(f"itr: {i}")
+            # print(f"itr: {i}")
 
     def test(self, itr=1):
         self.model.reset()

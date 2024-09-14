@@ -4,6 +4,8 @@ from frontend import Visualization, Controller, Model, Storage, Trainer
 from core import Agent, Grid
 from shared import State
 
+import datetime
+
 if __name__ == "__main__":
     fig1, ax1 = plt.subplots()
     width, height = 4, 4
@@ -29,7 +31,9 @@ if __name__ == "__main__":
     model.set_grid(grid).add_agent(agent).reset()
     controller.bind(model).add_helper(storage, trainer)
 
+    print(datetime.datetime.now())
     trainer.train(5000)
+    print(datetime.datetime.now())
     vis.bind(model, controller).show()
 
     # game = Game()
