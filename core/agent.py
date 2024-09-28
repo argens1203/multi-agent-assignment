@@ -158,8 +158,10 @@ class Agent:
     def get_total_reward(self):
         return self.total_reward
 
+    def set_has_item(self, has_item: bool):
+        self.is_having_item = has_item
+
     def update(self, state: "State", reward=0):
-        self.is_having_item = state.item_taken()
         self.total_reward += reward
 
     def reset(self):

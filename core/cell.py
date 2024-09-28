@@ -56,7 +56,7 @@ class Item(Cell):
 
     def interact(self, other: "Agent"):
         if not self.taken and not other.has_item():
-            # agent update is done in agent.update(...)
+            other.set_has_item(True)
             self.taken = True
             return 50, (self.x, self.y)
 
