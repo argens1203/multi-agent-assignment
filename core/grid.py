@@ -50,30 +50,36 @@ class Grid:
                     self.state[(x, y)] = Cell((x, y))
 
     # ----- Core Functions ----- #
+    def step(self, learn=True):
+        if self.get_state().is_terminal():
+            return
+
+        state = self.get_state()
+        loss = None
+        # TODO: Randomize here - need synchronize at agent level
+        for idx, agent in enumerate(self.agents):
+            action = agent.choose_action(state, explore=learn)
+            reward, nxt_state, is_terminal = self.move(idx, action)
+            if learn:
+                loss = agent.update_learn(state, action, reward, nxt_state, is_terminal)
+            else:
+                agent.update(nxt_state, reward)
+        return loss
+
     def move(
-        self, actions: List["Action"]
+        self, idx, action: "Action"
     ):  # List of actions, in the same order as self.agents
         # Update agent to temporary location according to move
-        temp_positions = [
-            self.process_action(action, agent_pos)
-            for action, agent_pos in zip(actions, self.agent_positions)
-        ]
+        tmp_pos = self.process_action(action, self.agent_positions[idx])
 
         # Retreive reward and new location according to Entity.interaction
-        reward_new_positions = [
-            self.state[(x, y)].interact(agent)
-            for agent, (x, y) in zip(self.agents, temp_positions)
-        ]
-        rewards, new_positions, is_terminal = zip(*reward_new_positions)
+        reward, new_pos, is_terminal = self.state[tmp_pos].interact(self.agents[idx])
 
         # Update new positions
-        self.agent_positions = new_positions
+        self.agent_positions[idx] = new_pos
 
         # Return move results, in the same order as self.agents
-        return [
-            (reward, self.get_state(), self.get_state().is_terminal())
-            for reward in rewards
-        ]
+        return reward, self.get_state(), is_terminal
 
     # ----- Private Functions ----- #
     def process_action(
