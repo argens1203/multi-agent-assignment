@@ -52,7 +52,7 @@ class State:
         # print(x, y, x2, y2, x3, y3)
         # TODO: remove hardcoded item_pos indices
         # return agent_pos, item_pos[0], self.has_item()
-        state = torch.empty(state_size, dtype=dtype)
+        state = torch.zeros(state_size, dtype=dtype)
         state[x * side + y] = 1
         if not self.item_taken():
             state[side**2 + x2 * side + y2] = 1
