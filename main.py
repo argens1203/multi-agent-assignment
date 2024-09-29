@@ -28,9 +28,9 @@ if __name__ == "__main__":
     model.set_grid(grid).add_agent(agent).reset()
     controller.bind(model).add_helper(storage, trainer)
 
-    # trainer.train(5000)
-    # fig2, ax2 = plt.subplots()
-    # MLGraph(storage.ml_losses, fig2, ax2).show()
+    trainer.train(50)
+    fig2, ax2 = plt.subplots()
+    MLGraph(storage.ml_losses, fig2, ax2).show()
 
     fig1, ax1 = plt.subplots()
     vis = Visualization(fig1, ax1)
