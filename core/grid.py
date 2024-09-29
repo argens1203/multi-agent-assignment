@@ -64,7 +64,7 @@ class Grid:
             self.state[(x, y)].interact(agent)
             for agent, (x, y) in zip(self.agents, temp_positions)
         ]
-        rewards, new_positions = zip(*reward_new_positions)
+        rewards, new_positions, is_terminal = zip(*reward_new_positions)
 
         # Update new positions
         self.agent_positions = new_positions
