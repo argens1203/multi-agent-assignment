@@ -28,7 +28,7 @@ if __name__ == "__main__":
     model.set_grid(grid).add_agent(agent).reset()
     controller.bind(model).add_helper(storage, trainer)
 
-    trainer.train(50)
+    trainer.train(2500)
     fig2, ax2 = plt.subplots()
     MLGraph(storage.ml_losses, fig2, ax2).show()
 
