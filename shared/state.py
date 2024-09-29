@@ -22,14 +22,6 @@ class State:
         # Generate possible actions
         return [Action.NORTH, Action.SOUTH, Action.EAST, Action.WEST]
 
-    # TODO: fix hardcode
-    def get_possible_states(width, height):
-        # Generate all possible states
-        return state_size
-        positions = [(x, y) for x in range(width) for y in range(height)]
-        has_items = [True, False]
-        return itertools.product(positions, positions, has_items)
-
     # ----- Private Functions ----- #
     def get_goal(self) -> "Goal":
         return next((x for x in self.lookup if isinstance(x, Goal)), [None])
