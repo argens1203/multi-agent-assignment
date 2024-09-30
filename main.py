@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 
 from frontend import Visualization, Controller, Model, Storage, Trainer, MLGraph
 from core import Agent, Grid
-from shared import Action
 from constants import state_size
 
 if __name__ == "__main__":
@@ -18,7 +17,7 @@ if __name__ == "__main__":
     agent = Agent(
         0,
         state_size,
-        [Action.NORTH, Action.SOUTH, Action.EAST, Action.WEST],
+        [(0, -1), (0, 1), (-1, 0), (1, 0)],
     )
     grid = Grid(width, height)
     grid.add_agent(agent)

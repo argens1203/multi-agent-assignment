@@ -4,8 +4,6 @@ from typing import TYPE_CHECKING, List, Tuple, Dict, Set
 
 import random
 
-from shared import Action
-
 from constants import dtype, state_size, side
 
 if TYPE_CHECKING:
@@ -141,7 +139,7 @@ class Grid:
         return loss if learn else None
 
     def move(
-        self, idx: int, action: "Action"
+        self, idx: int, action: Tuple[int, int]
     ):  # List of actions, in the same order as self.agents
         # Update agent to temporary location according to move
         temp_positions = self.process_action(action, self.agent_positions[idx])
@@ -159,22 +157,12 @@ class Grid:
 
     # ----- Private Functions ----- #
     def process_action(
-        self, action: List["Action"], agent_position: List[Tuple[int, int]]
+        self, action: Tuple[int, int], agent_position: List[Tuple[int, int]]
     ):
         # Move according to action
         x, y = agent_position
-        dx, dy = self.interpret_action(action)
+        dx, dy = action
         return x + dx, y + dy
-
-    def interpret_action(self, action: "Action"):
-        if action == Action.NORTH:
-            return 0, -1
-        if action == Action.SOUTH:
-            return 0, 1
-        if action == Action.EAST:
-            return 1, 0
-        if action == Action.WEST:
-            return -1, 0
 
     def set_interactive_tiles(self):
         self.lookup.clear()

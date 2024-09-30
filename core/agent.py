@@ -7,7 +7,7 @@ from .given import *
 from constants import state_size, device, dtype
 
 if TYPE_CHECKING:
-    from shared import Action
+    pass
 
 
 class ExpBuffer:
@@ -83,7 +83,7 @@ class Agent:
         prepare_torch()
 
     # ----- Core Functions ----- #
-    def choose_action(self, state: torch.tensor, explore=True):
+    def choose_action(self, state: torch.tensor, explore=True) -> Tuple[int, int]:
         if explore and np.random.rand() < self.epsilon:
             return random.choice(self.actions)
         else:
@@ -95,7 +95,7 @@ class Agent:
     def update_learn(
         self,
         state: torch.tensor,
-        action: "Action",
+        action: Tuple[int, int],
         reward: int,
         next_state: torch.tensor,
         is_terminal: bool,
