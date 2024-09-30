@@ -1,9 +1,12 @@
+import torch
 from typing import TYPE_CHECKING, List, Tuple, Dict, Set
 
 import random
 
-from shared import State, Action
+from shared import Action
 from .cell import *
+
+from constants import dtype, state_size, side
 
 if TYPE_CHECKING:
     from .agent import Agent
@@ -51,24 +54,27 @@ class Grid:
 
     # ----- Core Functions ----- #
     def step(self, learn=True):
-        if self.get_state().is_terminal():
+        if self.goal.has_reached():
             return
 
-        state = self.get_state()
-        actions = [agent.choose_action(state, explore=learn) for agent in self.agents]
-        results = []
-        for idx, act in enumerate(actions):
-            results.append(self.move(idx, act))
-        loss = None
+        loss = 0
 
-        for action, (reward, next_state, terminal), agent in zip(
-            actions, results, self.agents
-        ):
+        for idx, agent in enumerate(self.agents):
+            state = self.extract_state(idx)
+            action = agent.choose_action(state, explore=learn)
+            reward, next_state, terminal = self.move(idx, action)
+
             if learn:
-                loss = agent.update_learn(state, action, reward, next_state, terminal)
+                loss += agent.update_learn(
+                    state,
+                    action,
+                    reward,
+                    next_state,
+                    terminal,
+                )
             else:
                 agent.update(reward)
-        return loss
+        return loss if learn else None
 
     def move(
         self, idx: int, action: "Action"
@@ -85,7 +91,7 @@ class Grid:
         self.agent_positions[idx] = new_positions
 
         # Return move results, in the same order as self.agents
-        return rewards, self.get_state(), self.get_state().is_terminal()
+        return rewards, self.extract_state(idx), self.goal.has_reached()
 
     # ----- Private Functions ----- #
     def process_action(
@@ -118,6 +124,7 @@ class Grid:
         goal = Goal(goal_pos)
         self.state[goal_pos] = goal
         self.lookup.add(goal)
+        self.goal = goal
         used_pos.append(goal_pos)
 
         # Assign items to a random position in the remaining tiles
@@ -126,6 +133,7 @@ class Grid:
         self.state[item_pos] = item
         self.lookup.add(item)
         used_pos.append(item_pos)
+        self.item = item
 
         # Assign agents to random positions
         self.agent_positions = []
@@ -144,22 +152,56 @@ class Grid:
     def add_agent(self, agent: "Agent"):
         self.agents.append(agent)
 
-    def get_state(self):
-        return State(self.agent_positions, self.lookup)
-
     def get_size(self):
         return self.width, self.height
 
     def get_max_reward(self):
         return self.max_reward
 
+    def get_items(self):
+        return [x for x in self.lookup if isinstance(x, Item)]
+
+    def get_untaken_item_pos(self):
+        items = self.get_items()
+        untaken_items = filter(lambda i: not i.taken, items)
+        return [i.get_pos() for i in untaken_items]
+
+    def item_taken(self):
+        item = next((x for x in self.lookup if isinstance(x, Item)), [None])
+        return item.taken
+
+    def get_item_positions(self):
+        return [item.get_pos() for item in self.get_items()]
+
+    def get_goal_positions(self):
+        goal = self.goal
+        return goal.x, goal.y
+
+    def extract_state(self, idx):
+        x, y = self.agent_positions[idx]
+        x2, y2 = self.get_item_positions()[0]
+        x3, y3 = self.get_goal_positions()
+        # print(x, y, x2, y2, x3, y3)
+        # TODO: remove hardcoded item_pos indices
+        # return agent_pos, item_pos[0], self.has_item()
+        state = torch.zeros(state_size, dtype=dtype)
+        state[x * side + y] = 1
+        if not self.item_taken():
+            state[side**2 + x2 * side + y2] = 1
+        state[side**2 * 2 + x3 * side + y3] = 1
+
+        return state
+
+    def get_agent_positions(self):
+        return self.agent_positions
+
 
 class GridUtil:
     def calculate_max_reward(grid: Grid):
         # TODO: can only work with one agent and one item ATM
-        x1, y1 = grid.get_state().get_agent_positions()[0]
-        x2, y2 = grid.get_state().get_item_positions()[0]
-        x3, y3 = grid.get_state().get_goal_positions()
+        x1, y1 = grid.get_agent_positions()[0]
+        x2, y2 = grid.get_item_positions()[0]
+        x3, y3 = grid.get_goal_positions()
 
         # Manhanttan distance from agent to obj and obj to goal
         dist_to_obj = abs(x1 - x2) + abs(y1 - y2)

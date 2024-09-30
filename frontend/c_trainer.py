@@ -54,7 +54,7 @@ class Trainer:
         max_step_count = 50 if learn else 50
         step_count = 0
         ml_losses = []
-        while not self.grid.get_state().is_terminal() and step_count < max_step_count:
+        while not self.grid.goal.has_reached() and step_count < max_step_count:
             ml_loss = self.step(learn)
             if ml_loss is not None:
                 ml_losses.append(ml_loss)

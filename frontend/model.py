@@ -60,10 +60,10 @@ class Model(IVisual):
                     - has_item: bool
         """
         has_items = map(lambda agent: agent.has_item(), self.agents)
-        return list(zip(self.grid.get_state().get_agent_positions(), has_items))
+        return list(zip(self.grid.get_agent_positions(), has_items))
 
     def get_untaken_items(self):
-        return self.grid.get_state().get_untaken_item_pos()
+        return self.grid.get_untaken_item_pos()
 
     def get_total_reward(self):
         return sum(map(lambda a: a.get_total_reward(), self.agents))
@@ -75,10 +75,10 @@ class Model(IVisual):
         return self.grid.get_size()
 
     def get_target_location(self):
-        return self.grid.get_state().get_goal_positions()
+        return self.grid.get_goal_positions()
 
     def has_ended(self):
-        return self.grid.get_state().is_terminal()
+        return self.grid.goal.has_reached()
 
     # ---- Public Control Functions ----- #
     def reset(self):
