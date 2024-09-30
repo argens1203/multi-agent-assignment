@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from .model import Model
     from core import Grid
     from .c_storage import Storage
     from .c_trainer import Trainer
@@ -13,8 +12,7 @@ class Controller:
     def __init__(self):
         self.auto_reset = True
 
-    def bind(self, model: "Model", grid: "Grid"):
-        self.model = model
+    def bind(self, grid: "Grid"):
         self.grid = grid
         return self
 
@@ -52,4 +50,4 @@ class Controller:
     def train_in_background(self):
         trained_Q = self.trainer.train_in_background()
         # TODO: fix hardcode
-        self.model.agents[0].Q = trained_Q
+        self.grid.agents[0].Q = trained_Q

@@ -18,7 +18,7 @@ def draw_graphs(storage: "Storage"):
 def train(trainer: "Trainer", connection, ep):
     trainer.train(ep)
     # TODO: remove hardcode
-    q = trainer.model.agents[0].get_q_table()
+    q = trainer.grid.agents[0].get_q_table()
 
     shm = shared_memory.SharedMemory(create=True, size=q.nbytes)
     b = np.ndarray(q.shape, dtype=q.dtype, buffer=shm.buf)

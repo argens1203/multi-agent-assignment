@@ -8,7 +8,6 @@ from typing import Tuple, TypeAlias, TYPE_CHECKING
 from .v_graph import MLGraph
 
 if TYPE_CHECKING:
-    from .model import Model
     from .controller import Controller
     from .c_storage import Storage
     from core import Grid
@@ -22,17 +21,14 @@ class Visualization:
         self.ax = ax
         self.animating = False
 
-    def bind(
-        self, model: "Model", controller: "Controller", storage: "Storage", grid: "Grid"
-    ):
-        self.model = model
+    def bind(self, controller: "Controller", storage: "Storage", grid: "Grid"):
         self.controller = controller
         self.storage = storage
         self.grid = grid
         return self
 
     def show(self):
-        assert self.model is not None
+        assert self.grid is not None
         assert self.controller is not None
 
         self.add_ui_elements()

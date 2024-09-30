@@ -4,7 +4,6 @@ import datetime
 from .multithread import get_process, get_test_process, get_np_from_name
 
 if TYPE_CHECKING:
-    from .model import Model
     from .c_storage import Storage
     from core import Grid, Agent
 
@@ -13,10 +12,7 @@ class Trainer:
     def __init__(self, max_itr):
         self.max_itr = max_itr
 
-    def bind(
-        self, model: "Model", storage: "Storage", grid: "Grid", agents: List["Agent"]
-    ):
-        self.model = model
+    def bind(self, storage: "Storage", grid: "Grid", agents: List["Agent"]):
         self.storage = storage
         self.grid = grid
         self.agents = agents

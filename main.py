@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from frontend import Visualization, Controller, Model, Storage, Trainer, MLGraph
+from frontend import Visualization, Controller, Storage, Trainer, MLGraph
 from core import Agent, Grid
 from constants import state_size
 
@@ -8,7 +8,6 @@ if __name__ == "__main__":
     width, height = 4, 4
     max_itr = 1000
 
-    model = Model()
     controller = Controller()
 
     storage = Storage(max_itr)
@@ -22,11 +21,10 @@ if __name__ == "__main__":
     grid = Grid(width, height)
     grid.add_agent(agent)
 
-    trainer.bind(model, storage, grid, [agent])
+    trainer.bind(storage, grid, [agent])
 
-    model.set_grid(grid).add_agent(agent)
     grid.reset()
-    controller.bind(model, grid).add_helper(storage, trainer)
+    controller.bind(grid).add_helper(storage, trainer)
 
     trainer.train(2500)
     fig2, ax2 = plt.subplots()
@@ -34,7 +32,7 @@ if __name__ == "__main__":
 
     fig1, ax1 = plt.subplots()
     vis = Visualization(fig1, ax1)
-    vis.bind(model, controller, storage, grid).show()
+    vis.bind(controller, storage, grid).show()
 
     # game = Game()
     # controller = Controller(game, 1000)
