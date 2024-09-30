@@ -134,40 +134,30 @@ class Visualization:
         self.init_text()
 
     def init_buttons(self):
-        # Add button for next step
-        self.next_step_btn = self.add_button(
-            [0.85, 0.01, 0.12, 0.075], "Next Step", self.on_next
-        )
-        # Add button for reset
-        self.reset_btn = self.add_button(
-            [0.85, 0.11, 0.12, 0.075], "Reset", self.on_reset
-        )
-        # Add button for animation on/off
-        self.toggle_anim_btn = self.add_button(
-            [0.85, 0.21, 0.12, 0.075], "Anim\nOn", self.on_toggle_anim
-        )
-        # Add button for auto reset on/off
-        self.toggle_auto_reset_btn = self.add_button(
-            [0.85, 0.31, 0.12, 0.075], "Auto Reset\nOn", self.on_auto_reset
-        )
-        # # Add button for training
-        # self.bg_train_btn = self.add_button(
-        #     [0.85, 0.41, 0.12, 0.075], "Train 1000", self.on_train(1000, blocking=False)
-        # )
-        # Add button for training
-        self.block_train_btn = self.add_button(
-            [0.85, 0.41, 0.12, 0.075],
-            "Train 2500",
-            self.on_train(2500, blocking=True),
-        )
-        # Add button for training grpah
-        self.show_graph_button = self.add_button(
-            [0.85, 0.51, 0.12, 0.075], "Train Graph", self.on_show_graph
-        )
-        # Add button for testing
-        self.test_button = self.add_button(
-            [0.85, 0.61, 0.12, 0.075], "Test", self.on_test(100, blocking=True)
-        )
+        self.toggle_anim_btn = None
+        self.toggle_auto_reset_btn = None
+
+        btn_template = [
+            ("Next Step", self.on_next),
+            ("Reset", self.on_reset),
+            ("Anim\nOn", self.on_toggle_anim, "toggle_anim_btn"),
+            ("Auto Reset\nOn", self.on_auto_reset, "toggle_auto_reset_btn"),
+            ("Train 2500", self.on_train(2500, blocking=True)),
+            ("Train Graph", self.on_show_graph),
+            ("Test", self.on_test(100, blocking=True)),
+        ]
+        self.buttons = []
+        x, y, w, h = 0.85, 0.01, 0.12, 0.075
+        for template in btn_template:
+            ref = None
+            try:
+                label, cb, ref = template
+            except:
+                label, cb = template
+            self.buttons.append(self.add_button([x, y, w, h], label, cb))
+            y += 0.1
+            if ref:
+                setattr(self, ref, self.buttons[-1])
 
     def init_text(self):
         # Add text box for cumulative reward
