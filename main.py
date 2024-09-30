@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from frontend import Visualization, Controller, Model, Storage, Trainer, MLGraph
 from core import Agent, Grid
 from shared import State
-
+from constants import state_size
 
 if __name__ == "__main__":
     width, height = 4, 4
@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     agent = Agent(
         0,
-        State.get_possible_states(width, height),
+        state_size,
         State.get_possible_actions(),
     )
     grid = Grid(width, height)
