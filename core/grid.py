@@ -88,7 +88,37 @@ class GridFactory:
                 return position
 
 
-class Grid:
+class IVisual(ABC):
+    @abstractmethod
+    def get_agent_info(self) -> List[Tuple[Tuple[int, int], bool]]:
+        pass
+
+    @abstractmethod
+    def get_untaken_items(self) -> List[Tuple[int, int]]:
+        pass
+
+    @abstractmethod
+    def get_total_reward(self) -> int:
+        pass
+
+    @abstractmethod
+    def get_max_reward(self) -> int:
+        pass
+
+    @abstractmethod
+    def get_size(self) -> Tuple[int, int]:
+        pass
+
+    @abstractmethod
+    def get_target_location(self) -> List[Tuple[int, int]]:
+        pass
+
+    @abstractmethod
+    def has_ended(self) -> bool:
+        pass
+
+
+class Grid(IVisual):
     def __init__(self, width: int, height: int):
         self.width = width
         self.height = height
@@ -200,6 +230,8 @@ class Grid:
     def reset(self):
         self.init_environment()
         self.set_interactive_tiles()
+        for agent in self.agents:
+            agent.reset()
 
     def add_agent(self, agent: "Agent"):
         self.agents.append(agent)
@@ -213,7 +245,7 @@ class Grid:
     def get_items(self):
         return [x for x in self.lookup if isinstance(x, Item)]
 
-    def get_untaken_item_pos(self):
+    def get_untaken_items(self):
         items = self.get_items()
         untaken_items = filter(lambda i: not i.taken, items)
         return [i.get_pos() for i in untaken_items]
@@ -228,6 +260,25 @@ class Grid:
     def get_goal_positions(self):
         goal = self.goal
         return goal.x, goal.y
+
+    def get_target_location(self) -> List[Tuple[int, int]]:
+        return self.get_goal_positions()
+
+    def has_ended(self) -> bool:
+        return self.has_ended()
+
+    def get_total_reward(self):
+        return sum(map(lambda a: a.get_total_reward(), self.agents))
+
+    def get_agent_info(self) -> List[Tuple[Tuple[int, int], bool]]:
+        """
+        Output: List of
+                - Tuple of:
+                    - coordinate: (int, int)
+                    - has_item: bool
+        """
+        has_items = map(lambda agent: agent.has_item(), self.agents)
+        return list(zip(self.get_agent_positions(), has_items))
 
     def extract_state(self, idx):
         x, y = self.agent_positions[idx]

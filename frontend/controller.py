@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .model import Model
+    from core import Grid
     from .c_storage import Storage
     from .c_trainer import Trainer
 
@@ -12,8 +13,9 @@ class Controller:
     def __init__(self):
         self.auto_reset = True
 
-    def bind(self, model: "Model"):
+    def bind(self, model: "Model", grid: "Grid"):
         self.model = model
+        self.grid = grid
         return self
 
     def add_helper(self, storage: "Storage", trainer: "Trainer"):
@@ -26,8 +28,8 @@ class Controller:
         return self.auto_reset
 
     def next(self):
-        if self.model.has_ended() and self.auto_reset:
-            self.model.reset()
+        if self.grid.goal.has_reached() and self.auto_reset:
+            self.grid.reset()
         self.trainer.step(learn=False)
         return
 
@@ -38,7 +40,7 @@ class Controller:
         return self.trainer.test(itr)
 
     def reset(self):
-        self.model.reset()
+        self.grid.reset()
 
     def get_metrics(self):
         itrs, losses, epsilons, test_losses = self.storage.get_all()

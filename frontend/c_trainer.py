@@ -24,7 +24,7 @@ class Trainer:
     def train(self, itr=1):
         start = datetime.datetime.now()
         print(f"Start Time: {start}")
-        self.model.reset()
+        self.grid.reset()
         for i in range(itr):
             (loss, reward, epsilon, ml_losses) = self.train_one_game()
             # self.storage.append_loss_epsilon(loss, epsilon)
@@ -37,7 +37,7 @@ class Trainer:
         return self.storage.ml_losses
 
     def test(self, itr=1):
-        self.model.reset()
+        self.grid.reset()
         self.storage.reset_test_loss()
         # for i in range(self.max_itr):
         #     self.storage.test_loss[i] = 0
@@ -48,7 +48,7 @@ class Trainer:
         return self.storage.test_loss
 
     def train_one_game(self, learn=True):
-        self.model.reset()
+        self.grid.reset()
         max_reward = self.grid.get_max_reward()
 
         max_step_count = 50 if learn else 50

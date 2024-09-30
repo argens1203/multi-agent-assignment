@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from .model import Model
     from .controller import Controller
     from .c_storage import Storage
+    from core import Grid
 
 Coordinates: TypeAlias = Tuple[float, float, float, float]
 
@@ -21,10 +22,13 @@ class Visualization:
         self.ax = ax
         self.animating = False
 
-    def bind(self, model: "Model", controller: "Controller", storage: "Storage"):
+    def bind(
+        self, model: "Model", controller: "Controller", storage: "Storage", grid: "Grid"
+    ):
         self.model = model
         self.controller = controller
         self.storage = storage
+        self.grid = grid
         return self
 
     def show(self):
@@ -40,10 +44,10 @@ class Visualization:
         plt.show()
 
     def get_info(self):
-        info = self.model.get_agent_info()
-        items = self.model.get_untaken_items()
-        tot_reward = self.model.get_total_reward()
-        max_reward = self.model.get_max_reward()
+        info = self.grid.get_agent_info()
+        items = self.grid.get_untaken_items()
+        tot_reward = self.grid.get_total_reward()
+        max_reward = self.grid.get_max_reward()
         return info, items, tot_reward, max_reward
 
     def frames(self):
@@ -68,7 +72,7 @@ class Visualization:
         self.max_reward.set_text(f"Max Reward: {max_reward}")
 
         # Check if the environment is terminal
-        if self.model.has_ended():
+        if self.grid.goal.has_reached():
             self.draw_complete()
 
         # Early return if animating, since animation automatically refreshes canvas
@@ -78,7 +82,7 @@ class Visualization:
         self.fig.canvas.draw()
 
     def draw_grid(self):
-        width, height = self.model.get_size()
+        width, height = self.grid.get_size()
         for x in range(width):
             for y in range(height):
                 rect = patches.Rectangle(
@@ -95,7 +99,7 @@ class Visualization:
 
         # Draw target
         # TODO: cater multiple goals
-        tx, ty = self.model.get_target_location()
+        tx, ty = self.grid.get_goal_positions()
         target_patch = patches.Rectangle(
             (tx, ty), 1, 1, linewidth=1, edgecolor="black", facecolor="green"
         )
@@ -162,13 +166,13 @@ class Visualization:
     def init_text(self):
         # Add text box for cumulative reward
         self.reward = self.add_text(
-            [0.01, 0.01, 0.2, 0.075], f"Reward: {self.model.get_total_reward()}"
+            [0.01, 0.01, 0.2, 0.075], f"Reward: {self.grid.get_max_reward()}"
         )
 
         # Add text box for max reward
         self.max_reward = self.add_text(
             [0.25, 0.01, 0.2, 0.075],
-            f"Max Reward: {self.model.get_max_reward()}",
+            f"Max Reward: {self.grid.get_max_reward()}",
         )
 
     def add_button(self, coordinates: Coordinates, text, on_click):
@@ -247,7 +251,7 @@ class Visualization:
         plt.show()
 
     def on_reset(self, event):
-        self.model.reset()
+        self.grid.reset()
         self.draw(self.get_info())
 
     def on_next(self, e):

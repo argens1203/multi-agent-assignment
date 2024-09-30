@@ -24,8 +24,9 @@ if __name__ == "__main__":
 
     trainer.bind(model, storage, grid, [agent])
 
-    model.set_grid(grid).add_agent(agent).reset()
-    controller.bind(model).add_helper(storage, trainer)
+    model.set_grid(grid).add_agent(agent)
+    grid.reset()
+    controller.bind(model, grid).add_helper(storage, trainer)
 
     trainer.train(2500)
     fig2, ax2 = plt.subplots()
@@ -33,7 +34,7 @@ if __name__ == "__main__":
 
     fig1, ax1 = plt.subplots()
     vis = Visualization(fig1, ax1)
-    vis.bind(model, controller, storage).show()
+    vis.bind(model, controller, storage, grid).show()
 
     # game = Game()
     # controller = Controller(game, 1000)
