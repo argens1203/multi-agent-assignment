@@ -50,30 +50,42 @@ class Grid:
                     self.state[(x, y)] = Cell((x, y))
 
     # ----- Core Functions ----- #
+    def step(self, learn=True):
+        if self.get_state().is_terminal():
+            return
+
+        state = self.get_state()
+        actions = [agent.choose_action(state, explore=learn) for agent in self.agents]
+        results = []
+        for idx, act in enumerate(actions):
+            results.append(self.move(idx, act))
+        loss = None
+
+        for action, (reward, next_state, terminal), agent in zip(
+            actions, results, self.agents
+        ):
+            if learn:
+                loss = agent.update_learn(state, action, reward, next_state, terminal)
+            else:
+                agent.update(reward)
+        return loss
+
     def move(
-        self, actions: List["Action"]
+        self, idx: int, action: "Action"
     ):  # List of actions, in the same order as self.agents
         # Update agent to temporary location according to move
-        temp_positions = [
-            self.process_action(action, agent_pos)
-            for action, agent_pos in zip(actions, self.agent_positions)
-        ]
+        temp_positions = self.process_action(action, self.agent_positions[idx])
 
         # Retreive reward and new location according to Entity.interaction
-        reward_new_positions = [
-            self.state[(x, y)].interact(agent)
-            for agent, (x, y) in zip(self.agents, temp_positions)
-        ]
-        rewards, new_positions, is_terminal = zip(*reward_new_positions)
+        reward_new_positions = self.state[temp_positions].interact(self.agents[idx])
+        rewards, new_positions, is_terminal = reward_new_positions
 
         # Update new positions
-        self.agent_positions = new_positions
+        self.agent_positions = [pos for pos in self.agent_positions]
+        self.agent_positions[idx] = new_positions
 
         # Return move results, in the same order as self.agents
-        return [
-            (reward, self.get_state(), self.get_state().is_terminal())
-            for reward in rewards
-        ]
+        return rewards, self.get_state(), self.get_state().is_terminal()
 
     # ----- Private Functions ----- #
     def process_action(
@@ -121,10 +133,6 @@ class Grid:
             agent_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
             used_pos.append(agent_pos)
             self.agent_positions.append(agent_pos)
-
-        # Future proofing: update agents in case they spwaned on an item
-        for agent in self.agents:
-            agent.update(State(self.agent_positions, self.lookup))
 
         self.max_reward = GridUtil.calculate_max_reward(self)
 

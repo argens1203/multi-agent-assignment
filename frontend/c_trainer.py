@@ -65,22 +65,7 @@ class Trainer:
         return loss, total_reward, self.agents[0].epsilon, ml_losses  # TODO: 0
 
     def step(self, learn=True):
-        if self.grid.get_state().is_terminal():
-            return
-
-        state = self.grid.get_state()
-        actions = [agent.choose_action(state, explore=learn) for agent in self.agents]
-        results = self.grid.move(actions)
-        loss = None
-
-        for action, (reward, next_state, terminal), agent in zip(
-            actions, results, self.agents
-        ):
-            if learn:
-                loss = agent.update_learn(state, action, reward, next_state, terminal)
-            else:
-                agent.update(next_state, reward)
-        return loss
+        return self.grid.step(learn)
 
     def test_in_background(self, ep=1000):
         gp, tp = get_test_process(self.storage, self, ep)

@@ -101,7 +101,7 @@ class Agent:
         is_terminal: bool,
         learn=True,
     ):
-        self.update(next_state, reward)
+        self.update(reward)
 
         # Extract immutable state information
         # nxt_state_i = self.massage(next_state)
@@ -161,7 +161,7 @@ class Agent:
     def set_has_item(self, has_item: bool):
         self.is_having_item = has_item
 
-    def update(self, state: "State", reward=0):
+    def update(self, reward=0):
         self.total_reward += reward
 
     def reset(self):
