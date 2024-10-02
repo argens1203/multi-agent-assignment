@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from frontend import Visualization, Controller, Storage, MLGraph
+from frontend import Visualization, Storage, MLGraph
 from core import Agent, Grid
 from constants import state_size
 
