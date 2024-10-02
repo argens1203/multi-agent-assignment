@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from core import Grid
     from .c_storage import Storage
-    from .c_trainer import Trainer
 
 
 class Controller:
@@ -18,7 +17,6 @@ class Controller:
 
     def add_helper(self, storage: "Storage"):
         self.storage = storage
-        # self.grid = trainer
         return self
 
     def toggle_auto_reset(self):

@@ -4,10 +4,11 @@ import numpy as np
 from typing import TYPE_CHECKING
 from multiprocessing import Process, shared_memory, Pipe
 
-from .v_graph import Graph, TestGraph
+from frontend import Graph, TestGraph
 
 if TYPE_CHECKING:
-    from .controller import Storage, Trainer
+    from frontend import Storage
+    from core import Grid
 
 
 def draw_graphs(storage: "Storage"):
@@ -15,10 +16,10 @@ def draw_graphs(storage: "Storage"):
     graph = Graph(storage, fig, axs)
 
 
-def train(trainer: "Trainer", connection, ep):
-    trainer.train(ep)
+def train(grid: "Grid", connection, ep):
+    grid.train(ep)
     # TODO: remove hardcode
-    q = trainer.grid.agents[0].get_q_table()
+    q = grid.agents[0].get_q_table()
 
     shm = shared_memory.SharedMemory(create=True, size=q.nbytes)
     b = np.ndarray(q.shape, dtype=q.dtype, buffer=shm.buf)
@@ -27,7 +28,7 @@ def train(trainer: "Trainer", connection, ep):
     shm.close()
 
 
-def get_process(storage: "Storage", trainer: "Trainer"):
+def get_process(storage: "Storage", grid: "Grid"):
     conn1, conn2 = Pipe()
     graph_p = Process(
         target=draw_graphs,
@@ -36,12 +37,12 @@ def get_process(storage: "Storage", trainer: "Trainer"):
         ],
     )
     # TODO: remove hardcode
-    train_p = Process(target=train, args=[trainer, conn2, 1000])
+    train_p = Process(target=train, args=[grid, conn2, 1000])
     return graph_p, train_p, conn1
 
 
-def test(trainer: "Trainer", ep):
-    trainer.test(ep)
+def test(grid: "Grid", ep):
+    grid.test(ep)
 
 
 def draw_test_graph(storage: "Storage"):
@@ -49,12 +50,12 @@ def draw_test_graph(storage: "Storage"):
     graph = TestGraph(storage, fig, axs)
 
 
-def get_test_process(storage: "Storage", trainer: "Trainer", ep=1000):
+def get_test_process(storage: "Storage", grid: "Grid", ep=1000):
     graph_p = Process(
         target=draw_test_graph,
         args=[storage],
     )
-    test_p = Process(target=test, args=[trainer, ep])
+    test_p = Process(target=test, args=[grid, ep])
     return graph_p, test_p
 
 
