@@ -6,7 +6,7 @@ from matplotlib.widgets import Button
 from typing import Tuple, TypeAlias, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .controller import Controller
+    # from .controller import Controller
     from .c_storage import Storage
     from core import Grid
 
@@ -19,15 +19,13 @@ class Visualization:
         self.ax = ax
         self.animating = False
 
-    def bind(self, controller: "Controller", storage: "Storage", grid: "Grid"):
-        self.controller = controller
+    def bind(self, storage: "Storage", grid: "Grid"):
         self.storage = storage
         self.grid = grid
         return self
 
     def show(self):
         assert self.grid is not None
-        assert self.controller is not None
 
         self.add_ui_elements()
         self.fig.canvas.mpl_connect("close_event", self.on_close)
@@ -47,7 +45,7 @@ class Visualization:
     def frames(self):
         while True:
             if self.animating:
-                self.controller.next()
+                self.grid.next()
                 yield self.get_info()
             else:
                 yield self.get_info()
@@ -204,11 +202,11 @@ class Visualization:
     def on_test(self, episodes, blocking=False):
         def non_blocking_test(e):
             self.before_auto_train()
-            self.controller.test_in_background(episodes)
+            self.grid.test_in_background(episodes)
             self.after_auto_train()
 
         def blocking_test(e):
-            losses = self.controller.test(episodes)
+            losses = self.grid.test(episodes)
             fig2, ax2 = plt.subplots()
             MLGraph(losses, fig2, ax2).show()
 
@@ -216,19 +214,19 @@ class Visualization:
 
     def on_train(self, episodes, blocking=False):
         def blocking_train(e):
-            ml_losses = self.controller.train(episodes)
+            ml_losses = self.grid.train(episodes)
             fig2, ax2 = plt.subplots()
             MLGraph(ml_losses, fig2, ax2).show()
 
         def non_blocking_train(e):
             self.before_auto_train()
-            self.controller.train_in_background()
+            self.grid.train_in_background()
             self.after_auto_train()
 
         return blocking_train if blocking else non_blocking_train
 
     def on_auto_reset(self, event):
-        auto_reset_is_on = self.controller.toggle_auto_reset()
+        auto_reset_is_on = self.grid.toggle_auto_reset()
         if auto_reset_is_on:
             self.toggle_auto_reset_btn.label.set_text("Auto Reset\nOn")
         else:
@@ -249,21 +247,21 @@ class Visualization:
         self.draw(self.get_info())
 
     def on_next(self, e):
-        self.controller.next()
+        self.grid.next()
         self.draw(self.get_info())
 
     # ----- ----- ----- ----- Helper Functions  ----- ----- ----- ----- #
 
     def before_auto_train(self):
         self.animating = False
-        self.controller.reset()
+        self.grid.reset()
 
         self.toggle_anim_btn.label.set_text("Anim\nOff")
         self.draw(self.get_info())
 
     def after_auto_train(self):
         self.animating = True
-        self.controller.reset()
+        self.grid.reset()
 
         self.toggle_anim_btn.label.set_text("Anim\nOn")
         self.draw(self.get_info())
@@ -348,12 +346,11 @@ class Graph:
 
 
 class TestGraph:
-    def __init__(self, controller, fig, ax):
-        self.controller = controller
+    def __init__(self, grid, fig, ax):
+        self.grid = grid
         self.fig = fig
         self.ax = ax
 
-        self.controller = controller
         self.ani = animation.FuncAnimation(
             self.fig, self.draw, frames=self.frames, interval=100, save_count=100
         )
@@ -367,8 +364,8 @@ class TestGraph:
     def draw(self, args):
         self.plot_losses(
             self.ax,
-            self.controller.iterations,
-            self.controller.test_loss,
+            self.grid.iterations,
+            self.grid.test_loss,
         )
 
     def plot_losses(self, ax, iterations, loss):

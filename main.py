@@ -8,7 +8,7 @@ if __name__ == "__main__":
     width, height = 4, 4
     max_itr = 1000
 
-    controller = Controller()
+    # controller = Controller()
 
     storage = Storage(max_itr)
     # trainer = Trainer(max_itr)
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     # trainer.bind(storage, grid, [agent])
 
     grid.reset()
-    controller.bind(grid).add_helper(storage)
+    # controller.bind(grid)
 
     grid.train(2500)
     fig2, ax2 = plt.subplots()
@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     fig1, ax1 = plt.subplots()
     vis = Visualization(fig1, ax1)
-    vis.bind(controller, storage, grid).show()
+    vis.bind(storage, grid).show()
 
     # game = Game()
     # controller = Controller(game, 1000)
