@@ -4,7 +4,7 @@ import numpy as np
 from typing import TYPE_CHECKING
 from multiprocessing import Process, shared_memory, Pipe
 
-from frontend import Graph, TestGraph
+from .view import Graph, TestGraph
 
 if TYPE_CHECKING:
     from .storage import Storage
