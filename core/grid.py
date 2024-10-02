@@ -6,7 +6,7 @@ import random
 
 from constants import dtype, state_size, side
 import datetime
-
+from .view import IVisual
 
 if TYPE_CHECKING:
     from .agent import Agent
@@ -91,60 +91,6 @@ class GridFactory:
                 return position
 
 
-class IVisual(ABC):
-    @abstractmethod
-    def get_agent_info(self) -> List[Tuple[Tuple[int, int], bool]]:
-        pass
-
-    @abstractmethod
-    def get_untaken_items(self) -> List[Tuple[int, int]]:
-        pass
-
-    @abstractmethod
-    def get_total_reward(self) -> int:
-        pass
-
-    @abstractmethod
-    def get_max_reward(self) -> int:
-        pass
-
-    @abstractmethod
-    def get_size(self) -> Tuple[int, int]:
-        pass
-
-    @abstractmethod
-    def get_target_location(self) -> List[Tuple[int, int]]:
-        pass
-
-    @abstractmethod
-    def has_ended(self) -> bool:
-        pass
-
-    @abstractmethod
-    def train(self, itr=1):
-        pass
-
-    @abstractmethod
-    def test(self, itr=1):
-        pass
-
-    @abstractmethod
-    def reset(self):
-        pass
-
-    @abstractmethod
-    def test_in_background(self, ep=1000):
-        pass
-
-    @abstractmethod
-    def train_in_background(self):
-        pass
-
-    @abstractmethod
-    def next(self):
-        pass
-
-
 class Controller:
     # Iterate by number of games
     def __init__(self, **kwargs):
@@ -156,7 +102,7 @@ class Controller:
         return self.auto_reset
 
     def next(self):
-        if self.goal.has_reached() and self.auto_reset:
+        if self.has_ended() and self.auto_reset:
             self.reset()
         self.step(learn=False)
         return
@@ -200,7 +146,7 @@ class Trainer:
         max_step_count = 50 if learn else 50
         step_count = 0
         ml_losses = []
-        while not self.goal.has_reached() and step_count < max_step_count:
+        while not self.has_ended() and step_count < max_step_count:
             ml_loss = self.step(learn)
             if ml_loss is not None:
                 ml_losses.append(ml_loss)
@@ -268,7 +214,7 @@ class Grid(Controller, Trainer, IVisual):
 
     # ----- Core Functions ----- #
     def step(self, learn=True):
-        if self.goal.has_reached():
+        if self.has_ended():
             return
 
         loss = 0
@@ -305,7 +251,7 @@ class Grid(Controller, Trainer, IVisual):
         self.agent_positions[idx] = new_positions
 
         # Return move results, in the same order as self.agents
-        return rewards, self.extract_state(idx), self.goal.has_reached()
+        return rewards, self.extract_state(idx), self.has_ended()
 
     # ----- Private Functions ----- #
     def process_action(
@@ -355,9 +301,6 @@ class Grid(Controller, Trainer, IVisual):
         for agent in self.agents:
             agent.reset()
 
-    def add_agent(self, agent: "Agent"):
-        self.agents.append(agent)
-
     def get_size(self):
         return self.width, self.height
 
@@ -383,11 +326,8 @@ class Grid(Controller, Trainer, IVisual):
         goal = self.goal
         return goal.x, goal.y
 
-    def get_target_location(self) -> List[Tuple[int, int]]:
-        return self.get_goal_positions()
-
     def has_ended(self) -> bool:
-        return self.has_ended()
+        return self.goal.has_reached()
 
     def get_total_reward(self):
         return sum(map(lambda a: a.get_total_reward(), self.agents))

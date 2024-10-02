@@ -3,13 +3,77 @@ import matplotlib.patches as patches
 import matplotlib.animation as animation
 
 from matplotlib.widgets import Button
-from typing import Tuple, TypeAlias, TYPE_CHECKING
+from typing import Tuple, TypeAlias, TYPE_CHECKING, List
+from abc import ABC, abstractmethod
 
 if TYPE_CHECKING:
     # from .controller import Controller
     from core import Grid, Storage
 
 Coordinates: TypeAlias = Tuple[float, float, float, float]
+
+
+class IVisual(ABC):
+
+    # Getting Info
+
+    @abstractmethod
+    def get_agent_info(self) -> List[Tuple[Tuple[int, int], bool]]:
+        pass
+
+    @abstractmethod
+    def get_untaken_items(self) -> List[Tuple[int, int]]:
+        pass
+
+    @abstractmethod
+    def get_total_reward(self) -> int:
+        pass
+
+    @abstractmethod
+    def get_max_reward(self) -> int:
+        pass
+
+    @abstractmethod
+    def get_size(self) -> Tuple[int, int]:
+        pass
+
+    @abstractmethod
+    def get_goal_positions(self) -> List[Tuple[int, int]]:
+        pass
+
+    @abstractmethod
+    def has_ended(self) -> bool:
+        pass
+
+    # Functions
+
+    @abstractmethod
+    def toggle_auto_reset(self):
+        pass
+
+    @abstractmethod
+    def train(self, itr=1):
+        pass
+
+    @abstractmethod
+    def test(self, itr=1):
+        pass
+
+    @abstractmethod
+    def reset(self):
+        pass
+
+    @abstractmethod
+    def test_in_background(self, ep=1000):
+        pass
+
+    @abstractmethod
+    def train_in_background(self):
+        pass
+
+    @abstractmethod
+    def next(self):
+        pass
 
 
 class Visualization:
@@ -63,7 +127,7 @@ class Visualization:
         self.max_reward.set_text(f"Max Reward: {max_reward}")
 
         # Check if the environment is terminal
-        if self.grid.goal.has_reached():
+        if self.grid.has_ended():
             self.draw_complete()
 
         # Early return if animating, since animation automatically refreshes canvas
@@ -225,8 +289,8 @@ class Visualization:
         return blocking_train if blocking else non_blocking_train
 
     def on_auto_reset(self, event):
-        auto_reset_is_on = self.grid.toggle_auto_reset()
-        if auto_reset_is_on:
+        is_on = self.grid.toggle_auto_reset()
+        if is_on:
             self.toggle_auto_reset_btn.label.set_text("Auto Reset\nOn")
         else:
             self.toggle_auto_reset_btn.label.set_text("Auto Reset\nOff")
@@ -342,8 +406,8 @@ class Graph:
 
 
 class TestGraph:
-    def __init__(self, grid, fig, ax):
-        self.grid = grid
+    def __init__(self, storage, fig, ax):
+        self.storage = storage
         self.fig = fig
         self.ax = ax
 
@@ -360,8 +424,8 @@ class TestGraph:
     def draw(self, args):
         self.plot_losses(
             self.ax,
-            self.grid.iterations,
-            self.grid.test_loss,
+            self.storage.iterations,
+            self.storage.test_loss,
         )
 
     def plot_losses(self, ax, iterations, loss):
