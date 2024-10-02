@@ -16,9 +16,9 @@ class Controller:
         self.grid = grid
         return self
 
-    def add_helper(self, storage: "Storage", trainer: "Trainer"):
+    def add_helper(self, storage: "Storage"):
         self.storage = storage
-        self.trainer = trainer
+        # self.grid = trainer
         return self
 
     def toggle_auto_reset(self):
@@ -28,14 +28,14 @@ class Controller:
     def next(self):
         if self.grid.goal.has_reached() and self.auto_reset:
             self.grid.reset()
-        self.trainer.step(learn=False)
+        self.grid.step(learn=False)
         return
 
     def train(self, itr=1):
-        return self.trainer.train(itr)
+        return self.grid.train(itr)
 
     def test(self, itr=1):
-        return self.trainer.test(itr)
+        return self.grid.test(itr)
 
     def reset(self):
         self.grid.reset()
@@ -45,9 +45,9 @@ class Controller:
         return itrs, losses, epsilons
 
     def test_in_background(self, ep=1000):
-        self.trainer.test_in_background(ep)
+        self.grid.test_in_background(ep)
 
     def train_in_background(self):
-        trained_Q = self.trainer.train_in_background()
+        trained_Q = self.grid.train_in_background()
         # TODO: fix hardcode
         self.grid.agents[0].Q = trained_Q

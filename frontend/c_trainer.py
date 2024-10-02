@@ -1,26 +1,13 @@
-from typing import TYPE_CHECKING, List
 import datetime
 
 from .multithread import get_process, get_test_process, get_np_from_name
 
-if TYPE_CHECKING:
-    from .c_storage import Storage
-    from core import Grid, Agent
-
 
 class Trainer:
-    def __init__(self, max_itr):
-        self.max_itr = max_itr
-
-    def bind(self, storage: "Storage", grid: "Grid", agents: List["Agent"]):
-        self.storage = storage
-        self.grid = grid
-        self.agents = agents
-
     def train(self, itr=1):
         start = datetime.datetime.now()
         print(f"Start Time: {start}")
-        self.grid.reset()
+        self.reset()
         for i in range(itr):
             (loss, reward, epsilon, ml_losses) = self.train_one_game()
             # self.storage.append_loss_epsilon(loss, epsilon)
@@ -33,7 +20,7 @@ class Trainer:
         return self.storage.ml_losses
 
     def test(self, itr=1):
-        self.grid.reset()
+        self.reset()
         self.storage.reset_test_loss()
         # for i in range(self.max_itr):
         #     self.storage.test_loss[i] = 0
@@ -44,13 +31,13 @@ class Trainer:
         return self.storage.test_loss
 
     def train_one_game(self, learn=True):
-        self.grid.reset()
-        max_reward = self.grid.get_max_reward()
+        self.reset()
+        max_reward = self.get_max_reward()
 
         max_step_count = 50 if learn else 50
         step_count = 0
         ml_losses = []
-        while not self.grid.goal.has_reached() and step_count < max_step_count:
+        while not self.goal.has_reached() and step_count < max_step_count:
             ml_loss = self.step(learn)
             if ml_loss is not None:
                 ml_losses.append(ml_loss)
@@ -61,7 +48,7 @@ class Trainer:
         return loss, total_reward, self.agents[0].epsilon, ml_losses  # TODO: 0
 
     def step(self, learn=True):
-        return self.grid.step(learn)
+        return self.step(learn)
 
     def test_in_background(self, ep=1000):
         gp, tp = get_test_process(self.storage, self, ep)

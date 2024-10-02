@@ -5,9 +5,11 @@ from typing import TYPE_CHECKING, List, Tuple, Dict, Set
 import random
 
 from constants import dtype, state_size, side
+from frontend import Trainer
 
 if TYPE_CHECKING:
     from .agent import Agent
+    from frontend import Storage
 
 
 class IInteractable(ABC):
@@ -118,8 +120,15 @@ class IVisual(ABC):
         pass
 
 
-class Grid(IVisual):
-    def __init__(self, width: int, height: int):
+class Grid(IVisual, Trainer):
+    def __init__(
+        self,
+        width: int,
+        height: int,
+        agents: List["Agent"],
+        storage: "Storage",
+        max_itr: int,
+    ):
         self.width = width
         self.height = height
         self.max_reward = 0
@@ -128,7 +137,9 @@ class Grid(IVisual):
             {}
         )  # TODO: multiple entities in one cell
         self.lookup: set[Cell] = set()  # Interactive tiles
-        self.agents: List["Agent"] = []
+        self.agents: List["Agent"] = agents
+        self.storage = storage
+        self.max_itr = max_itr
         self.agent_positions: List[Tuple[int, int]] = []
 
         self.init_environment()

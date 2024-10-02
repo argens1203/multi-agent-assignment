@@ -11,22 +11,22 @@ if __name__ == "__main__":
     controller = Controller()
 
     storage = Storage(max_itr)
-    trainer = Trainer(max_itr)
+    # trainer = Trainer(max_itr)
 
     agent = Agent(
         0,
         state_size,
         [(0, -1), (0, 1), (-1, 0), (1, 0)],
     )
-    grid = Grid(width, height)
-    grid.add_agent(agent)
+    grid = Grid(width, height, [agent], storage, max_itr)
+    # grid.add_agent(agent)
 
-    trainer.bind(storage, grid, [agent])
+    # trainer.bind(storage, grid, [agent])
 
     grid.reset()
-    controller.bind(grid).add_helper(storage, trainer)
+    controller.bind(grid).add_helper(storage)
 
-    trainer.train(2500)
+    grid.train(2500)
     fig2, ax2 = plt.subplots()
     MLGraph(storage.ml_losses, fig2, ax2).show()
 
