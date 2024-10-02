@@ -7,7 +7,7 @@ from .given import *
 from constants import state_size, device, dtype
 
 if TYPE_CHECKING:
-    from shared import State, Action
+    pass
 
 
 class ExpBuffer:
@@ -83,7 +83,7 @@ class Agent:
         prepare_torch()
 
     # ----- Core Functions ----- #
-    def choose_action(self, state: "State", explore=True):
+    def choose_action(self, state: torch.tensor, explore=True) -> Tuple[int, int]:
         if explore and np.random.rand() < self.epsilon:
             return random.choice(self.actions)
         else:
@@ -94,14 +94,14 @@ class Agent:
 
     def update_learn(
         self,
-        state: "State",
-        action: "Action",
+        state: torch.tensor,
+        action: Tuple[int, int],
         reward: int,
-        next_state: "State",
+        next_state: torch.tensor,
         is_terminal: bool,
         learn=True,
     ):
-        self.update(next_state, reward)
+        self.update(reward)
 
         # Extract immutable state information
         # nxt_state_i = self.massage(next_state)
@@ -161,7 +161,7 @@ class Agent:
     def set_has_item(self, has_item: bool):
         self.is_having_item = has_item
 
-    def update(self, state: "State", reward=0):
+    def update(self, reward=0):
         self.total_reward += reward
 
     def reset(self):
@@ -173,7 +173,7 @@ class Agent:
 
     # ----- Private Functions ----- #
     # Extract immutable information from State object
-    def massage(self, state: "State"):
-        state_i = state.extract_state(self.idx).to(device).float()
+    def massage(self, state: torch.tensor):
+        state_i = state.to(device).float()
         return state_i + 0.001  # 5 Minutes
         # return state_i + torch.rand(state_size).to(device) / 100.0  # 15 Minutes
