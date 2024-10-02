@@ -16,6 +16,11 @@ if TYPE_CHECKING:
 
 
 class Trainer:
+    def __init__(self, storage, max_itr, **kwargs):
+        super().__init__(**kwargs)
+        self.storage = storage
+        self.max_itr = max_itr
+
     def train(self, itr=1):
         start = datetime.datetime.now()
         print(f"Start Time: {start}")
@@ -190,7 +195,7 @@ class IVisual(ABC):
         pass
 
 
-class Grid(IVisual, Trainer):
+class Grid(Trainer, IVisual):
     def __init__(
         self,
         width: int,
@@ -199,6 +204,7 @@ class Grid(IVisual, Trainer):
         storage: "Storage",
         max_itr: int,
     ):
+        super().__init__(storage=storage, max_itr=max_itr)
         self.width = width
         self.height = height
         self.max_reward = 0
@@ -208,8 +214,6 @@ class Grid(IVisual, Trainer):
         )  # TODO: multiple entities in one cell
         self.lookup: set[Cell] = set()  # Interactive tiles
         self.agents: List["Agent"] = agents
-        self.storage = storage
-        self.max_itr = max_itr
         self.agent_positions: List[Tuple[int, int]] = []
 
         self.init_environment()
