@@ -7,8 +7,7 @@ from typing import Tuple, TypeAlias, TYPE_CHECKING
 
 if TYPE_CHECKING:
     # from .controller import Controller
-    from .c_storage import Storage
-    from core import Grid
+    from core import Grid, Storage
 
 Coordinates: TypeAlias = Tuple[float, float, float, float]
 
@@ -295,9 +294,6 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 
 from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from frontend import Storage
 
 
 class Graph:

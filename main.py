@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
-from frontend import Visualization, Storage, MLGraph
-from core import Agent, Grid
+from frontend import Visualization, MLGraph
+from core import Agent, Grid, Storage
 from constants import state_size
 
 if __name__ == "__main__":

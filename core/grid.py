@@ -12,7 +12,7 @@ from .multithread import get_process, get_test_process, get_np_from_name
 
 if TYPE_CHECKING:
     from .agent import Agent
-    from frontend import Storage
+    from .storage import Storage
 
 
 class Trainer:

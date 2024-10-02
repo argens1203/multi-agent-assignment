@@ -7,8 +7,8 @@ from multiprocessing import Process, shared_memory, Pipe
 from frontend import Graph, TestGraph
 
 if TYPE_CHECKING:
-    from frontend import Storage
-    from core import Grid
+    from .storage import Storage
+    from .grid import Grid
 
 
 def draw_graphs(storage: "Storage"):
