@@ -186,3 +186,6 @@ class Agent:
         state_i = state.to(device).float()
         return state_i + 0.001  # 5 Minutes
         # return state_i + torch.rand(state_size).to(device) / 100.0  # 15 Minutes
+
+    def interact(self, other: "Agent"):
+        return 0, None, None

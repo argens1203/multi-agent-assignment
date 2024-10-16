@@ -270,6 +270,7 @@ class Grid(Controller, Trainer, IVisual):
             )
         else:
             agent.update(reward)
+        self.agent_pointer += 1
         return loss if learn else None
 
     def interact(self, temp_position: Tuple[int, int], agent: "Agent"):
@@ -280,6 +281,10 @@ class Grid(Controller, Trainer, IVisual):
         for interactable in self.interactables[new_pos]:
             if interactable is not agent:
                 r, _, it = interactable.interact(agent)
+                if it is None:
+                    it = False
+                if _ is None:
+                    pass
                 reward += r
                 is_terminal = is_terminal or it
 

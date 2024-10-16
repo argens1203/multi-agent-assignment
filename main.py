@@ -8,12 +8,17 @@ if __name__ == "__main__":
     max_itr = 1000
 
     storage = Storage(max_itr)
-    agent = Agent(
+    agent1 = Agent(
         0,
         state_size,
         [(0, -1), (0, 1), (-1, 0), (1, 0)],
     )
-    grid = Grid(width, height, [agent], storage)
+    agent2 = Agent(
+        0,
+        state_size,
+        [(0, -1), (0, 1), (-1, 0), (1, 0)],
+    )
+    grid = Grid(width, height, [agent1, agent2], storage)
     grid.reset()
 
     grid.train(2500)
