@@ -13,12 +13,6 @@ if TYPE_CHECKING:
     from .storage import Storage
 
 
-class IInteractable(ABC):
-    @abstractmethod
-    def interact(self, agent: "Agent") -> Tuple[int, Tuple[int, int]]:
-        pass
-
-
 class Cell:
     def __init__(self, pos):
         x, y = pos
@@ -38,7 +32,7 @@ class Goal(Cell):
     def interact(self, agent: "Agent"):
         if agent.has_item() and not self.reached:
             self.reached = True
-            return 50, (self.x, self.y), True
+            return 51, (self.x, self.y), True
         else:
             return -1, (self.x, self.y), False
 
@@ -55,7 +49,7 @@ class Item(Cell):
         if not self.taken and not agent.has_item():
             agent.set_has_item(True)
             self.taken = True
-            return 50, (self.x, self.y), False
+            return 51, (self.x, self.y), False
 
         return -1, (self.x, self.y), False
 
@@ -192,9 +186,10 @@ class Grid(Controller, Trainer, IVisual):
         self.height = height
         self.max_reward = 0
 
-        self.state: Dict[Tuple[int, int], Cell] = (
+        self.env: Dict[Tuple[int, int], Cell] = (
             {}
         )  # TODO: multiple entities in one cell
+        self.interactables: Dict[Tuple[int, int], set[Cell]] = {}
         self.lookup: set[Cell] = set()  # Interactive tiles
         self.agents: List["Agent"] = agents
         self.agent_positions: List[Tuple[int, int]] = []
@@ -206,11 +201,49 @@ class Grid(Controller, Trainer, IVisual):
         for x in range(-1, self.width + 1):
             for y in range(-1, self.height + 1):
                 if x < 0 or x >= self.width:
-                    self.state[(x, y)] = Wall((x, y), (self.width, self.height))
+                    self.env[(x, y)] = Wall((x, y), (self.width, self.height))
                 elif y < 0 or y >= self.height:
-                    self.state[(x, y)] = Wall((x, y), (self.width, self.height))
+                    self.env[(x, y)] = Wall((x, y), (self.width, self.height))
                 else:
-                    self.state[(x, y)] = Cell((x, y))
+                    self.env[(x, y)] = Cell((x, y))
+
+    def set_interactive_tiles(self):
+        self.lookup.clear()
+        used_pos = []
+
+        for x in range(self.width):
+            for y in range(self.height):
+                self.interactables[(x, y)] = set()
+        # TODO: extract repeated code
+
+        # Assign goal to set position
+        goal_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
+        # goal_pos = (self.width - 1, self.height - 1)
+        goal = Goal(goal_pos)
+        # self.env[goal_pos] = goal
+        self.lookup.add(goal)
+        self.goal = goal
+        used_pos.append(goal_pos)
+        self.interactables[goal_pos].add(goal)
+
+        # Assign items to a random position in the remaining tiles
+        item_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
+        item = Item(item_pos)
+        # self.env[item_pos] = item
+        self.lookup.add(item)
+        used_pos.append(item_pos)
+        self.item = item
+        self.interactables[item_pos].add(item)
+
+        # Assign agents to random positions
+        self.agent_positions = []
+        for agent in self.agents:
+            agent_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
+            used_pos.append(agent_pos)
+            self.agent_positions.append(agent_pos)
+            self.interactables[agent_pos].add(agent)
+
+        self.max_reward = GridUtil.calculate_max_reward(self)
 
     # ----- Core Functions ----- #
     def step(self, learn=True):
@@ -236,6 +269,19 @@ class Grid(Controller, Trainer, IVisual):
                 agent.update(reward)
         return loss if learn else None
 
+    def interact(self, temp_position: Tuple[int, int], agent: "Agent"):
+        reward, new_pos, is_terminal = self.env[temp_position].interact(agent)
+        if is_terminal:
+            return reward, new_pos, is_terminal
+
+        for interactable in self.interactables[new_pos]:
+            if interactable is not agent:
+                r, _, it = interactable.interact(agent)
+                reward += r
+                is_terminal = is_terminal or it
+
+        return reward, new_pos, is_terminal
+
     def move(
         self, idx: int, action: Tuple[int, int]
     ):  # List of actions, in the same order as self.agents
@@ -243,7 +289,8 @@ class Grid(Controller, Trainer, IVisual):
         temp_positions = self.process_action(action, self.agent_positions[idx])
 
         # Retreive reward and new location according to Entity.interaction
-        reward_new_positions = self.state[temp_positions].interact(self.agents[idx])
+        reward_new_positions = self.interact(temp_positions, self.agents[idx])
+        # self.env[temp_positions].interact(self.agents[idx])
         rewards, new_positions, is_terminal = reward_new_positions
 
         # Update new positions
@@ -251,7 +298,7 @@ class Grid(Controller, Trainer, IVisual):
         self.agent_positions[idx] = new_positions
 
         # Return move results, in the same order as self.agents
-        return rewards, self.extract_state(idx), self.has_ended()
+        return rewards, self.extract_state(idx), is_terminal
 
     # ----- Private Functions ----- #
     def process_action(
@@ -261,38 +308,6 @@ class Grid(Controller, Trainer, IVisual):
         x, y = agent_position
         dx, dy = action
         return x + dx, y + dy
-
-    def set_interactive_tiles(self):
-        self.lookup.clear()
-        used_pos = []
-
-        # TODO: extract repeated code
-
-        # Assign goal to set position
-        goal_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
-        # goal_pos = (self.width - 1, self.height - 1)
-        goal = Goal(goal_pos)
-        self.state[goal_pos] = goal
-        self.lookup.add(goal)
-        self.goal = goal
-        used_pos.append(goal_pos)
-
-        # Assign items to a random position in the remaining tiles
-        item_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
-        item = Item(item_pos)
-        self.state[item_pos] = item
-        self.lookup.add(item)
-        used_pos.append(item_pos)
-        self.item = item
-
-        # Assign agents to random positions
-        self.agent_positions = []
-        for _ in self.agents:
-            agent_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
-            used_pos.append(agent_pos)
-            self.agent_positions.append(agent_pos)
-
-        self.max_reward = GridUtil.calculate_max_reward(self)
 
     # ----- Public Functions ----- #
     def reset(self):
@@ -326,21 +341,23 @@ class Grid(Controller, Trainer, IVisual):
         goal = self.goal
         return goal.x, goal.y
 
-    def has_ended(self) -> bool:
-        return self.goal.has_reached()
-
     def get_total_reward(self):
         return sum(map(lambda a: a.get_total_reward(), self.agents))
 
-    def get_agent_info(self) -> List[Tuple[Tuple[int, int], bool]]:
+    def get_agent_info(self) -> List[Tuple[Tuple[int, int], int, bool]]:
         """
         Output: List of
                 - Tuple of:
                     - coordinate: (int, int)
-                    - has_item: bool
+                    - type: int (1 or 2)
+                    - has_secret: bool
         """
-        has_items = map(lambda agent: agent.has_item(), self.agents)
-        return list(zip(self.get_agent_positions(), has_items))
+        agent_types = map(lambda agent: agent.get_type(), self.agents)
+        has_secrets = map(lambda agent: agent.has_secret(), self.agents)
+        return list(zip(self.get_agent_positions(), agent_types, has_secrets))
+
+    def has_ended(self) -> bool:
+        return self.goal.has_reached()
 
     def extract_state(self, idx):
         x, y = self.agent_positions[idx]

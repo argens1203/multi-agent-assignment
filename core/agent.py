@@ -155,6 +155,15 @@ class Agent:
     def has_item(self):
         return self.is_having_item
 
+    def has_secret(self):
+        return self.is_having_item
+        return False
+        return self.is_have_secret
+
+    def get_type(self):
+        return 1
+        return self.type
+
     def get_total_reward(self):
         return self.total_reward
 

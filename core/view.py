@@ -99,11 +99,11 @@ class Visualization:
         plt.show()
 
     def get_info(self):
-        info = self.grid.get_agent_info()
+        agents = self.grid.get_agent_info()
         items = self.grid.get_untaken_items()
         tot_reward = self.grid.get_total_reward()
         max_reward = self.grid.get_max_reward()
-        return info, items, tot_reward, max_reward
+        return agents, items, tot_reward, max_reward
 
     def frames(self):
         while True:
@@ -162,7 +162,7 @@ class Visualization:
 
     def draw_agent(self, info):
         # Draw agent
-        for pos, has_item in info:
+        for pos, type, has_item in info:
             ax, ay = pos
             agent_color = "blue" if not has_item else "orange"
             agent_patch = patches.Circle((ax + 0.5, ay + 0.5), 0.3, color=agent_color)
