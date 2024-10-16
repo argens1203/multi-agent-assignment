@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from core import Agent, Grid, Storage, Visualization, MLGraph
+from core import Agent1, Agent2, Grid, Storage, Visualization, MLGraph
 from constants import state_size
 
 if __name__ == "__main__":
@@ -8,17 +8,19 @@ if __name__ == "__main__":
     max_itr = 1000
 
     storage = Storage(max_itr)
-    agent1 = Agent(
-        0,
-        state_size,
-        [(0, -1), (0, 1), (-1, 0), (1, 0)],
+    possible_actions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
+
+    grid = Grid(
+        width,
+        height,
+        [
+            Agent1(0, state_size, possible_actions),
+            Agent1(0, state_size, possible_actions),
+            Agent2(0, state_size, possible_actions),
+            Agent2(0, state_size, possible_actions),
+        ],
+        storage,
     )
-    agent2 = Agent(
-        0,
-        state_size,
-        [(0, -1), (0, 1), (-1, 0), (1, 0)],
-    )
-    grid = Grid(width, height, [agent1], storage)
     grid.reset()
 
     grid.train(2500)

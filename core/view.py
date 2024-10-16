@@ -162,10 +162,19 @@ class Visualization:
 
     def draw_agent(self, info):
         # Draw agent
-        for pos, type, has_item in info:
+        for idx, (pos, type, has_item) in enumerate(info):
+            size = [0.4, 0.37, 0.33, 0.3][idx]
             ax, ay = pos
-            agent_color = "blue" if not has_item else "orange"
-            agent_patch = patches.Circle((ax + 0.5, ay + 0.5), 0.3, color=agent_color)
+            if type == 1:
+                agent_color = "red" if has_item else "pink"
+                agent_patch = patches.Circle(
+                    (ax + 0.5, ay + 0.5), size, color=agent_color
+                )
+            if type == 2:
+                agent_color = "blue" if has_item else "cyan"
+                agent_patch = patches.Circle(
+                    (ax + 0.5, ay + 0.5), size, color=agent_color
+                )
             self.ax.add_patch(agent_patch)
 
     def draw_item(self, items):

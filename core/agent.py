@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Tuple, List
+from abc import abstractmethod, ABC
 
 import numpy as np
 import random
@@ -53,7 +54,13 @@ class ExpBuffer:
         return len(self.states)
 
 
-class Agent:
+buffer1 = ExpBuffer()
+buffer2 = ExpBuffer()
+dqn1 = DQN(state_size=state_size, action_size=action_size)
+dqn2 = DQN(state_size=state_size, action_size=action_size)
+
+
+class Agent(ABC):
     def __init__(self, idx, all_states, actions):
         # Agent property (for illustration purposes)
         self.is_having_item = False
@@ -71,20 +78,18 @@ class Agent:
 
         # Initialize Learning param
         # TODO: fix resetting epsilon
-        self.epsilon = 1.0
+        self.epsilon = 0.2
         self.epsilon_decay = 0.997  # TODO: reduce the decay (ie. increase the number)
-        self.epsilon_min = 0.1
+        self.epsilon_min = 0.01
         self.gamma = 0.997
 
-        # self.alpha = 0.1
-
-        self.buffer = ExpBuffer()
-
-        self.dqn = DQN(state_size=state_size, action_size=action_size)
-
     # ----- Core Functions ----- #
-    def choose_action(self, state: torch.tensor, explore=True) -> Tuple[int, int]:
-        if explore and np.random.rand() < self.epsilon:
+    def choose_action(
+        self, state: torch.tensor, explore=True, ep=0, total_ep=1
+    ) -> Tuple[int, int]:
+        eps = 1 - (1 - self.epsilon_min) * min(1, ep / (total_ep))
+        print(f"explore: {explore}; eps: {eps}")
+        if explore and np.random.rand() < eps:
             return random.choice(self.actions)
         else:
             # Extract immutable state information
@@ -148,21 +153,18 @@ class Agent:
             self.step_count += 1
 
         # Epsilon decay
-        self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+        # self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
         return loss
 
     # ----- Public Functions ----- #
     def has_item(self):
         return self.is_having_item
 
-    def has_secret(self):
-        return self.is_having_item
-        return False
-        return self.is_have_secret
+    def have_secret_(self, new_value: bool):
+        self.is_have_secret = new_value
 
-    def get_type(self):
-        return 1
-        return self.type
+    def has_secret(self):
+        return self.is_have_secret
 
     def get_total_reward(self):
         return self.total_reward
@@ -180,6 +182,10 @@ class Agent:
     def get_q_table(self):
         return self.Q
 
+    @abstractmethod
+    def get_type(self):
+        pass
+
     # ----- Private Functions ----- #
     # Extract immutable information from State object
     def massage(self, state: torch.tensor):
@@ -189,3 +195,45 @@ class Agent:
 
     def interact(self, other: "Agent"):
         return 0, None, None
+
+
+class Agent1(Agent):
+    def __init__(self, idx, all_states, actions):
+        super().__init__(idx, all_states, actions)
+        self.buffer = buffer1
+        self.dqn = dqn1
+        self.is_have_secret = False
+
+    def get_type(self):
+        return 1
+
+    def interact(self, other: "Agent"):
+        if other.get_type() == 2:
+            self.is_have_secret = True
+            other.have_secret_(True)
+        return 0, None, None
+
+    def reset(self):
+        super().reset()
+        self.is_have_secret = False
+
+
+class Agent2(Agent):
+    def __init__(self, idx, all_states, actions):
+        super().__init__(idx, all_states, actions)
+        self.buffer = buffer2
+        self.dqn = dqn2
+        self.is_have_secret = False
+
+    def get_type(self):
+        return 2
+
+    def interact(self, other: "Agent"):
+        if other.get_type() == 1:
+            self.is_have_secret = True
+            other.have_secret_(True)
+        return 0, None, None
+
+    def reset(self):
+        super().reset()
+        self.is_have_secret = False

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, List, Tuple, Dict, Set
 
 import random
 
-from constants import dtype, state_size, side
+from constants import dtype, state_size, side, debug
 import datetime
 from .view import IVisual
 
@@ -30,7 +30,7 @@ class Goal(Cell):
         self.reached = False
 
     def interact(self, agent: "Agent"):
-        if agent.has_item() and not self.reached:
+        if agent.has_secret() and not self.reached:
             self.reached = True
             return 51, (self.x, self.y), True
         else:
@@ -112,7 +112,7 @@ class Trainer:
         print(f"Start Time: {start}")
         self.reset()
         for i in range(itr):
-            (loss, reward, epsilon, ml_losses) = self.train_one_game()
+            (loss, reward, epsilon, ml_losses) = self.train_one_game(ep=i, total_ep=itr)
             # self.storage.append_loss_epsilon(loss, epsilon)
 
             self.storage.append_ml_losses(ml_losses)
@@ -133,7 +133,7 @@ class Trainer:
             self.storage.append_test_loss(loss)
         return self.storage.test_loss
 
-    def train_one_game(self, learn=True):
+    def train_one_game(self, learn=True, **kwargs):
         self.reset()
         max_reward = self.get_max_reward()
 
@@ -141,7 +141,7 @@ class Trainer:
         step_count = 0
         ml_losses = []
         while not self.has_ended() and step_count < max_step_count:
-            ml_loss = self.step(learn)
+            ml_loss = self.step(learn=learn, **kwargs)
             if ml_loss is not None:
                 ml_losses.append(ml_loss)
             step_count += 1
@@ -225,13 +225,13 @@ class Grid(Controller, Trainer, IVisual):
         self.interactables[goal_pos].add(goal)
 
         # Assign items to a random position in the remaining tiles
-        item_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
-        item = Item(item_pos)
-        # self.env[item_pos] = item
-        self.lookup.add(item)
-        used_pos.append(item_pos)
-        self.item = item
-        self.interactables[item_pos].add(item)
+        # item_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
+        # item = Item(item_pos)
+        # # self.env[item_pos] = item
+        # self.lookup.add(item)
+        # used_pos.append(item_pos)
+        # self.item = item
+        # self.interactables[item_pos].add(item)
 
         # Assign agents to random positions
         self.agent_positions = []
@@ -244,12 +244,12 @@ class Grid(Controller, Trainer, IVisual):
         self.max_reward = GridUtil.calculate_max_reward(self)
 
     # ----- Core Functions ----- #
-    def step(self, learn=True):
+    def step(self, learn=True, ep=0, total_ep=1):
         if self.has_ended():
             return
         if self.agent_pointer >= len(self.agent_idx):
             self.agent_pointer = 0
-            random.shuffle(self.agent_idx)
+            # random.shuffle(self.agent_idx)
 
         idx = self.agent_idx[self.agent_pointer]
         agent = self.agents[idx]
@@ -257,9 +257,34 @@ class Grid(Controller, Trainer, IVisual):
         loss = 0
 
         state = self.extract_state(idx)
-        action = agent.choose_action(state, explore=learn)
+
+        # Off the job training
+        if learn:
+            percent = ep / total_ep
+            if percent >= 0.8:
+                learn = True
+            elif (
+                percent <= 0.2
+                or (percent >= 0.4 and percent <= 0.6)
+                and agent.get_type() == 1
+            ):
+                learn = True
+            elif (
+                (percent >= 0.2 and percent <= 0.4)
+                or (percent >= 0.6 and percent <= 0.8)
+                and agent.get_type() == 2
+            ):
+                learn = True
+            else:
+                learn = False
+
+        action = agent.choose_action(state, explore=learn, ep=ep, total_ep=total_ep)
+        if debug:
+            print(self.agent_positions[idx])
+            print(f"agent {idx} of type {agent.get_type()} is making a move: {action}")
         reward, next_state, terminal = self.move(idx, action)
 
+        # print(f"next state is {next_state[:16], next_state[16:32], next_state[32:]}")
         if learn:
             loss += agent.update_learn(
                 state,
@@ -294,18 +319,26 @@ class Grid(Controller, Trainer, IVisual):
         self, idx: int, action: Tuple[int, int]
     ):  # List of actions, in the same order as self.agents
         # Update agent to temporary location according to move
-        temp_positions = self.process_action(action, self.agent_positions[idx])
+        old_pos = self.agent_positions[idx]
+        temp_positions = self.process_action(action, old_pos)
 
         # Retreive reward and new location according to Entity.interaction
+        if debug:
+            print(f"temp(before bounce back from walls):{temp_positions}")
         reward_new_positions = self.interact(temp_positions, self.agents[idx])
         # self.env[temp_positions].interact(self.agents[idx])
         rewards, new_positions, is_terminal = reward_new_positions
-
+        if debug:
+            print(f"new pos: {new_positions}")
         # Update new positions
         self.agent_positions = [pos for pos in self.agent_positions]
         self.agent_positions[idx] = new_positions
+        self.interactables[old_pos].remove(self.agents[idx])
+        self.interactables[new_positions].add(self.agents[idx])
 
         # Return move results, in the same order as self.agents
+        if debug:
+            print(self.agent_positions[idx])
         return rewards, self.extract_state(idx), is_terminal
 
     # ----- Private Functions ----- #
@@ -343,7 +376,7 @@ class Grid(Controller, Trainer, IVisual):
         return item.taken
 
     def get_item_positions(self):
-        return [item.get_pos() for item in self.get_items()]
+        return []
 
     def get_goal_positions(self):
         goal = self.goal
@@ -367,17 +400,39 @@ class Grid(Controller, Trainer, IVisual):
     def has_ended(self) -> bool:
         return self.goal.has_reached()
 
+    def get_closest_other_agent(self, x, y, type):
+        other_type = 2 if type == 1 else 1
+        min_dist = 1e9
+        min_x, min_y = -1, -1
+
+        for agent, agent_pos in zip(self.agents, self.agent_positions):
+            if agent.get_type() == other_type:
+                other_x, other_y = agent_pos
+                dist = abs(other_x - x) + abs(other_y - y)
+                if dist < min_dist:
+                    min_x, min_y = other_x, other_y
+                    min_dist = dist
+
+        if debug:
+            print(
+                f"for current agent {x, y}, closest agent of opposite type of {type} is at {min_x, min_y}"
+            )
+        return min_x, min_y
+
     def extract_state(self, idx):
+        if debug:
+            print(f"all agent pos: {self.agent_positions}")
+            print(f"all types: {[agent.get_type() for agent in self.agents]}")
+        type = self.agents[idx].get_type()
         x, y = self.agent_positions[idx]
-        x2, y2 = self.get_item_positions()[0]
+        x2, y2 = self.get_closest_other_agent(x, y, type)
         x3, y3 = self.get_goal_positions()
-        # print(x, y, x2, y2, x3, y3)
         # TODO: remove hardcoded item_pos indices
         # return agent_pos, item_pos[0], self.has_item()
         state = torch.zeros(state_size, dtype=dtype)
         state[x * side + y] = 1
-        if not self.item_taken():
-            state[side**2 + x2 * side + y2] = 1
+        # if not self.item_taken():
+        state[side**2 + x2 * side + y2] = 1
         state[side**2 * 2 + x3 * side + y3] = 1
 
         return state
@@ -388,6 +443,7 @@ class Grid(Controller, Trainer, IVisual):
 
 class GridUtil:
     def calculate_max_reward(grid: Grid):
+        return 100
         # TODO: can only work with one agent and one item ATM
         x1, y1 = grid.get_agent_positions()[0]
         x2, y2 = grid.get_item_positions()[0]

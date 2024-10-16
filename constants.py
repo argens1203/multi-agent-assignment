@@ -10,3 +10,4 @@ device = torch.device(
 )
 dtype = torch.float32
 # if device.type == "mps" else torch.float64
+debug = False
