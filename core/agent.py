@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Tuple, List
 import numpy as np
 import random
 import torch
-from .given import *
-from constants import state_size, device, dtype
+from .given import DQN
+from constants import state_size, device, dtype, action_size
 
 if TYPE_CHECKING:
     pass
@@ -80,7 +80,7 @@ class Agent:
 
         self.buffer = ExpBuffer()
 
-        prepare_torch()
+        self.dqn = DQN(state_size=state_size, action_size=action_size)
 
     # ----- Core Functions ----- #
     def choose_action(self, state: torch.tensor, explore=True) -> Tuple[int, int]:
@@ -89,7 +89,7 @@ class Agent:
         else:
             # Extract immutable state information
             state_i = self.massage(state)
-            idx = torch.argmax(get_qvals(state_i))
+            idx = torch.argmax(self.dqn.get_qvals(state_i))
             return self.actions[idx]
 
     def update_learn(
@@ -133,16 +133,16 @@ class Agent:
             )
             rewards = rewards.to(device)
             indices = is_terminals.nonzero().to(device)
-            targets = self.gamma * get_maxQ(next_states.to(device)) + rewards
+            targets = self.gamma * self.dqn.get_maxQ(next_states.to(device)) + rewards
             targets[indices] = rewards[
                 indices
             ]  # For terminal states, target_val is reward
             # print(states, actions, targets)
             # print(states.shape, actions.shape, targets.shape)
-            loss = train_one_step(states, actions, targets)
+            loss = self.dqn.train_one_step(states, actions, targets)
 
         if self.step_count >= self.C:
-            update_target()
+            self.dqn.update_target()
             self.step_count = 0
         else:
             self.step_count += 1

@@ -18,7 +18,7 @@ if __name__ == "__main__":
         state_size,
         [(0, -1), (0, 1), (-1, 0), (1, 0)],
     )
-    grid = Grid(width, height, [agent1, agent2], storage)
+    grid = Grid(width, height, [agent1], storage)
     grid.reset()
 
     grid.train(2500)

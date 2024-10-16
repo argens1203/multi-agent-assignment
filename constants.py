@@ -1,6 +1,7 @@
 import torch
 
 side = 4
+action_size = 4
 state_size = 4 * 4 * 3
 device = torch.device(
     "cuda:0"
