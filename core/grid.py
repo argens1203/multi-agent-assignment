@@ -150,9 +150,6 @@ class Trainer:
         loss = max_reward - total_reward
         return loss, total_reward, self.agents[0].epsilon, ml_losses  # TODO: 0
 
-    def step(self, learn=True):
-        return self.step(learn)
-
     def test_in_background(self, ep=1000):
         gp, tp = get_test_process(self.storage, self, ep)
         gp.start()
@@ -192,8 +189,9 @@ class Grid(Controller, Trainer, IVisual):
         self.interactables: Dict[Tuple[int, int], set[Cell]] = {}
         self.lookup: set[Cell] = set()  # Interactive tiles
         self.agents: List["Agent"] = agents
+        self.agent_idx: List[int] = list(range(len(agents)))
+        self.agent_pointer = 0
         self.agent_positions: List[Tuple[int, int]] = []
-
         self.init_environment()
 
     # ----- Init Functions ----- #
@@ -249,24 +247,29 @@ class Grid(Controller, Trainer, IVisual):
     def step(self, learn=True):
         if self.has_ended():
             return
+        if self.agent_pointer >= len(self.agent_idx):
+            self.agent_pointer = 0
+            random.shuffle(self.agent_idx)
+
+        idx = self.agent_idx[self.agent_pointer]
+        agent = self.agents[idx]
 
         loss = 0
 
-        for idx, agent in enumerate(self.agents):
-            state = self.extract_state(idx)
-            action = agent.choose_action(state, explore=learn)
-            reward, next_state, terminal = self.move(idx, action)
+        state = self.extract_state(idx)
+        action = agent.choose_action(state, explore=learn)
+        reward, next_state, terminal = self.move(idx, action)
 
-            if learn:
-                loss += agent.update_learn(
-                    state,
-                    action,
-                    reward,
-                    next_state,
-                    terminal,
-                )
-            else:
-                agent.update(reward)
+        if learn:
+            loss += agent.update_learn(
+                state,
+                action,
+                reward,
+                next_state,
+                terminal,
+            )
+        else:
+            agent.update(reward)
         return loss if learn else None
 
     def interact(self, temp_position: Tuple[int, int], agent: "Agent"):
