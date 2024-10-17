@@ -98,7 +98,7 @@ class Controller:
     def next(self):
         if self.has_ended() and self.auto_reset:
             self.reset()
-        self.step(learn=False)
+        self.step(testing=True)
         return
 
 
@@ -128,20 +128,20 @@ class Trainer:
         # for i in range(self.max_itr):
         #     self.storage.test_loss[i] = 0
         for _ in range(itr):
-            (loss, reward, epsilon, _) = self.train_one_game(learn=False)
+            (loss, reward, epsilon, _) = self.train_one_game(testing=True)
             # self.storage.append_test_loss(loss)
             self.storage.append_test_loss(loss)
         return self.storage.test_loss
 
-    def train_one_game(self, learn=True, **kwargs):
+    def train_one_game(self, **kwargs):
         self.reset()
         max_reward = self.get_max_reward()
 
-        max_step_count = 50 if learn else 50
+        max_step_count = 50
         step_count = 0
         ml_losses = []
         while not self.has_ended() and step_count < max_step_count:
-            ml_loss = self.step(learn=learn, **kwargs)
+            ml_loss = self.step(**kwargs)
             if ml_loss is not None:
                 ml_losses.append(ml_loss)
             step_count += 1
@@ -244,7 +244,7 @@ class Grid(Controller, Trainer, IVisual):
         self.max_reward = GridUtil.calculate_max_reward(self)
 
     # ----- Core Functions ----- #
-    def step(self, learn=True, ep=0, total_ep=1):
+    def step(self, testing=False, ep=0, total_ep=1):
         if self.has_ended():
             return
         if self.agent_pointer >= len(self.agent_idx):
@@ -259,26 +259,25 @@ class Grid(Controller, Trainer, IVisual):
         state = self.extract_state(idx)
 
         # Off the job training
-        if learn:
+        learn = not testing
+        if not testing:
             percent = ep / total_ep
-            if percent >= 0.8:
+            # print(agent.get_type(), percent)
+            if percent >= 0.99:
                 learn = True
-            elif (
-                percent <= 0.2
-                or (percent >= 0.4 and percent <= 0.6)
-                and agent.get_type() == 1
-            ):
+            elif (int(percent * 100) % 2 == 0) and agent.get_type() == 1:
+                # print(273)
                 learn = True
-            elif (
-                (percent >= 0.2 and percent <= 0.4)
-                or (percent >= 0.6 and percent <= 0.8)
-                and agent.get_type() == 2
-            ):
+            elif (int(percent * 100) % 2 == 1) and agent.get_type() == 2:
+                # print(279)
                 learn = True
             else:
+                # print("Hello")
                 learn = False
 
-        action = agent.choose_action(state, explore=learn, ep=ep, total_ep=total_ep)
+        action = agent.choose_action(
+            state, testing=testing, learn=learn, ep=ep, total_ep=total_ep
+        )
         if debug:
             print(self.agent_positions[idx])
             print(f"agent {idx} of type {agent.get_type()} is making a move: {action}")
@@ -427,6 +426,9 @@ class Grid(Controller, Trainer, IVisual):
         x, y = self.agent_positions[idx]
         x2, y2 = self.get_closest_other_agent(x, y, type)
         x3, y3 = self.get_goal_positions()
+        # print(x, y)
+        # print(x2, y2)
+        # print(x3, y3)
         # TODO: remove hardcoded item_pos indices
         # return agent_pos, item_pos[0], self.has_item()
         state = torch.zeros(state_size, dtype=dtype)
@@ -434,7 +436,11 @@ class Grid(Controller, Trainer, IVisual):
         # if not self.item_taken():
         state[side**2 + x2 * side + y2] = 1
         state[side**2 * 2 + x3 * side + y3] = 1
+        state[side**2 * 3] = 1 if self.agents[idx].has_secret() else 0
 
+        # print(self.agents[idx].has_secret())
+        # print(state)
+        # input()
         return state
 
     def get_agent_positions(self):

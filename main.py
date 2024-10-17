@@ -8,7 +8,7 @@ if __name__ == "__main__":
     max_itr = 1000
 
     storage = Storage(max_itr)
-    possible_actions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
+    possible_actions = [(0, -1), (0, 1), (-1, 0), (1, 0), (0, 0)]
 
     grid = Grid(
         width,
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     )
     grid.reset()
 
-    grid.train(2500)
+    grid.train(15000)
     fig2, ax2 = plt.subplots()
     MLGraph(storage.ml_losses, fig2, ax2).show()
 

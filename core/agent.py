@@ -5,7 +5,7 @@ import numpy as np
 import random
 import torch
 from .given import DQN
-from constants import state_size, device, dtype, action_size
+from constants import state_size, device, dtype, action_size, debug
 
 if TYPE_CHECKING:
     pass
@@ -85,11 +85,13 @@ class Agent(ABC):
 
     # ----- Core Functions ----- #
     def choose_action(
-        self, state: torch.tensor, explore=True, ep=0, total_ep=1
+        self, state: torch.tensor, testing=False, learn=True, ep=0, total_ep=1
     ) -> Tuple[int, int]:
+        # eps = self.epsilon_min + (1 - self.epsilon_min) * (math.e ** (-0.997 * ep))
         eps = 1 - (1 - self.epsilon_min) * min(1, ep / (total_ep))
-        print(f"explore: {explore}; eps: {eps}")
-        if explore and np.random.rand() < eps:
+        if debug:
+            print(f"learn: {learn}; testing: {testing}, eps: {eps}")
+        if not testing and np.random.rand() < eps and learn:
             return random.choice(self.actions)
         else:
             # Extract immutable state information
@@ -208,10 +210,13 @@ class Agent1(Agent):
         return 1
 
     def interact(self, other: "Agent"):
+        rewarded = False
         if other.get_type() == 2:
+            if not self.is_have_secret:
+                rewarded = True
             self.is_have_secret = True
             other.have_secret_(True)
-        return 0, None, None
+        return 50 if rewarded else 0, None, None
 
     def reset(self):
         super().reset()
@@ -229,10 +234,13 @@ class Agent2(Agent):
         return 2
 
     def interact(self, other: "Agent"):
+        rewarded = False
         if other.get_type() == 1:
+            if not self.is_have_secret:
+                rewarded = True
             self.is_have_secret = True
             other.have_secret_(True)
-        return 0, None, None
+        return 50 if rewarded else 0, None, None
 
     def reset(self):
         super().reset()
