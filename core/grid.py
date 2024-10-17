@@ -188,7 +188,7 @@ class Grid(Controller, Trainer, Visual, IVisual):
             observed_state, choose_best=is_testing, ep_ratio=ep / total_ep
         )
         reward, next_state, is_terminal = self.move(self.idx, action)
-        agent.update(
+        loss = agent.update(
             state=observed_state,
             action=action,
             reward=reward,
@@ -198,7 +198,7 @@ class Grid(Controller, Trainer, Visual, IVisual):
         )
 
         self.idx += 1
-        return
+        return loss
 
     def move(
         self, idx: int, action: Tuple[int, int]
@@ -227,11 +227,13 @@ class Grid(Controller, Trainer, Visual, IVisual):
             if agent.has_secret():
                 reward += 50
                 goal_reached = True
+                if goal_reached:
+                    print(f"goal_reached: {goal_reached}")
             else:
                 reward -= 20
-        print(f"goal_reached: {goal_reached}")
         self.goal_reached = goal_reached or self.goal_reached
-        print(f"self.goal_reached: {self.goal_reached}")
+        if goal_reached:
+            print(f"self.goal_reached: {self.goal_reached}")
 
         other_indices = [
             other_idx
@@ -253,6 +255,7 @@ class Grid(Controller, Trainer, Visual, IVisual):
 
         self.agent_positions[idx] = new_pos
         print(f"reward: {reward}")
+        print(f"has secret: {agent.has_secret()}")
         return reward, self.extract_state(idx), goal_reached
 
     # ----- Private Functions ----- #

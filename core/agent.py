@@ -78,7 +78,7 @@ class Agent(ABC):
 
         # Initialize Learning param
         # TODO: fix resetting epsilon
-        self.epsilon = 0.2
+        self.epsilon = 1
         self.epsilon_decay = 0.997  # TODO: reduce the decay (ie. increase the number)
         self.epsilon_min = 0.01
         self.gamma = 0.997
@@ -87,8 +87,10 @@ class Agent(ABC):
     def choose_action(
         self, state: torch.tensor, choose_best: bool, ep_ratio: float
     ) -> Tuple[int, int]:
-        eps = 1 - (1 - self.epsilon_min) * min(1, ep_ratio)
-        if not choose_best and np.random.rand() < eps:
+        # eps = 1 - (1 - self.epsilon_min) * min(1, ep_ratio)
+        if not choose_best and np.random.rand() < self.epsilon:
+            self.epsilon *= self.epsilon_decay
+            self.epsilon = max(self.epsilon, self.epsilon_min)
             return random.choice(self.actions)
         else:
             # Extract immutable state information

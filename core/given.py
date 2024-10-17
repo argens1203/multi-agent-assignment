@@ -10,14 +10,17 @@ class DQN:
     def __init__(self, state_size, action_size=4):
         l1 = state_size
         l2 = 150
-        l3 = 100
-        l4 = action_size
+        l3 = 200
+        l4 = 200
+        l5 = action_size
         self.model = torch.nn.Sequential(
             torch.nn.Linear(l1, l2),
             torch.nn.ReLU(),
             torch.nn.Linear(l2, l3),
             torch.nn.ReLU(),
             torch.nn.Linear(l3, l4),
+            torch.nn.ReLU(),
+            torch.nn.Linear(l4, l5),
         ).to(device)
 
         self.model2 = copy.deepcopy(self.model).to(device)
