@@ -22,10 +22,6 @@ class IVisual(ABC):
         pass
 
     @abstractmethod
-    def get_untaken_items(self) -> List[Tuple[int, int]]:
-        pass
-
-    @abstractmethod
     def get_total_reward(self) -> int:
         pass
 
@@ -42,6 +38,10 @@ class IVisual(ABC):
         pass
 
     @abstractmethod
+    def get_agent_positions(self) -> List[Tuple[int, int]]:
+        pass
+
+    @abstractmethod
     def has_ended(self) -> bool:
         pass
 
@@ -52,6 +52,12 @@ class IVisual(ABC):
         pass
 
     @abstractmethod
+    def next(self):
+        pass
+
+    # Trainings
+
+    @abstractmethod
     def train(self, itr=1):
         pass
 
@@ -60,7 +66,7 @@ class IVisual(ABC):
         pass
 
     @abstractmethod
-    def reset(self):
+    def train_in_background(self):
         pass
 
     @abstractmethod
@@ -68,11 +74,7 @@ class IVisual(ABC):
         pass
 
     @abstractmethod
-    def train_in_background(self):
-        pass
-
-    @abstractmethod
-    def next(self):
+    def reset(self):
         pass
 
 
@@ -100,10 +102,9 @@ class Visualization:
 
     def get_info(self):
         agents = self.grid.get_agent_info()
-        items = self.grid.get_untaken_items()
         tot_reward = self.grid.get_total_reward()
         max_reward = self.grid.get_max_reward()
-        return agents, items, tot_reward, max_reward
+        return agents, tot_reward, max_reward
 
     def frames(self):
         while True:
@@ -116,12 +117,11 @@ class Visualization:
     # ----- ----- ----- ----- Drawing Functions  ----- ----- ----- ----- #
 
     def draw(self, args):
-        info, items, tot_reward, max_reward = args
+        info, tot_reward, max_reward = args
 
         self.ax.clear()
         self.draw_grid()
         self.draw_agent(info)
-        self.draw_item(items)
 
         self.reward.set_text(f"Reward: {tot_reward}")
         self.max_reward.set_text(f"Max Reward: {max_reward}")

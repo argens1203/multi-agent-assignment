@@ -150,13 +150,6 @@ class Trainer:
         loss = max_reward - total_reward
         return loss, total_reward, self.agents[0].epsilon, ml_losses  # TODO: 0
 
-    def test_in_background(self, ep=1000):
-        gp, tp = get_test_process(self.storage, self, ep)
-        gp.start()
-        tp.start()
-        gp.join()
-        tp.join()
-
     def train_in_background(self):
         gp, tp, conn1 = get_process(self.storage, self)
         gp.start()
@@ -169,8 +162,48 @@ class Trainer:
         trained_Q = get_np_from_name(name)
         return trained_Q
 
+    def test_in_background(self, ep=1000):
+        gp, tp = get_test_process(self.storage, self, ep)
+        gp.start()
+        tp.start()
+        gp.join()
+        tp.join()
 
-class Grid(Controller, Trainer, IVisual):
+
+class Visual:
+    def get_agent_info(self) -> List[Tuple[Tuple[int, int], int, bool]]:
+        """
+        Output: List of
+                - Tuple of:
+                    - coordinate: (int, int)
+                    - type: int (1 or 2)
+                    - has_secret: bool
+        """
+        agent_types = map(lambda agent: agent.get_type(), self.agents)
+        has_secrets = map(lambda agent: agent.has_secret(), self.agents)
+        return list(zip(self.get_agent_positions(), agent_types, has_secrets))
+
+    def get_total_reward(self):
+        return sum(map(lambda a: a.get_total_reward(), self.agents))
+
+    def get_max_reward(self):
+        return self.max_reward
+
+    def get_size(self):
+        return self.width, self.height
+
+    def get_goal_positions(self):
+        goal = self.goal
+        return goal.x, goal.y
+
+    def get_agent_positions(self):
+        return self.agent_positions
+
+    def has_ended(self) -> bool:
+        return self.goal.has_reached()
+
+
+class Grid(Controller, Trainer, Visual, IVisual):
     def __init__(
         self,
         width: int,
@@ -356,48 +389,26 @@ class Grid(Controller, Trainer, IVisual):
         for agent in self.agents:
             agent.reset()
 
-    def get_size(self):
-        return self.width, self.height
-
-    def get_max_reward(self):
-        return self.max_reward
-
-    def get_items(self):
-        return [x for x in self.lookup if isinstance(x, Item)]
-
-    def get_untaken_items(self):
-        items = self.get_items()
-        untaken_items = filter(lambda i: not i.taken, items)
-        return [i.get_pos() for i in untaken_items]
-
-    def item_taken(self):
-        item = next((x for x in self.lookup if isinstance(x, Item)), [None])
-        return item.taken
-
-    def get_item_positions(self):
-        return []
-
-    def get_goal_positions(self):
-        goal = self.goal
-        return goal.x, goal.y
-
-    def get_total_reward(self):
-        return sum(map(lambda a: a.get_total_reward(), self.agents))
-
-    def get_agent_info(self) -> List[Tuple[Tuple[int, int], int, bool]]:
-        """
-        Output: List of
-                - Tuple of:
-                    - coordinate: (int, int)
-                    - type: int (1 or 2)
-                    - has_secret: bool
-        """
-        agent_types = map(lambda agent: agent.get_type(), self.agents)
-        has_secrets = map(lambda agent: agent.has_secret(), self.agents)
-        return list(zip(self.get_agent_positions(), agent_types, has_secrets))
-
     def has_ended(self) -> bool:
         return self.goal.has_reached()
+
+    def extract_state(self, idx):
+        if debug:
+            print(f"all agent pos: {self.agent_positions}")
+            print(f"all types: {[agent.get_type() for agent in self.agents]}")
+        type = self.agents[idx].get_type()
+        x, y = self.agent_positions[idx]
+        x2, y2 = self.get_closest_other_agent(x, y, type)
+        x3, y3 = self.get_goal_positions()
+
+        state = torch.zeros(state_size, dtype=dtype)
+        state[x * side + y] = 1
+
+        state[side**2 + x2 * side + y2] = 1
+        state[side**2 * 2 + x3 * side + y3] = 1
+        state[side**2 * 3] = 1 if self.agents[idx].has_secret() else 0
+
+        return state
 
     def get_closest_other_agent(self, x, y, type):
         other_type = 2 if type == 1 else 1
@@ -417,34 +428,6 @@ class Grid(Controller, Trainer, IVisual):
                 f"for current agent {x, y}, closest agent of opposite type of {type} is at {min_x, min_y}"
             )
         return min_x, min_y
-
-    def extract_state(self, idx):
-        if debug:
-            print(f"all agent pos: {self.agent_positions}")
-            print(f"all types: {[agent.get_type() for agent in self.agents]}")
-        type = self.agents[idx].get_type()
-        x, y = self.agent_positions[idx]
-        x2, y2 = self.get_closest_other_agent(x, y, type)
-        x3, y3 = self.get_goal_positions()
-        # print(x, y)
-        # print(x2, y2)
-        # print(x3, y3)
-        # TODO: remove hardcoded item_pos indices
-        # return agent_pos, item_pos[0], self.has_item()
-        state = torch.zeros(state_size, dtype=dtype)
-        state[x * side + y] = 1
-        # if not self.item_taken():
-        state[side**2 + x2 * side + y2] = 1
-        state[side**2 * 2 + x3 * side + y3] = 1
-        state[side**2 * 3] = 1 if self.agents[idx].has_secret() else 0
-
-        # print(self.agents[idx].has_secret())
-        # print(state)
-        # input()
-        return state
-
-    def get_agent_positions(self):
-        return self.agent_positions
 
 
 class GridUtil:
