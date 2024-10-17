@@ -13,64 +13,6 @@ if TYPE_CHECKING:
     from .storage import Storage
 
 
-class Cell:
-    def __init__(self, pos):
-        x, y = pos
-        self.x = x
-        self.y = y
-
-    # returns: score delta, (new_coordinate_x, new_coordinate_y)
-    def interact(self, agent: "Agent") -> Tuple[int, Tuple[int, int]]:
-        return -1, (self.x, self.y), False
-
-
-class Goal(Cell):
-    def __init__(self, pos):
-        super().__init__(pos)
-        self.reached = False
-
-    def interact(self, agent: "Agent"):
-        if agent.has_secret() and not self.reached:
-            self.reached = True
-            return 51, (self.x, self.y), True
-        else:
-            return -1, (self.x, self.y), False
-
-    def has_reached(self):
-        return self.reached
-
-
-class Item(Cell):
-    def __init__(self, pos):
-        super().__init__(pos)
-        self.taken = False
-
-    def interact(self, agent: "Agent"):
-        if not self.taken and not agent.has_item():
-            agent.set_has_item(True)
-            self.taken = True
-            return 51, (self.x, self.y), False
-
-        return -1, (self.x, self.y), False
-
-    def get_pos(self):
-        return self.x, self.y
-
-
-class Wall(Cell):
-    def __init__(self, pos, dimensions):
-        super().__init__(pos)
-
-        width, height = dimensions
-        x, y = pos
-
-        self.new_x = min(width - 1, max(0, x))
-        self.new_y = min(height - 1, max(0, y))
-
-    def interact(self, agent: "Agent"):
-        return -10, (self.new_x, self.new_y), False
-
-
 class GridFactory:
     # Getting a random location in a grid, excluding certain locations
     def get_random_pos(
@@ -98,7 +40,7 @@ class Controller:
     def next(self):
         if self.has_ended() and self.auto_reset:
             self.reset()
-        self.step(testing=True)
+        self.step(is_testing=True)
         return
 
 
@@ -193,14 +135,13 @@ class Visual:
         return self.width, self.height
 
     def get_goal_positions(self):
-        goal = self.goal
-        return goal.x, goal.y
+        return self.goal_pos
 
     def get_agent_positions(self):
         return self.agent_positions
 
     def has_ended(self) -> bool:
-        return self.goal.has_reached()
+        return self.goal_reached
 
 
 class Grid(Controller, Trainer, Visual, IVisual):
@@ -216,197 +157,129 @@ class Grid(Controller, Trainer, Visual, IVisual):
         self.height = height
         self.max_reward = 0
 
-        self.env: Dict[Tuple[int, int], Cell] = (
-            {}
-        )  # TODO: multiple entities in one cell
-        self.interactables: Dict[Tuple[int, int], set[Cell]] = {}
-        self.lookup: set[Cell] = set()  # Interactive tiles
         self.agents: List["Agent"] = agents
-        self.agent_idx: List[int] = list(range(len(agents)))
-        self.agent_pointer = 0
-        self.agent_positions: List[Tuple[int, int]] = []
-        self.init_environment()
+        self.idx: List[int] = 0
 
-    # ----- Init Functions ----- #
-    def init_environment(self):
-        for x in range(-1, self.width + 1):
-            for y in range(-1, self.height + 1):
-                if x < 0 or x >= self.width:
-                    self.env[(x, y)] = Wall((x, y), (self.width, self.height))
-                elif y < 0 or y >= self.height:
-                    self.env[(x, y)] = Wall((x, y), (self.width, self.height))
-                else:
-                    self.env[(x, y)] = Cell((x, y))
+        self.set_interactive_tiles()
 
     def set_interactive_tiles(self):
-        self.lookup.clear()
-        used_pos = []
-
-        for x in range(self.width):
-            for y in range(self.height):
-                self.interactables[(x, y)] = set()
-        # TODO: extract repeated code
-
         # Assign goal to set position
-        goal_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
-        # goal_pos = (self.width - 1, self.height - 1)
-        goal = Goal(goal_pos)
-        # self.env[goal_pos] = goal
-        self.lookup.add(goal)
-        self.goal = goal
-        used_pos.append(goal_pos)
-        self.interactables[goal_pos].add(goal)
-
-        # Assign items to a random position in the remaining tiles
-        # item_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
-        # item = Item(item_pos)
-        # # self.env[item_pos] = item
-        # self.lookup.add(item)
-        # used_pos.append(item_pos)
-        # self.item = item
-        # self.interactables[item_pos].add(item)
+        self.goal_pos = GridFactory.get_random_pos(self.width, self.height)
+        self.goal_reached = False
 
         # Assign agents to random positions
-        self.agent_positions = []
-        for agent in self.agents:
-            agent_pos = GridFactory.get_random_pos(self.width, self.height, used_pos)
-            used_pos.append(agent_pos)
-            self.agent_positions.append(agent_pos)
-            self.interactables[agent_pos].add(agent)
+        self.agent_positions = [
+            GridFactory.get_random_pos(self.width, self.height) for _ in self.agents
+        ]
 
         self.max_reward = GridUtil.calculate_max_reward(self)
 
     # ----- Core Functions ----- #
-    def step(self, testing=False, ep=0, total_ep=1):
+    def step(self, is_testing=False, ep=0, total_ep=1):
         if self.has_ended():
             return
-        if self.agent_pointer >= len(self.agent_idx):
-            self.agent_pointer = 0
+        if self.idx >= len(self.agents):
+            self.idx = 0
             # random.shuffle(self.agent_idx)
 
-        idx = self.agent_idx[self.agent_pointer]
-        agent = self.agents[idx]
-
-        loss = 0
-
-        state = self.extract_state(idx)
-
-        # Off the job training
-        learn = not testing
-        if not testing:
-            percent = ep / total_ep
-            # print(agent.get_type(), percent)
-            if percent >= 0.99:
-                learn = True
-            elif (int(percent * 100) % 2 == 0) and agent.get_type() == 1:
-                # print(273)
-                learn = True
-            elif (int(percent * 100) % 2 == 1) and agent.get_type() == 2:
-                # print(279)
-                learn = True
-            else:
-                # print("Hello")
-                learn = False
-
+        agent = self.agents[self.idx]
+        observed_state = self.extract_state(self.idx)
         action = agent.choose_action(
-            state, testing=testing, learn=learn, ep=ep, total_ep=total_ep
+            observed_state, choose_best=is_testing, ep_ratio=ep / total_ep
         )
-        if debug:
-            print(self.agent_positions[idx])
-            print(f"agent {idx} of type {agent.get_type()} is making a move: {action}")
-        reward, next_state, terminal = self.move(idx, action)
+        reward, next_state, is_terminal = self.move(self.idx, action)
+        agent.update(
+            state=observed_state,
+            action=action,
+            reward=reward,
+            next_state=next_state,
+            is_terminal=is_terminal,
+            learn=True,
+        )
 
-        # print(f"next state is {next_state[:16], next_state[16:32], next_state[32:]}")
-        if learn:
-            loss += agent.update_learn(
-                state,
-                action,
-                reward,
-                next_state,
-                terminal,
-            )
-        else:
-            agent.update(reward)
-        self.agent_pointer += 1
-        return loss if learn else None
-
-    def interact(self, temp_position: Tuple[int, int], agent: "Agent"):
-        reward, new_pos, is_terminal = self.env[temp_position].interact(agent)
-        if is_terminal:
-            return reward, new_pos, is_terminal
-
-        for interactable in self.interactables[new_pos]:
-            if interactable is not agent:
-                r, _, it = interactable.interact(agent)
-                if it is None:
-                    it = False
-                if _ is None:
-                    pass
-                reward += r
-                is_terminal = is_terminal or it
-
-        return reward, new_pos, is_terminal
+        self.idx += 1
+        return
 
     def move(
         self, idx: int, action: Tuple[int, int]
     ):  # List of actions, in the same order as self.agents
         # Update agent to temporary location according to move
-        old_pos = self.agent_positions[idx]
-        temp_positions = self.process_action(action, old_pos)
+        old_x, old_y = self.agent_positions[idx]
+        dx, dy = action
+        new_x, new_y = old_x + dx, old_y + dy
+
+        reward = 0
+
+        def clamp(i: int, lower: int, upper: int) -> Tuple[int, int]:
+            penalty = -50 if i < lower or i > upper else 0
+            return penalty, min(max(i, lower), upper)
 
         # Retreive reward and new location according to Entity.interaction
-        if debug:
-            print(f"temp(before bounce back from walls):{temp_positions}")
-        reward_new_positions = self.interact(temp_positions, self.agents[idx])
-        # self.env[temp_positions].interact(self.agents[idx])
-        rewards, new_positions, is_terminal = reward_new_positions
-        if debug:
-            print(f"new pos: {new_positions}")
-        # Update new positions
-        self.agent_positions = [pos for pos in self.agent_positions]
-        self.agent_positions[idx] = new_positions
-        self.interactables[old_pos].remove(self.agents[idx])
-        self.interactables[new_positions].add(self.agents[idx])
+        penalty, new_x = clamp(new_x, 0, self.width - 1)
+        penalty, new_y = clamp(new_y, 0, self.height - 1)
+        reward += penalty
+        reward -= 1
 
-        # Return move results, in the same order as self.agents
-        if debug:
-            print(self.agent_positions[idx])
-        return rewards, self.extract_state(idx), is_terminal
+        new_pos = new_x, new_y
+        agent = self.agents[idx]
+        goal_reached = False
+        if new_pos == self.goal_pos:
+            if agent.has_secret():
+                reward += 50
+                goal_reached = True
+            else:
+                reward -= 20
+        print(f"goal_reached: {goal_reached}")
+        self.goal_reached = goal_reached or self.goal_reached
+        print(f"self.goal_reached: {self.goal_reached}")
+
+        other_indices = [
+            other_idx
+            for (other_idx, pos) in enumerate(self.agent_positions)
+            if other_idx != idx and pos == new_pos
+        ]
+        print(other_indices)
+        other_agents_diff_type = [
+            self.agents[o_idx]
+            for o_idx in other_indices
+            if self.agents[o_idx].get_type() != self.agents[idx].get_type()
+        ]
+        print(other_agents_diff_type)
+        if len(other_agents_diff_type) > 0:
+            if not self.agents[idx].has_secret():
+                reward += 50
+            for agents in other_agents_diff_type + [self.agents[idx]]:
+                agents.have_secret_(True)
+
+        self.agent_positions[idx] = new_pos
+        print(f"reward: {reward}")
+        return reward, self.extract_state(idx), goal_reached
 
     # ----- Private Functions ----- #
-    def process_action(
-        self, action: Tuple[int, int], agent_position: List[Tuple[int, int]]
-    ):
-        # Move according to action
-        x, y = agent_position
-        dx, dy = action
-        return x + dx, y + dy
 
     # ----- Public Functions ----- #
     def reset(self):
-        self.init_environment()
         self.set_interactive_tiles()
         for agent in self.agents:
             agent.reset()
-
-    def has_ended(self) -> bool:
-        return self.goal.has_reached()
 
     def extract_state(self, idx):
         if debug:
             print(f"all agent pos: {self.agent_positions}")
             print(f"all types: {[agent.get_type() for agent in self.agents]}")
+
         type = self.agents[idx].get_type()
         x, y = self.agent_positions[idx]
         x2, y2 = self.get_closest_other_agent(x, y, type)
         x3, y3 = self.get_goal_positions()
 
         state = torch.zeros(state_size, dtype=dtype)
-        state[x * side + y] = 1
 
+        state[x * side + y] = 1
         state[side**2 + x2 * side + y2] = 1
         state[side**2 * 2 + x3 * side + y3] = 1
         state[side**2 * 3] = 1 if self.agents[idx].has_secret() else 0
+        print(state[side**2 * 3])
 
         return state
 

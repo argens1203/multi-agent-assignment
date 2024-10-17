@@ -85,13 +85,10 @@ class Agent(ABC):
 
     # ----- Core Functions ----- #
     def choose_action(
-        self, state: torch.tensor, testing=False, learn=True, ep=0, total_ep=1
+        self, state: torch.tensor, choose_best: bool, ep_ratio: float
     ) -> Tuple[int, int]:
-        # eps = self.epsilon_min + (1 - self.epsilon_min) * (math.e ** (-0.997 * ep))
-        eps = 1 - (1 - self.epsilon_min) * min(1, ep / (total_ep))
-        if debug:
-            print(f"learn: {learn}; testing: {testing}, eps: {eps}")
-        if not testing and np.random.rand() < eps and learn:
+        eps = 1 - (1 - self.epsilon_min) * min(1, ep_ratio)
+        if not choose_best and np.random.rand() < eps:
             return random.choice(self.actions)
         else:
             # Extract immutable state information
@@ -99,38 +96,21 @@ class Agent(ABC):
             idx = torch.argmax(self.dqn.get_qvals(state_i))
             return self.actions[idx]
 
-    def update_learn(
+    def update(
         self,
         state: torch.tensor,
         action: Tuple[int, int],
         reward: int,
         next_state: torch.tensor,
         is_terminal: bool,
-        learn=True,
+        learn: bool,
     ):
-        self.update(reward)
-
-        # Extract immutable state information
-        # nxt_state_i = self.massage(next_state)
-
+        self.total_reward += reward
         if not learn:
             return
 
-        # # All states (including terminal states) have initial Q-values of 0 and thus there is no need for branching for handling terminal next state
-        # self.Q[state_i][self.actions.index(action)] += self.alpha * (
-        #     reward
-        #     + self.gamma * np.max(self.Q[nxt_state_i])
-        #     - self.Q[state_i][self.actions.index(action)]
-        # )
-
         state_i = self.massage(state)
         nxt_state_i = self.massage(next_state)
-        # target_val = self.gamma * get_maxQ(nxt_state_i) + reward
-        # if is_terminal:
-        #     target_val = torch.tensor(reward)
-
-        # next_qa = np.copy(current_qa)
-        # next_qa[np.argmax(next_qa)] = target_val
         self.buffer.insert(
             state_i, self.actions.index(action), reward, nxt_state_i, is_terminal
         )
@@ -144,8 +124,6 @@ class Agent(ABC):
             targets[indices] = rewards[
                 indices
             ]  # For terminal states, target_val is reward
-            # print(states, actions, targets)
-            # print(states.shape, actions.shape, targets.shape)
             loss = self.dqn.train_one_step(states, actions, targets)
 
         if self.step_count >= self.C:
@@ -154,39 +132,26 @@ class Agent(ABC):
         else:
             self.step_count += 1
 
-        # Epsilon decay
-        # self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
         return loss
 
     # ----- Public Functions ----- #
-    def has_item(self):
-        return self.is_having_item
-
     def have_secret_(self, new_value: bool):
         self.is_have_secret = new_value
 
     def has_secret(self):
         return self.is_have_secret
 
-    def get_total_reward(self):
-        return self.total_reward
-
-    def set_has_item(self, has_item: bool):
-        self.is_having_item = has_item
-
-    def update(self, reward=0):
-        self.total_reward += reward
-
     def reset(self):
         self.is_having_item = False
+        self.is_have_secret = False
         self.total_reward = 0
-
-    def get_q_table(self):
-        return self.Q
 
     @abstractmethod
     def get_type(self):
         pass
+
+    def get_total_reward(self):
+        return self.total_reward
 
     # ----- Private Functions ----- #
     # Extract immutable information from State object
