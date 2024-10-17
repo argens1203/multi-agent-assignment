@@ -23,7 +23,7 @@ if __name__ == "__main__":
     )
     grid.reset()
 
-    grid.train(2500)
+    grid.train(15000)
     fig2, ax2 = plt.subplots()
     MLGraph(storage.ml_losses, fig2, ax2).show()
 
