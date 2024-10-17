@@ -212,11 +212,11 @@ class Agent1(Agent):
     def interact(self, other: "Agent"):
         rewarded = False
         if other.get_type() == 2:
-            if not self.is_have_secret:
+            if not other.has_secret():
                 rewarded = True
             self.is_have_secret = True
             other.have_secret_(True)
-        return 50 if rewarded else 0, None, None
+        return (50 if rewarded else 0), None, None
 
     def reset(self):
         super().reset()
@@ -236,11 +236,11 @@ class Agent2(Agent):
     def interact(self, other: "Agent"):
         rewarded = False
         if other.get_type() == 1:
-            if not self.is_have_secret:
+            if not other.has_secret():
                 rewarded = True
             self.is_have_secret = True
             other.have_secret_(True)
-        return 50 if rewarded else 0, None, None
+        return (50 if rewarded else 0), None, None
 
     def reset(self):
         super().reset()
