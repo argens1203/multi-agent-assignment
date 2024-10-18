@@ -163,18 +163,23 @@ class Visualization:
     def draw_agent(self, info):
         # Draw agent
         for idx, (pos, type, has_item) in enumerate(info):
-            size = [0.4, 0.37, 0.33, 0.3][idx]
+            dx = [0, 0.5, 0, 0.5][idx]
+            dy = [0, 0, 0.5, 0.5][idx]
             ax, ay = pos
+
             if type == 1:
                 agent_color = "red" if has_item else "pink"
-                agent_patch = patches.Circle(
-                    (ax + 0.5, ay + 0.5), size, color=agent_color
-                )
             if type == 2:
                 agent_color = "blue" if has_item else "cyan"
-                agent_patch = patches.Circle(
-                    (ax + 0.5, ay + 0.5), size, color=agent_color
-                )
+
+            agent_patch = patches.Rectangle(
+                (ax + dx, ay + dy),
+                0.5,
+                0.5,
+                linewidth=1,
+                edgecolor="black",
+                facecolor=agent_color,
+            )
             self.ax.add_patch(agent_patch)
 
     def draw_item(self, items):
