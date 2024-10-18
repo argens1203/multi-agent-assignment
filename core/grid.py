@@ -54,8 +54,14 @@ class Trainer:
         print(f"Start Time: {start}")
         self.reset()
         for i in range(itr):
+            if i / itr >= 0.9:
+                self.enable_learning(agent_type=1)
+                self.enable_learning(agent_type=2)
+            else:
+                self.enable_learning(agent_type=(2 - (i // (itr // 100)) % 2))
+                self.disable_learning(agent_type=(1 + (i // (itr // 100)) % 2))
+
             (loss, reward, epsilon, ml_losses) = self.train_one_game(ep=i, total_ep=itr)
-            # self.storage.append_loss_epsilon(loss, epsilon)
 
             self.storage.append_ml_losses(ml_losses)
             if (i + 1) % 100 == 0:
@@ -71,14 +77,10 @@ class Trainer:
         #     self.storage.test_loss[i] = 0
         for i in range(itr):
             # Off the job training
-            if i / itr >= 0.9:
-                self.enable_learning(agent_type=1)
-                self.enable_learning(agent_type=2)
-            else:
-                self.enable_learning(agent_type=(2 - (i // (itr // 100)) % 2))
-                self.disable_learning(agent_type=(1 + (i // (itr // 100)) % 2))
+            self.disable_learning(agent_type=1)
+            self.disable_learning(agent_type=2)
             (loss, reward, epsilon, _) = self.train_one_game(testing=True)
-            # self.storage.append_test_loss(loss)
+
             self.storage.append_test_loss(loss)
         return self.storage.test_loss
 
@@ -243,12 +245,12 @@ class Grid(Controller, Trainer, Visual, IVisual):
             if agent.has_secret():
                 reward += 50
                 goal_reached = True
-                if goal_reached:
+                if goal_reached and debug:
                     print(f"goal_reached: {goal_reached}")
             else:
                 reward -= 20
         self.goal_reached = goal_reached or self.goal_reached
-        if goal_reached:
+        if goal_reached and debug:
             print(f"self.goal_reached: {self.goal_reached}")
 
         other_indices = [
@@ -256,13 +258,11 @@ class Grid(Controller, Trainer, Visual, IVisual):
             for (other_idx, pos) in enumerate(self.agent_positions)
             if other_idx != idx and pos == new_pos
         ]
-        print(other_indices)
         other_agents_diff_type = [
             self.agents[o_idx]
             for o_idx in other_indices
             if self.agents[o_idx].get_type() != self.agents[idx].get_type()
         ]
-        print(other_agents_diff_type)
         if len(other_agents_diff_type) > 0:
             if not self.agents[idx].has_secret():
                 reward += 50
@@ -270,8 +270,9 @@ class Grid(Controller, Trainer, Visual, IVisual):
                 agents.have_secret_(True)
 
         self.agent_positions[idx] = new_pos
-        print(f"reward: {reward}")
-        print(f"has secret: {agent.has_secret()}")
+        if debug:
+            print(f"reward: {reward}")
+            print(f"has secret: {agent.has_secret()}")
         return reward, self.extract_state(idx), goal_reached
 
     # ----- Private Functions ----- #
@@ -298,7 +299,6 @@ class Grid(Controller, Trainer, Visual, IVisual):
         state[side**2 + x2 * side + y2] = 1
         state[side**2 * 2 + x3 * side + y3] = 1
         state[side**2 * 3] = 1 if self.agents[idx].has_secret() else 0
-        print(state[side**2 * 3])
 
         return state
 
