@@ -61,7 +61,9 @@ class Trainer:
                 self.enable_learning(agent_type=(2 - (i // (itr // 100)) % 2))
                 self.disable_learning(agent_type=(1 + (i // (itr // 100)) % 2))
 
-            (loss, reward, epsilon, ml_losses) = self.train_one_game(ep=i, total_ep=itr)
+            (loss, reward, epsilon, ml_losses, step_count) = self.play_one_game(
+                ep=i, total_ep=itr
+            )
 
             self.storage.append_ml_losses(ml_losses)
             if (i + 1) % 100 == 0:
@@ -73,16 +75,39 @@ class Trainer:
     def test(self, itr=1):
         self.reset()
         self.storage.reset_test_loss()
-        # for i in range(self.max_itr):
-        #     self.storage.test_loss[i] = 0
-        for i in range(itr):
-            # Off the job training
-            self.disable_learning(agent_type=1)
-            self.disable_learning(agent_type=2)
-            (loss, reward, epsilon, _) = self.train_one_game(testing=True)
+        self.disable_learning(agent_type=1)
+        self.disable_learning(agent_type=2)
 
-            self.storage.append_test_loss(loss)
-        return self.storage.test_loss
+        possible_loc = [(x, y) for x in range(side) for y in range(side)]
+        total_step_count = 0
+        count = 0
+        for goal_pos in possible_loc:
+            for p1 in possible_loc:
+                for p2 in possible_loc:
+                    for p3 in possible_loc:
+                        for p4 in possible_loc:
+                            for agent in self.agents:
+                                agent.reset()
+                            self.goal_reached = False
+                            self.goal_pos = goal_pos
+                            self.agent_positions = [p1, p2, p3, p4]
+                            max_reward = GridUtil.calculate_max_reward(self)
+
+                            (loss, reward, epsilon, ml_loss, step_count) = (
+                                self.play_one_game(is_testing=True)
+                            )
+                            self.storage.append_test_loss(loss)
+                            self.storage.append_step_count(step_count)
+
+                            total_step_count += step_count
+                            count += 1
+
+                            if count % 100 == 0:
+                                print(
+                                    f"Average step -- ep {count}: {total_step_count / count}"
+                                )
+
+        return self.storage.test_loss, self.storage.step_count
 
     def enable_learning(self, agent_type):
         agents = [a for a in self.agents if a.get_type() == agent_type]
@@ -94,7 +119,7 @@ class Trainer:
         for a in agents:
             a.disable_learning()
 
-    def train_one_game(self, **kwargs):
+    def play_one_game(self, **kwargs):
         self.reset()
         max_reward = self.get_max_reward()
 
@@ -109,7 +134,13 @@ class Trainer:
 
         total_reward = sum(map(lambda a: a.get_total_reward(), self.agents))
         loss = max_reward - total_reward
-        return loss, total_reward, self.agents[0].epsilon, ml_losses  # TODO: 0
+        return (
+            loss,
+            total_reward,
+            self.agents[0].epsilon,
+            ml_losses,
+            step_count,
+        )  # TODO: 0
 
     def train_in_background(self):
         gp, tp, conn1 = get_process(self.storage, self)

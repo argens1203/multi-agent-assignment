@@ -283,9 +283,13 @@ class Visualization:
             self.after_auto_train()
 
         def blocking_test(e):
-            losses = self.grid.test(episodes)
+            losses, step_counts = self.grid.test(episodes)
+
             fig2, ax2 = plt.subplots()
             MLGraph(losses, fig2, ax2).show()
+
+            fig3, ax3 = plt.subplots()
+            MLGraph(step_counts, fig3, ax3).show()
 
         return blocking_test if blocking else non_blocking_test
 
