@@ -50,6 +50,9 @@ class ExpBuffer:
             self.is_terminals[indices],
         )
 
+    def clear(self):
+        self.__init__()
+
     def __len__(self):
         return len(self.states)
 
@@ -83,6 +86,8 @@ class Agent(ABC):
         self.epsilon_min = 0.01
         self.gamma = 0.997
 
+        self.learning = True
+
     # ----- Core Functions ----- #
     def choose_action(
         self, state: torch.tensor, choose_best: bool, ep_ratio: float
@@ -105,10 +110,9 @@ class Agent(ABC):
         reward: int,
         next_state: torch.tensor,
         is_terminal: bool,
-        learn: bool,
     ):
         self.total_reward += reward
-        if not learn:
+        if not self.learning:
             return
 
         state_i = self.massage(state)
@@ -154,6 +158,14 @@ class Agent(ABC):
 
     def get_total_reward(self):
         return self.total_reward
+
+    def enable_learning(self):
+        if not self.learning:
+            self.buffer.clear()
+        self.learning = True
+
+    def disable_learning(self):
+        self.learning = False
 
     # ----- Private Functions ----- #
     # Extract immutable information from State object

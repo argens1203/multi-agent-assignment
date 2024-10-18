@@ -69,11 +69,28 @@ class Trainer:
         self.storage.reset_test_loss()
         # for i in range(self.max_itr):
         #     self.storage.test_loss[i] = 0
-        for _ in range(itr):
+        for i in range(itr):
+            # Off the job training
+            if i / itr >= 0.9:
+                self.enable_learning(agent_type=1)
+                self.enable_learning(agent_type=2)
+            else:
+                self.enable_learning(agent_type=(2 - (i // (itr // 100)) % 2))
+                self.disable_learning(agent_type=(1 + (i // (itr // 100)) % 2))
             (loss, reward, epsilon, _) = self.train_one_game(testing=True)
             # self.storage.append_test_loss(loss)
             self.storage.append_test_loss(loss)
         return self.storage.test_loss
+
+    def enable_learning(self, agent_type):
+        agents = [a for a in self.agents if a.get_type() == agent_type]
+        for a in agents:
+            a.enable_learning()
+
+    def disable_learning(self, agent_type):
+        agents = [a for a in self.agents if a.get_type() == agent_type]
+        for a in agents:
+            a.disable_learning()
 
     def train_one_game(self, **kwargs):
         self.reset()
@@ -194,7 +211,6 @@ class Grid(Controller, Trainer, Visual, IVisual):
             reward=reward,
             next_state=next_state,
             is_terminal=is_terminal,
-            learn=True,
         )
 
         self.idx += 1
