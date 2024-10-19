@@ -1,8 +1,8 @@
 import torch
 
-side = 4
-action_size = 4
-state_size = 4 * 4 * 3 + 1
+side = 5
+action_size = 5
+state_size = 5 * 5 * 3 + 1
 device = torch.device(
     "cuda:0"
     if torch.cuda.is_available()

@@ -63,3 +63,11 @@ class DQN:
         loss.backward()
         self.optimizer.step()
         return loss.item() / len(X)
+
+    def save(self, idx):
+        torch.save(self.model.state_dict(), f"agent_{idx}_1.pth")
+        torch.save(self.model2.state_dict(), f"agent_{idx}_2.pth")
+
+    def load(self, idx):
+        self.model.load_state_dict(torch.load(f"agent_{idx}_1.pth", weights_only=True))
+        self.model2.load_state_dict(torch.load(f"agent_{idx}_2.pth"), weights_only=True)

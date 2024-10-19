@@ -178,6 +178,12 @@ class Agent(ABC):
     def interact(self, other: "Agent"):
         return 0, None, None
 
+    def load(self, idx):
+        self.dqn.load(idx)
+
+    def save(self, idx):
+        self.dqn.save(idx)
+
 
 class Agent1(Agent):
     def __init__(self, idx, all_states, actions):

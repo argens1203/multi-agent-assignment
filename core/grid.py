@@ -161,6 +161,17 @@ class Trainer:
         gp.join()
         tp.join()
 
+    def try_load_dqn(self):
+        for idx, agent in enumerate(self.agents):
+            try:
+                agent.load(idx)
+            except:
+                pass
+
+    def save_dqn(self):
+        for idx, agent in enumerate(self.agents):
+            agent.save(idx)
+
 
 class Visual:
     def get_agent_info(self) -> List[Tuple[Tuple[int, int], int, bool]]:
