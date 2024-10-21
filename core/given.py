@@ -70,4 +70,4 @@ class DQN:
 
     def load(self, idx):
         self.model.load_state_dict(torch.load(f"agent_{idx}_1.pth", weights_only=True))
-        self.model2.load_state_dict(torch.load(f"agent_{idx}_2.pth"), weights_only=True)
+        self.model2.load_state_dict(torch.load(f"agent_{idx}_2.pth", weights_only=True))

@@ -165,7 +165,9 @@ class Trainer:
         for idx, agent in enumerate(self.agents):
             try:
                 agent.load(idx)
-            except:
+            except Exception as e:
+                print(e)
+                print("load failed")
                 pass
 
     def save_dqn(self):
