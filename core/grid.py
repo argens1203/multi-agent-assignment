@@ -13,20 +13,6 @@ if TYPE_CHECKING:
     from .storage import Storage
 
 
-class GridFactory:
-    # Getting a random location in a grid, excluding certain locations
-    def get_random_pos(
-        width: int, height: int, exclude: List[Tuple[int, int]] = []
-    ) -> Tuple[int, int]:
-        while True:
-            position = (
-                random.randint(0, width - 1),
-                random.randint(0, height - 1),
-            )
-            if position not in exclude:
-                return position
-
-
 class Controller:
     # Iterate by number of games
     def __init__(self, **kwargs):
@@ -207,7 +193,70 @@ class Visual:
         return self.goal_reached
 
 
-class Grid(Controller, Trainer, Visual, IVisual):
+class GridUtil:
+    def calculate_min_step_for_two(one_pos, two_pos, goal_pos):
+        if line_passing_through_goal_can_cut:
+            return max(
+                self.cacl_mht_dist(one_pos, goal_pos),
+                self.cacl_mht_dist(two_pos, goal_pos),
+            )
+        if one_on_line and other_not_on_line:
+            return max(
+                2 + self.calc_mht_distance(on_line, goal_pos),
+                self.calc_mht_distance(not_on_line, goal_pos),
+            )
+        if both_on_line:
+            if opposite:
+                move = find_move(one_pos, two_pos, goal_pos)
+                return 1 + self.calculate_min_step_for_two(
+                    move + one_pos, move + two_pos, goal_pos
+                )
+            if perpendicular:
+                move = find_joining_move(one_pos, two_pos, goal_pos)
+                return 1 + self.calculate_min_step_for_two(
+                    move + one_pos, move + two_pos, goal_pos
+                )
+        if diff_quadrant:
+            return min(
+                max(
+                    mht_dist(one_pos) + min_of_x_y_diff_to_goal(one_pos) + 1,
+                    mht_dist(two_pos),
+                ),
+                max(
+                    mht_dist(two_pos) + min_of_x_y_diff_to_goal(two_pos) + 1,
+                    mht_dist(one_pos),
+                ),
+            )
+
+    def calculate_max_reward(self):
+        return 100
+        ones = [idx for idx, agent in enumerate(self.agents) if agent.get_type() == 1]
+        twos = [idx for idx, agent in enumerate(self.agents) if agent.get_type() == 2]
+        ones_pos = [self.agent_positions[i] for i in ones]
+        twos_pos = [self.agent_positions[i] for i in twos]
+
+        min_step = 1e9
+        for one in ones_pos:
+            for two in twos_pos:
+                step = self.calculate_min_step_for_two(one, two, self.goal_pos)
+                if step < min_step:
+                    min_step = step
+        return min_step
+
+    # Getting a random location in a grid, excluding certain locations
+    def get_random_pos(
+        self, width: int, height: int, exclude: List[Tuple[int, int]] = []
+    ) -> Tuple[int, int]:
+        while True:
+            position = (
+                random.randint(0, width - 1),
+                random.randint(0, height - 1),
+            )
+            if position not in exclude:
+                return position
+
+
+class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
     def __init__(
         self,
         width: int,
@@ -227,12 +276,12 @@ class Grid(Controller, Trainer, Visual, IVisual):
 
     def set_interactive_tiles(self):
         # Assign goal to set position
-        self.goal_pos = GridFactory.get_random_pos(self.width, self.height)
+        self.goal_pos = self.get_random_pos(self.width, self.height)
         self.goal_reached = False
 
         # Assign agents to random positions
         self.agent_positions = [
-            GridFactory.get_random_pos(self.width, self.height) for _ in self.agents
+            self.get_random_pos(self.width, self.height) for _ in self.agents
         ]
 
         self.max_reward = GridUtil.calculate_max_reward(self)
@@ -364,22 +413,6 @@ class Grid(Controller, Trainer, Visual, IVisual):
                 f"for current agent {x, y}, closest agent of opposite type of {type} is at {min_x, min_y}"
             )
         return min_x, min_y
-
-
-class GridUtil:
-    def calculate_max_reward(grid: Grid):
-        return 100
-        # TODO: can only work with one agent and one item ATM
-        x1, y1 = grid.get_agent_positions()[0]
-        x2, y2 = grid.get_item_positions()[0]
-        x3, y3 = grid.get_goal_positions()
-
-        # Manhanttan distance from agent to obj and obj to goal
-        dist_to_obj = abs(x1 - x2) + abs(y1 - y2)
-        dist_to_goal = abs(x2 - x3) + abs(y2 - y3)
-
-        # +100 for reward and +2 for 2 unneeded mark deduction when stepping on item and goal respectively
-        return (dist_to_obj + dist_to_goal) * -1 + 102
 
 
 # ---- Grid

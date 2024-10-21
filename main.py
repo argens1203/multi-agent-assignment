@@ -21,7 +21,7 @@ if __name__ == "__main__":
         ],
         storage,
     )
-    grid.try_load_dqn()
+    # grid.try_load_dqn()
     grid.reset()
 
     grid.train(15000)

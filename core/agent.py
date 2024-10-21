@@ -84,7 +84,7 @@ class Agent(ABC):
         # TODO: fix resetting epsilon
         self.epsilon = 1
         self.epsilon_decay = 0.997  # TODO: reduce the decay (ie. increase the number)
-        self.epsilon_min = 0.01
+        self.epsilon_min = 0.05
         self.gamma = 0.997
 
         self.learning = True
