@@ -13,6 +13,7 @@ class Storage:
         self.epsilon = Array("f", max_itr)
         self.test_loss = []
         self.ml_losses = []
+        self.step_count = []
 
     def reset_counter(self):
         self.itr = 0
@@ -23,6 +24,9 @@ class Storage:
         self.losses[self.itr] = loss
         self.epsilon[self.itr] = epsilon
         self.itr += 1
+
+    def append_step_count(self, step_count: int):
+        self.step_count.append(step_count)
 
     def append_test_loss(self, test_loss: int):
         self.test_loss.append(test_loss)

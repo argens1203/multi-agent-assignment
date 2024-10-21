@@ -1,13 +1,15 @@
 from typing import TYPE_CHECKING, Tuple, List
+from abc import abstractmethod, ABC
 
 import numpy as np
 import random
 import torch
-from .given import *
-from constants import state_size, device, dtype
+
+from .given import DQN
+from constants import state_size, device, dtype, action_size, debug
 
 if TYPE_CHECKING:
-    from shared import State, Action
+    pass
 
 
 class ExpBuffer:
@@ -49,11 +51,20 @@ class ExpBuffer:
             self.is_terminals[indices],
         )
 
+    def clear(self):
+        self.__init__()
+
     def __len__(self):
         return len(self.states)
 
 
-class Agent:
+buffer1 = ExpBuffer()
+buffer2 = ExpBuffer()
+dqn1 = DQN(state_size=state_size, action_size=action_size)
+dqn2 = DQN(state_size=state_size, action_size=action_size)
+
+
+class Agent(ABC):
     def __init__(self, idx, all_states, actions):
         # Agent property (for illustration purposes)
         self.is_having_item = False
@@ -71,59 +82,42 @@ class Agent:
 
         # Initialize Learning param
         # TODO: fix resetting epsilon
-        self.epsilon = 1.0
+        self.epsilon = 1
         self.epsilon_decay = 0.997  # TODO: reduce the decay (ie. increase the number)
-        self.epsilon_min = 0.1
+        self.epsilon_min = 0.01
         self.gamma = 0.997
 
-        # self.alpha = 0.1
-
-        self.buffer = ExpBuffer()
-
-        prepare_torch()
+        self.learning = True
 
     # ----- Core Functions ----- #
-    def choose_action(self, state: "State", explore=True):
-        if explore and np.random.rand() < self.epsilon:
+    def choose_action(
+        self, state: torch.tensor, choose_best: bool, ep_ratio: float
+    ) -> Tuple[int, int]:
+        # eps = 1 - (1 - self.epsilon_min) * min(1, ep_ratio)
+        if not choose_best and np.random.rand() < self.epsilon:
+            self.epsilon *= self.epsilon_decay
+            self.epsilon = max(self.epsilon, self.epsilon_min)
             return random.choice(self.actions)
         else:
             # Extract immutable state information
             state_i = self.massage(state)
-            idx = torch.argmax(get_qvals(state_i))
+            idx = torch.argmax(self.dqn.get_qvals(state_i))
             return self.actions[idx]
 
-    def update_learn(
+    def update(
         self,
-        state: "State",
-        action: "Action",
+        state: torch.tensor,
+        action: Tuple[int, int],
         reward: int,
-        next_state: "State",
+        next_state: torch.tensor,
         is_terminal: bool,
-        learn=True,
     ):
-        self.update(next_state, reward)
-
-        # Extract immutable state information
-        # nxt_state_i = self.massage(next_state)
-
-        if not learn:
+        self.total_reward += reward
+        if not self.learning:
             return
-
-        # # All states (including terminal states) have initial Q-values of 0 and thus there is no need for branching for handling terminal next state
-        # self.Q[state_i][self.actions.index(action)] += self.alpha * (
-        #     reward
-        #     + self.gamma * np.max(self.Q[nxt_state_i])
-        #     - self.Q[state_i][self.actions.index(action)]
-        # )
 
         state_i = self.massage(state)
         nxt_state_i = self.massage(next_state)
-        # target_val = self.gamma * get_maxQ(nxt_state_i) + reward
-        # if is_terminal:
-        #     target_val = torch.tensor(reward)
-
-        # next_qa = np.copy(current_qa)
-        # next_qa[np.argmax(next_qa)] = target_val
         self.buffer.insert(
             state_i, self.actions.index(action), reward, nxt_state_i, is_terminal
         )
@@ -133,45 +127,107 @@ class Agent:
             )
             rewards = rewards.to(device)
             indices = is_terminals.nonzero().to(device)
-            targets = self.gamma * get_maxQ(next_states.to(device)) + rewards
+            targets = self.gamma * self.dqn.get_maxQ(next_states.to(device)) + rewards
             targets[indices] = rewards[
                 indices
             ]  # For terminal states, target_val is reward
-            # print(states, actions, targets)
-            # print(states.shape, actions.shape, targets.shape)
-            loss = train_one_step(states, actions, targets)
+            loss = self.dqn.train_one_step(states, actions, targets)
 
         if self.step_count >= self.C:
-            update_target()
+            self.dqn.update_target()
             self.step_count = 0
         else:
             self.step_count += 1
 
-        # Epsilon decay
-        self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
         return loss
 
     # ----- Public Functions ----- #
-    def has_item(self):
-        return self.is_having_item
+    def have_secret_(self, new_value: bool):
+        self.is_have_secret = new_value
+
+    def has_secret(self):
+        return self.is_have_secret
+
+    def reset(self):
+        self.is_having_item = False
+        self.is_have_secret = False
+        self.total_reward = 0
+
+    @abstractmethod
+    def get_type(self):
+        pass
 
     def get_total_reward(self):
         return self.total_reward
 
-    def update(self, state: "State", reward=0):
-        self.is_having_item = state.item_taken()
-        self.total_reward += reward
+    def enable_learning(self):
+        if not self.learning:
+            self.buffer.clear()
+        self.learning = True
 
-    def reset(self):
-        self.is_having_item = False
-        self.total_reward = 0
-
-    def get_q_table(self):
-        return self.Q
+    def disable_learning(self):
+        self.learning = False
 
     # ----- Private Functions ----- #
     # Extract immutable information from State object
-    def massage(self, state: "State"):
-        state_i = state.extract_state(self.idx).to(device).float()
+    def massage(self, state: torch.tensor):
+        state_i = state.to(device).float()
         return state_i + 0.001  # 5 Minutes
         # return state_i + torch.rand(state_size).to(device) / 100.0  # 15 Minutes
+
+    def interact(self, other: "Agent"):
+        return 0, None, None
+
+    def load(self, idx):
+        self.dqn.load(idx)
+
+    def save(self, idx):
+        self.dqn.save(idx)
+
+
+class Agent1(Agent):
+    def __init__(self, idx, all_states, actions):
+        super().__init__(idx, all_states, actions)
+        self.buffer = buffer1
+        self.dqn = dqn1
+        self.is_have_secret = False
+
+    def get_type(self):
+        return 1
+
+    def interact(self, other: "Agent"):
+        rewarded = False
+        if other.get_type() == 2:
+            if not other.has_secret():
+                rewarded = True
+            self.is_have_secret = True
+            other.have_secret_(True)
+        return (50 if rewarded else 0), None, None
+
+    def reset(self):
+        super().reset()
+        self.is_have_secret = False
+
+
+class Agent2(Agent):
+    def __init__(self, idx, all_states, actions):
+        super().__init__(idx, all_states, actions)
+        self.buffer = buffer2
+        self.dqn = dqn2
+        self.is_have_secret = False
+
+    def get_type(self):
+        return 2
+
+    def interact(self, other: "Agent"):
+        rewarded = False
+        if other.get_type() == 1:
+            if not other.has_secret():
+                rewarded = True
+            self.is_have_secret = True
+            other.have_secret_(True)
+        return (50 if rewarded else 0), None, None
+
+    def reset(self):
+        super().reset()
+        self.is_have_secret = False

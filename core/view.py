@@ -3,16 +3,79 @@ import matplotlib.patches as patches
 import matplotlib.animation as animation
 
 from matplotlib.widgets import Button
-from typing import Tuple, TypeAlias, TYPE_CHECKING
-
-from .v_graph import MLGraph
+from typing import Tuple, TypeAlias, TYPE_CHECKING, List
+from abc import ABC, abstractmethod
 
 if TYPE_CHECKING:
-    from .model import Model
-    from .controller import Controller
-    from .c_storage import Storage
+    # from .controller import Controller
+    from core import Grid, Storage
 
 Coordinates: TypeAlias = Tuple[float, float, float, float]
+
+
+class IVisual(ABC):
+
+    # Getting Info
+
+    @abstractmethod
+    def get_agent_info(self) -> List[Tuple[Tuple[int, int], bool]]:
+        pass
+
+    @abstractmethod
+    def get_total_reward(self) -> int:
+        pass
+
+    @abstractmethod
+    def get_max_reward(self) -> int:
+        pass
+
+    @abstractmethod
+    def get_size(self) -> Tuple[int, int]:
+        pass
+
+    @abstractmethod
+    def get_goal_positions(self) -> List[Tuple[int, int]]:
+        pass
+
+    @abstractmethod
+    def get_agent_positions(self) -> List[Tuple[int, int]]:
+        pass
+
+    @abstractmethod
+    def has_ended(self) -> bool:
+        pass
+
+    # Functions
+
+    @abstractmethod
+    def toggle_auto_reset(self):
+        pass
+
+    @abstractmethod
+    def next(self):
+        pass
+
+    # Trainings
+
+    @abstractmethod
+    def train(self, itr=1):
+        pass
+
+    @abstractmethod
+    def test(self, itr=1):
+        pass
+
+    @abstractmethod
+    def train_in_background(self):
+        pass
+
+    @abstractmethod
+    def test_in_background(self, ep=1000):
+        pass
+
+    @abstractmethod
+    def reset(self):
+        pass
 
 
 class Visualization:
@@ -21,15 +84,13 @@ class Visualization:
         self.ax = ax
         self.animating = False
 
-    def bind(self, model: "Model", controller: "Controller", storage: "Storage"):
-        self.model = model
-        self.controller = controller
+    def bind(self, storage: "Storage", grid: "Grid"):
         self.storage = storage
+        self.grid = grid
         return self
 
     def show(self):
-        assert self.model is not None
-        assert self.controller is not None
+        assert self.grid is not None
 
         self.add_ui_elements()
         self.fig.canvas.mpl_connect("close_event", self.on_close)
@@ -40,16 +101,15 @@ class Visualization:
         plt.show()
 
     def get_info(self):
-        info = self.model.get_agent_info()
-        items = self.model.get_untaken_items()
-        tot_reward = self.model.get_total_reward()
-        max_reward = self.model.get_max_reward()
-        return info, items, tot_reward, max_reward
+        agents = self.grid.get_agent_info()
+        tot_reward = self.grid.get_total_reward()
+        max_reward = self.grid.get_max_reward()
+        return agents, tot_reward, max_reward
 
     def frames(self):
         while True:
             if self.animating:
-                self.controller.next()
+                self.grid.next()
                 yield self.get_info()
             else:
                 yield self.get_info()
@@ -57,18 +117,17 @@ class Visualization:
     # ----- ----- ----- ----- Drawing Functions  ----- ----- ----- ----- #
 
     def draw(self, args):
-        info, items, tot_reward, max_reward = args
+        info, tot_reward, max_reward = args
 
         self.ax.clear()
         self.draw_grid()
         self.draw_agent(info)
-        self.draw_item(items)
 
         self.reward.set_text(f"Reward: {tot_reward}")
         self.max_reward.set_text(f"Max Reward: {max_reward}")
 
         # Check if the environment is terminal
-        if self.model.has_ended():
+        if self.grid.has_ended():
             self.draw_complete()
 
         # Early return if animating, since animation automatically refreshes canvas
@@ -78,7 +137,7 @@ class Visualization:
         self.fig.canvas.draw()
 
     def draw_grid(self):
-        width, height = self.model.get_size()
+        width, height = self.grid.get_size()
         for x in range(width):
             for y in range(height):
                 rect = patches.Rectangle(
@@ -95,7 +154,7 @@ class Visualization:
 
         # Draw target
         # TODO: cater multiple goals
-        tx, ty = self.model.get_target_location()
+        tx, ty = self.grid.get_goal_positions()
         target_patch = patches.Rectangle(
             (tx, ty), 1, 1, linewidth=1, edgecolor="black", facecolor="green"
         )
@@ -103,10 +162,24 @@ class Visualization:
 
     def draw_agent(self, info):
         # Draw agent
-        for pos, has_item in info:
+        for idx, (pos, type, has_item) in enumerate(info):
+            dx = [0, 0.5, 0, 0.5][idx]
+            dy = [0, 0, 0.5, 0.5][idx]
             ax, ay = pos
-            agent_color = "blue" if not has_item else "orange"
-            agent_patch = patches.Circle((ax + 0.5, ay + 0.5), 0.3, color=agent_color)
+
+            if type == 1:
+                agent_color = "red" if has_item else "pink"
+            if type == 2:
+                agent_color = "blue" if has_item else "cyan"
+
+            agent_patch = patches.Rectangle(
+                (ax + dx, ay + dy),
+                0.5,
+                0.5,
+                linewidth=1,
+                edgecolor="black",
+                facecolor=agent_color,
+            )
             self.ax.add_patch(agent_patch)
 
     def draw_item(self, items):
@@ -134,51 +207,41 @@ class Visualization:
         self.init_text()
 
     def init_buttons(self):
-        # Add button for next step
-        self.next_step_btn = self.add_button(
-            [0.85, 0.01, 0.12, 0.075], "Next Step", self.on_next
-        )
-        # Add button for reset
-        self.reset_btn = self.add_button(
-            [0.85, 0.11, 0.12, 0.075], "Reset", self.on_reset
-        )
-        # Add button for animation on/off
-        self.toggle_anim_btn = self.add_button(
-            [0.85, 0.21, 0.12, 0.075], "Anim\nOn", self.on_toggle_anim
-        )
-        # Add button for auto reset on/off
-        self.toggle_auto_reset_btn = self.add_button(
-            [0.85, 0.31, 0.12, 0.075], "Auto Reset\nOn", self.on_auto_reset
-        )
-        # # Add button for training
-        # self.bg_train_btn = self.add_button(
-        #     [0.85, 0.41, 0.12, 0.075], "Train 1000", self.on_train(1000, blocking=False)
-        # )
-        # Add button for training
-        self.block_train_btn = self.add_button(
-            [0.85, 0.41, 0.12, 0.075],
-            "Train 2500",
-            self.on_train(2500, blocking=True),
-        )
-        # Add button for training grpah
-        self.show_graph_button = self.add_button(
-            [0.85, 0.51, 0.12, 0.075], "Train Graph", self.on_show_graph
-        )
-        # Add button for testing
-        self.test_button = self.add_button(
-            [0.85, 0.61, 0.12, 0.075], "Test", self.on_test(100, blocking=True)
-        )
+        self.toggle_anim_btn = None
+        self.toggle_auto_reset_btn = None
+
+        btn_template = [
+            ("Next Step", self.on_next),
+            ("Reset", self.on_reset),
+            ("Anim\nOn", self.on_toggle_anim, "toggle_anim_btn"),
+            ("Auto Reset\nOn", self.on_auto_reset, "toggle_auto_reset_btn"),
+            ("Train 2500", self.on_train(2500, blocking=True)),
+            ("Train Graph", self.on_show_graph),
+            ("Test", self.on_test(100, blocking=True)),
+        ]
+        self.buttons = []
+        x, y, w, h = 0.85, 0.01, 0.12, 0.075
+        for template in btn_template:
+            ref = None
+            try:
+                label, cb, ref = template
+            except:
+                label, cb = template
+            self.buttons.append(self.add_button([x, y, w, h], label, cb))
+            y += 0.1
+            if ref:
+                setattr(self, ref, self.buttons[-1])
 
     def init_text(self):
         # Add text box for cumulative reward
         self.reward = self.add_text(
-            [0.01, 0.01, 0.2, 0.075], f"Reward: {self.model.get_total_reward()}"
+            [0.01, 0.01, 0.2, 0.075], f"Reward: {self.grid.get_max_reward()}"
         )
 
         # Add text box for max reward
         self.max_reward = self.add_text(
             [0.25, 0.01, 0.2, 0.075],
-            f"Max Reward: {self.model.get_max_reward()}",
+            f"Max Reward: {self.grid.get_max_reward()}",
         )
 
     def add_button(self, coordinates: Coordinates, text, on_click):
@@ -216,32 +279,36 @@ class Visualization:
     def on_test(self, episodes, blocking=False):
         def non_blocking_test(e):
             self.before_auto_train()
-            self.controller.test_in_background(episodes)
+            self.grid.test_in_background(episodes)
             self.after_auto_train()
 
         def blocking_test(e):
-            losses = self.controller.test(episodes)
+            losses, step_counts = self.grid.test(episodes)
+
             fig2, ax2 = plt.subplots()
             MLGraph(losses, fig2, ax2).show()
+
+            fig3, ax3 = plt.subplots()
+            MLGraph(step_counts, fig3, ax3).show()
 
         return blocking_test if blocking else non_blocking_test
 
     def on_train(self, episodes, blocking=False):
         def blocking_train(e):
-            ml_losses = self.controller.train(episodes)
+            ml_losses = self.grid.train(episodes)
             fig2, ax2 = plt.subplots()
             MLGraph(ml_losses, fig2, ax2).show()
 
         def non_blocking_train(e):
             self.before_auto_train()
-            self.controller.train_in_background()
+            self.grid.train_in_background()
             self.after_auto_train()
 
         return blocking_train if blocking else non_blocking_train
 
     def on_auto_reset(self, event):
-        auto_reset_is_on = self.controller.toggle_auto_reset()
-        if auto_reset_is_on:
+        is_on = self.grid.toggle_auto_reset()
+        if is_on:
             self.toggle_auto_reset_btn.label.set_text("Auto Reset\nOn")
         else:
             self.toggle_auto_reset_btn.label.set_text("Auto Reset\nOff")
@@ -257,25 +324,25 @@ class Visualization:
         plt.show()
 
     def on_reset(self, event):
-        self.model.reset()
+        self.grid.reset()
         self.draw(self.get_info())
 
     def on_next(self, e):
-        self.controller.next()
+        self.grid.next()
         self.draw(self.get_info())
 
     # ----- ----- ----- ----- Helper Functions  ----- ----- ----- ----- #
 
     def before_auto_train(self):
         self.animating = False
-        self.controller.reset()
+        self.grid.reset()
 
         self.toggle_anim_btn.label.set_text("Anim\nOff")
         self.draw(self.get_info())
 
     def after_auto_train(self):
         self.animating = True
-        self.controller.reset()
+        self.grid.reset()
 
         self.toggle_anim_btn.label.set_text("Anim\nOn")
         self.draw(self.get_info())
@@ -303,3 +370,101 @@ class Visualization:
         # Display the plots
         plt.tight_layout()
         plt.show()
+
+
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+
+from typing import TYPE_CHECKING
+
+
+class Graph:
+    def __init__(self, storage: "Storage", fig, axs):
+        self.storage = storage
+        self.fig = fig
+        self.ax1, self.ax2 = axs
+
+        self.storage = storage
+        self.ani = animation.FuncAnimation(
+            self.fig, self.draw, frames=self.frames, interval=100, save_count=100
+        )
+
+        plt.show()
+
+    def frames(self):
+        while True:
+            yield None
+
+    # Compulsory unused argument
+    def draw(self, args):
+        self.plot_losses(
+            self.ax1,
+            self.storage.iterations,
+            self.storage.losses,
+        )
+        self.plot_epsilon(
+            self.ax2,
+            self.storage.iterations,
+            self.storage.epsilon,
+        )
+
+    def plot_losses(self, ax, iterations, loss):
+        # Plotting the loss in the first subplot
+        ax.plot(iterations, loss, color="blue", label="Loss")
+        ax.set_title("Loss")
+        ax.set_xlabel("Iteration")
+        ax.set_ylabel("Loss")
+
+    def plot_epsilon(self, ax, iterations, epsilon):
+        # Plotting the loss in the first subplot
+        ax.plot(iterations, epsilon, color="blue", label="Loss")
+        ax.set_title("Epsilon")
+        ax.set_xlabel("Iteration")
+        ax.set_ylabel("Epsilon")
+
+
+class TestGraph:
+    def __init__(self, storage, fig, ax):
+        self.storage = storage
+        self.fig = fig
+        self.ax = ax
+
+        self.ani = animation.FuncAnimation(
+            self.fig, self.draw, frames=self.frames, interval=100, save_count=100
+        )
+
+        plt.show()
+
+    def frames(self):
+        while True:
+            yield None
+
+    def draw(self, args):
+        self.plot_losses(
+            self.ax,
+            self.storage.iterations,
+            self.storage.test_loss,
+        )
+
+    def plot_losses(self, ax, iterations, loss):
+        # Plotting the loss in the first subplot
+        ax.plot(iterations, loss, color="blue", label="Loss")
+        ax.set_title("Loss")
+        ax.set_xlabel("Iteration")
+        ax.set_ylabel("Loss")
+
+
+class MLGraph:
+    def __init__(self, ml_losses, fig, ax):
+        ax.plot(range(len(ml_losses)), ml_losses, label="Loss")
+        # ax.set_title("Loss")
+        ax.set_xlabel("Iteration")
+        ax.set_ylabel("Loss")
+        pass
+
+    def show(self):
+
+        # Display the plots
+        plt.tight_layout()
+        plt.show()
+        pass
