@@ -198,46 +198,15 @@ class GridUtil:
         one_dist = self.calc_mht_dist(one_pos, goal_pos)
         two_dist = self.calc_mht_dist(two_pos, goal_pos)
 
-        if self.line_passing_through_goal_can_cut(one_pos, two_pos, goal_pos):
-            if one_dist == two_dist:
-                return one_dist
-
-            return max(one_dist, two_dist) - (1 if clock else 0)
-
-        smaller, larger = min(one_dist, two_dist), one_dist + two_dist - min(
-            one_dist, two_dist
+        smaller, larger = min(one_dist, two_dist), max(one_dist, two_dist)
+        smaller = smaller + (
+            0
+            if self.line_passing_through_goal_can_cut(one_pos, two_pos, goal_pos)
+            else 2
         )
-        smaller = smaller + 2
         smaller, larger = min(smaller, larger), max(smaller, larger)
 
         return max(smaller, larger - (1 if clock else 0))
-        #     )
-        # one_on_line = self.is_on_line_with_goal(one_pos, goal_pos)
-        # two_on_line = self.is_on_line_with_goal(two_pos, goal_pos)
-        # if one_on_line != two_on_line:  # XOR
-        #     pass
-        # if one_on_line and two_on_line:
-        #     if opposite:
-        #         move = find_move(one_pos, two_pos, goal_pos)
-        #         return 1 + self.calculate_min_step_for_two(
-        #             move + one_pos, move + two_pos, goal_pos
-        #         )
-        #     if perpendicular:
-        #         move = find_joining_move(one_pos, two_pos, goal_pos)
-        #         return 1 + self.calculate_min_step_for_two(
-        #             move + one_pos, move + two_pos, goal_pos
-        #         )
-        # if diff_quadrant:
-        #     return min(
-        #         max(
-        #             mht_dist(one_pos) + min_of_x_y_diff_to_goal(one_pos) + 1,
-        #             mht_dist(two_pos),
-        #         ),
-        #         max(
-        #             mht_dist(two_pos) + min_of_x_y_diff_to_goal(two_pos) + 1,
-        #             mht_dist(one_pos),
-        #         ),
-        #     )
 
     def line_passing_through_goal_can_cut(self, one_pos, two_pos, goal_pos):
         x1, y1 = one_pos
