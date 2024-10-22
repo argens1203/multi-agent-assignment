@@ -77,7 +77,7 @@ class Trainer:
                             self.goal_reached = False
                             self.goal_pos = goal_pos
                             self.agent_positions = [p1, p2, p3, p4]
-                            max_reward = GridUtil.calculate_max_reward(self)
+                            max_reward = GridUtil.calculate_min_step(self)
 
                             (loss, reward, epsilon, ml_loss, step_count) = (
                                 self.play_one_game(is_testing=True)
@@ -194,42 +194,75 @@ class Visual:
 
 
 class GridUtil:
-    def calculate_min_step_for_two(one_pos, two_pos, goal_pos):
-        if line_passing_through_goal_can_cut:
+    def calculate_min_step_for_two(self, one_pos, two_pos, goal_pos, clock=False):
+        if self.line_passing_through_goal_can_cut(one_pos, two_pos, goal_pos):
             return max(
-                self.cacl_mht_dist(one_pos, goal_pos),
-                self.cacl_mht_dist(two_pos, goal_pos),
-            )
-        if one_on_line and other_not_on_line:
-            return max(
-                2 + self.calc_mht_distance(on_line, goal_pos),
-                self.calc_mht_distance(not_on_line, goal_pos),
-            )
-        if both_on_line:
-            if opposite:
-                move = find_move(one_pos, two_pos, goal_pos)
-                return 1 + self.calculate_min_step_for_two(
-                    move + one_pos, move + two_pos, goal_pos
-                )
-            if perpendicular:
-                move = find_joining_move(one_pos, two_pos, goal_pos)
-                return 1 + self.calculate_min_step_for_two(
-                    move + one_pos, move + two_pos, goal_pos
-                )
-        if diff_quadrant:
-            return min(
-                max(
-                    mht_dist(one_pos) + min_of_x_y_diff_to_goal(one_pos) + 1,
-                    mht_dist(two_pos),
-                ),
-                max(
-                    mht_dist(two_pos) + min_of_x_y_diff_to_goal(two_pos) + 1,
-                    mht_dist(one_pos),
-                ),
+                self.calc_mht_dist(one_pos, goal_pos),
+                self.calc_mht_dist(two_pos, goal_pos),
             )
 
-    def calculate_max_reward(self):
-        return 100
+        return max(
+            self.calc_mht_dist(one_pos, goal_pos),
+            self.calc_mht_dist(two_pos, goal_pos),
+            min(
+                self.calc_mht_dist(one_pos, goal_pos),
+                self.calc_mht_dist(two_pos, goal_pos),
+            )
+            + 2,
+        )
+        #     )
+        # one_on_line = self.is_on_line_with_goal(one_pos, goal_pos)
+        # two_on_line = self.is_on_line_with_goal(two_pos, goal_pos)
+        # if one_on_line != two_on_line:  # XOR
+        #     pass
+        # if one_on_line and two_on_line:
+        #     if opposite:
+        #         move = find_move(one_pos, two_pos, goal_pos)
+        #         return 1 + self.calculate_min_step_for_two(
+        #             move + one_pos, move + two_pos, goal_pos
+        #         )
+        #     if perpendicular:
+        #         move = find_joining_move(one_pos, two_pos, goal_pos)
+        #         return 1 + self.calculate_min_step_for_two(
+        #             move + one_pos, move + two_pos, goal_pos
+        #         )
+        # if diff_quadrant:
+        #     return min(
+        #         max(
+        #             mht_dist(one_pos) + min_of_x_y_diff_to_goal(one_pos) + 1,
+        #             mht_dist(two_pos),
+        #         ),
+        #         max(
+        #             mht_dist(two_pos) + min_of_x_y_diff_to_goal(two_pos) + 1,
+        #             mht_dist(one_pos),
+        #         ),
+        #     )
+
+    def line_passing_through_goal_can_cut(self, one_pos, two_pos, goal_pos):
+        x1, y1 = one_pos
+        x2, y2 = two_pos
+        x, y = goal_pos
+        if x1 < x and x2 < x:
+            return True
+        if x1 > x and x2 > x:
+            return True
+        if y1 < y and y2 < y:
+            return True
+        if y1 > y and y2 > y:
+            return True
+        return False
+
+    def calc_mht_dist(self, pos1, pos2):
+        x1, y1 = pos1
+        x2, y2 = pos2
+        return abs(x1 - x2) + abs(y1 - y2)
+
+    def is_on_line_with_goal(self, pos, goal_pos):
+        x1, y1 = pos
+        x2, y2 = goal_pos
+        return x1 == x2 or y1 == y2
+
+    def calculate_min_step(self):
         ones = [idx for idx, agent in enumerate(self.agents) if agent.get_type() == 1]
         twos = [idx for idx, agent in enumerate(self.agents) if agent.get_type() == 2]
         ones_pos = [self.agent_positions[i] for i in ones]
@@ -284,7 +317,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
             self.get_random_pos(self.width, self.height) for _ in self.agents
         ]
 
-        self.max_reward = GridUtil.calculate_max_reward(self)
+        self.max_reward = GridUtil.calculate_min_step(self)
 
     # ----- Core Functions ----- #
     def step(self, is_testing=False, ep=0, total_ep=1):
