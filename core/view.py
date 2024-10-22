@@ -13,6 +13,9 @@ if TYPE_CHECKING:
 Coordinates: TypeAlias = Tuple[float, float, float, float]
 
 
+# TODO: print step in text
+
+
 class IVisual(ABC):
 
     # Getting Info
@@ -162,6 +165,7 @@ class Visualization:
 
     def draw_agent(self, info):
         # Draw agent
+        # TODO: write self order on top
         for idx, (pos, type, has_item) in enumerate(info):
             dx = [0, 0.5, 0, 0.5][idx]
             dy = [0, 0, 0.5, 0.5][idx]
