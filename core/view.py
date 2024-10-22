@@ -26,7 +26,7 @@ class IVisual(ABC):
         pass
 
     @abstractmethod
-    def get_max_reward(self) -> int:
+    def get_min_step(self) -> int:
         pass
 
     @abstractmethod
@@ -102,9 +102,9 @@ class Visualization:
 
     def get_info(self):
         agents = self.grid.get_agent_info()
-        tot_reward = self.grid.get_total_reward()
-        max_reward = self.grid.get_max_reward()
-        return agents, tot_reward, max_reward
+        step_count = self.grid.get_step_count()
+        min_step = self.grid.get_min_step()
+        return agents, step_count, min_step
 
     def frames(self):
         while True:
@@ -117,14 +117,14 @@ class Visualization:
     # ----- ----- ----- ----- Drawing Functions  ----- ----- ----- ----- #
 
     def draw(self, args):
-        info, tot_reward, max_reward = args
+        info, step_count, min_step = args
 
         self.ax.clear()
         self.draw_grid()
         self.draw_agent(info)
 
-        self.reward.set_text(f"Reward: {tot_reward}")
-        self.max_reward.set_text(f"Max Reward: {max_reward}")
+        self.reward.set_text(f"Step: {step_count}")
+        self.max_reward.set_text(f"Min Step: {min_step}")
 
         # Check if the environment is terminal
         if self.grid.has_ended():
@@ -234,14 +234,12 @@ class Visualization:
 
     def init_text(self):
         # Add text box for cumulative reward
-        self.reward = self.add_text(
-            [0.01, 0.01, 0.2, 0.075], f"Reward: {self.grid.get_max_reward()}"
-        )
+        self.reward = self.add_text([0.01, 0.01, 0.2, 0.075], f"Step Count: {0}")
 
         # Add text box for max reward
         self.max_reward = self.add_text(
             [0.25, 0.01, 0.2, 0.075],
-            f"Max Reward: {self.grid.get_max_reward()}",
+            f"Min Step: {self.grid.get_min_step()}",
         )
 
     def add_button(self, coordinates: Coordinates, text, on_click):

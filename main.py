@@ -26,14 +26,15 @@ if __name__ == "__main__":
         ],
         storage,
     )
-    # grid.try_load_dqn()
+    grid.try_load_dqn()
     grid.reset()
 
-    grid.train(1500)
-    grid.save_dqn()
+    grid.train(15000)
+    # grid.save_dqn()
     fig2, ax2 = plt.subplots()
     MLGraph(storage.ml_losses, fig2, ax2).show()
 
     fig1, ax1 = plt.subplots()
     vis = Visualization(fig1, ax1)
+    grid.reset()
     vis.bind(storage, grid).show()

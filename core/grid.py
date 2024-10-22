@@ -66,6 +66,7 @@ class Trainer:
 
         possible_loc = [(x, y) for x in range(side) for y in range(side)]
         total_step_count = 0
+        excess_step_count = 0
         count = 0
         for goal_pos in possible_loc:
             for p1 in possible_loc:
@@ -77,7 +78,7 @@ class Trainer:
                             self.goal_reached = False
                             self.goal_pos = goal_pos
                             self.agent_positions = [p1, p2, p3, p4]
-                            max_reward = GridUtil.calculate_min_step(self)
+                            min_step_count = self.calculate_min_step()
 
                             (loss, reward, epsilon, ml_loss, step_count) = (
                                 self.play_one_game(is_testing=True)
@@ -86,11 +87,15 @@ class Trainer:
                             self.storage.append_step_count(step_count)
 
                             total_step_count += step_count
+                            excess_step_count += step_count - min_step_count
                             count += 1
 
                             if count % 100 == 0:
                                 print(
                                     f"Average step -- ep {count}: {total_step_count / count}"
+                                )
+                                print(
+                                    f"Excess step -- ep {count}: {excess_step_count / count}"
                                 )
 
         return self.storage.test_loss, self.storage.step_count
@@ -107,25 +112,24 @@ class Trainer:
 
     def play_one_game(self, **kwargs):
         self.reset()
-        max_reward = self.get_max_reward()
+        min_step = self.calculate_min_step()
 
         max_step_count = 50
-        step_count = 0
         ml_losses = []
-        while not self.has_ended() and step_count < max_step_count:
+        while not self.has_ended() and self.step_count < max_step_count:
             ml_loss = self.step(**kwargs)
             if ml_loss is not None:
                 ml_losses.append(ml_loss)
-            step_count += 1
+            self.step_count += 1
 
         total_reward = sum(map(lambda a: a.get_total_reward(), self.agents))
-        loss = max_reward - total_reward
+        loss = self.step_count - min_step
         return (
             loss,
             total_reward,
             self.agents[0].epsilon,
             ml_losses,
-            step_count,
+            self.step_count,
         )  # TODO: 0
 
     def train_in_background(self):
@@ -177,8 +181,8 @@ class Visual:
     def get_total_reward(self):
         return sum(map(lambda a: a.get_total_reward(), self.agents))
 
-    def get_max_reward(self):
-        return self.max_reward
+    def get_min_step(self):
+        return self.min_step
 
     def get_size(self):
         return self.width, self.height
@@ -191,6 +195,9 @@ class Visual:
 
     def has_ended(self) -> bool:
         return self.goal_reached
+
+    def get_step_count(self) -> int:
+        return self.step_count
 
 
 class GridUtil:
@@ -232,7 +239,7 @@ class GridUtil:
         x2, y2 = goal_pos
         return x1 == x2 or y1 == y2
 
-    def calculate_min_step(self):
+    def calculate_min_step(self, clock=True):
         ones = [idx for idx, agent in enumerate(self.agents) if agent.get_type() == 1]
         twos = [idx for idx, agent in enumerate(self.agents) if agent.get_type() == 2]
         ones_pos = [self.agent_positions[i] for i in ones]
@@ -241,7 +248,9 @@ class GridUtil:
         min_step = 1e9
         for one in ones_pos:
             for two in twos_pos:
-                step = self.calculate_min_step_for_two(one, two, self.goal_pos)
+                step = self.calculate_min_step_for_two(
+                    one, two, self.goal_pos, clock=clock
+                )
                 if step < min_step:
                     min_step = step
         return min_step
@@ -270,12 +279,14 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         super().__init__(storage=storage)
         self.width = width
         self.height = height
-        self.max_reward = 0
+        self.min_step = 0
+        self.step_count = 0
 
         self.agents: List["Agent"] = agents
-        self.idx: List[int] = 0
+        self.idx: int = 0
 
         self.set_interactive_tiles()
+        self.reorder_for_min_step()
 
     def set_interactive_tiles(self):
         # Assign goal to set position
@@ -287,13 +298,14 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
             self.get_random_pos(self.width, self.height) for _ in self.agents
         ]
 
-        self.max_reward = GridUtil.calculate_min_step(self)
+        self.min_step = self.calculate_min_step()
 
     # ----- Core Functions ----- #
     def step(self, is_testing=False, ep=0, total_ep=1):
         if self.has_ended():
             return
         if self.idx >= len(self.agents):
+            self.step_count += 1
             self.idx = 0
             # random.shuffle(self.agent_idx)
 
@@ -372,12 +384,17 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         return reward, self.extract_state(idx), goal_reached
 
     # ----- Private Functions ----- #
+    def reorder_for_min_step(self):
+        # TODO
+        pass
 
     # ----- Public Functions ----- #
     def reset(self):
+        self.step_count = 0
         self.set_interactive_tiles()
         for agent in self.agents:
             agent.reset()
+        self.reorder_for_min_step()
 
     def extract_state(self, idx):
         if debug:
