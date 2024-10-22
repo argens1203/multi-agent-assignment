@@ -37,12 +37,12 @@ class DQN:
 
     # The function "get_qvals" returns a numpy list of qvals for the state given by the argument based on the prediction network.
     def get_qvals(self, state):
-        q_values = self.model(state).to(device)
+        q_values = self.model(state.to(device)).to(device)
         return q_values
 
     # The function "get_maxQ" returns the maximum q-value for the state given by the argument based on the target network.
     def get_maxQ(self, state):
-        return torch.max(self.model2(state), dim=1).values.float()
+        return torch.max(self.model2(state.to(device)), dim=1).values.float()
 
     # The function "train_one_step_new" performs a single training step.
     # It returns the current loss (only needed for debugging purposes).
@@ -52,6 +52,7 @@ class DQN:
         # state1_batch = torch.cat([torch.from_numpy(s).float() for s in states])
         state1_batch = states.to(device)
         action_batch = actions.to(device)
+        targets = targets.to(device)
         # print(action_batch.shape)
         # print(state1_batch.shape)
         Q1 = self.model(state1_batch)

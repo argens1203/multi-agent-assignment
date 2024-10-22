@@ -2,6 +2,8 @@ import torch
 
 side = 5
 action_size = 5
+action_space = [(0, -1), (0, 1), (-1, 0), (1, 0), (0, 0)]
+
 state_size = 5 * 5 * 3 + 1
 device = torch.device(
     "cuda:0"

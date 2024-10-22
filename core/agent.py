@@ -5,8 +5,7 @@ import numpy as np
 import random
 import torch
 
-from .given import DQN
-from constants import state_size, device, dtype, action_size, debug
+from constants import state_size, device, dtype, action_space
 
 if TYPE_CHECKING:
     pass
@@ -41,8 +40,6 @@ class ExpBuffer:
         indices = np.random.randint(
             0, self.max if self.has_reached else self.itr, batch_size
         )
-        # print(len(self.states))
-        # print(indices)
         return (
             self.states[indices],
             self.actions[indices],
@@ -58,32 +55,24 @@ class ExpBuffer:
         return len(self.states)
 
 
-buffer1 = ExpBuffer()
-buffer2 = ExpBuffer()
-dqn1 = DQN(state_size=state_size, action_size=action_size)
-dqn2 = DQN(state_size=state_size, action_size=action_size)
-
-
 class Agent(ABC):
-    def __init__(self, idx, all_states, actions):
-        # Agent property (for illustration purposes)
-        self.is_having_item = False
-        self.total_reward = 0
+    def __init__(self, dqn, buffer):
+        self.dqn = dqn
+        self.buffer = buffer
+        self.actions = action_space
 
-        self.actions = actions  # TODO: encode different action for different state. How to initialize Q-Table
-        self.idx = idx
+        # Agent Properties
+        self.total_reward = 0
+        self.have_secret = False
 
         # Initialize Q Table for all state-action to be 0
-        # TODO: use multi-D np array
-        self.min_buffer = 200
+        self.batch_size = 200
         self.step_count = 0
-        self.C = 500
-        self.Q = np.zeros((all_states, len(actions)))
+        self.C = 500  # Network update frequency
 
         # Initialize Learning param
-        # TODO: fix resetting epsilon
         self.epsilon = 1
-        self.epsilon_decay = 0.997  # TODO: reduce the decay (ie. increase the number)
+        self.decay_ratio = 0.997
         self.epsilon_min = 0.05
         self.gamma = 0.997
 
@@ -91,18 +80,19 @@ class Agent(ABC):
 
     # ----- Core Functions ----- #
     def choose_action(
-        self, state: torch.tensor, choose_best: bool, ep_ratio: float
+        self, state: torch.tensor, choose_best: bool, episode_ratio: float
     ) -> Tuple[int, int]:
-        # eps = 1 - (1 - self.epsilon_min) * min(1, ep_ratio)
         if not choose_best and np.random.rand() < self.epsilon:
-            self.epsilon *= self.epsilon_decay
-            self.epsilon = max(self.epsilon, self.epsilon_min)
+            self.epsilon_decay(episode_ratio)
             return random.choice(self.actions)
         else:
             # Extract immutable state information
-            state_i = self.massage(state)
-            idx = torch.argmax(self.dqn.get_qvals(state_i))
+            idx = torch.argmax(self.dqn.get_qvals(state))
             return self.actions[idx]
+
+    def epsilon_decay(self, episode_ratio):
+        self.epsilon *= self.decay_ratio
+        self.epsilon = max(self.epsilon, self.epsilon_min)
 
     def update(
         self,
@@ -116,21 +106,20 @@ class Agent(ABC):
         if not self.learning:
             return
 
-        state_i = self.massage(state)
-        nxt_state_i = self.massage(next_state)
         self.buffer.insert(
-            state_i, self.actions.index(action), reward, nxt_state_i, is_terminal
+            state, self.actions.index(action), reward, next_state, is_terminal
         )
-        if len(self.buffer) >= self.min_buffer:
+        if len(self.buffer) >= self.batch_size:
             states, actions, rewards, next_states, is_terminals = self.buffer.extract(
-                200
+                self.batch_size
             )
             rewards = rewards.to(device)
+            targets = self.gamma * self.dqn.get_maxQ(next_states) + rewards
+
+            # For terminal states, target_val is reward
             indices = is_terminals.nonzero().to(device)
-            targets = self.gamma * self.dqn.get_maxQ(next_states.to(device)) + rewards
-            targets[indices] = rewards[
-                indices
-            ]  # For terminal states, target_val is reward
+            targets[indices] = rewards[indices]
+
             loss = self.dqn.train_one_step(states, actions, targets)
 
         if self.step_count >= self.C:
@@ -143,19 +132,11 @@ class Agent(ABC):
 
     # ----- Public Functions ----- #
     def have_secret_(self, new_value: bool):
-        self.is_have_secret = new_value
-
-    def has_secret(self):
-        return self.is_have_secret
+        self.have_secret = new_value
 
     def reset(self):
-        self.is_having_item = False
-        self.is_have_secret = False
+        self.have_secret = False
         self.total_reward = 0
-
-    @abstractmethod
-    def get_type(self):
-        pass
 
     def get_total_reward(self):
         return self.total_reward
@@ -169,14 +150,9 @@ class Agent(ABC):
         self.learning = False
 
     # ----- Private Functions ----- #
-    # Extract immutable information from State object
-    def massage(self, state: torch.tensor):
-        state_i = state.to(device).float()
-        return state_i + 0.001  # 5 Minutes
-        # return state_i + torch.rand(state_size).to(device) / 100.0  # 15 Minutes
-
-    def interact(self, other: "Agent"):
-        return 0, None, None
+    @abstractmethod
+    def get_type(self):
+        pass
 
     def load(self, idx):
         self.dqn.load(idx)
@@ -184,50 +160,24 @@ class Agent(ABC):
     def save(self, idx):
         self.dqn.save(idx)
 
+    def interact(self, other: "Agent"):
+        rewarded = False
+        if self.is_different_type(other):
+            if not other.have_secret:
+                rewarded = True
+            self.have_secret = True
+            other.have_secret_(True)
+        return (50 if rewarded else 0), None, None
+
+    def is_different_type(self, other: "Agent"):
+        return other.get_type() != self.get_type()
+
 
 class Agent1(Agent):
-    def __init__(self, idx, all_states, actions):
-        super().__init__(idx, all_states, actions)
-        self.buffer = buffer1
-        self.dqn = dqn1
-        self.is_have_secret = False
-
     def get_type(self):
         return 1
 
-    def interact(self, other: "Agent"):
-        rewarded = False
-        if other.get_type() == 2:
-            if not other.has_secret():
-                rewarded = True
-            self.is_have_secret = True
-            other.have_secret_(True)
-        return (50 if rewarded else 0), None, None
-
-    def reset(self):
-        super().reset()
-        self.is_have_secret = False
-
 
 class Agent2(Agent):
-    def __init__(self, idx, all_states, actions):
-        super().__init__(idx, all_states, actions)
-        self.buffer = buffer2
-        self.dqn = dqn2
-        self.is_have_secret = False
-
     def get_type(self):
         return 2
-
-    def interact(self, other: "Agent"):
-        rewarded = False
-        if other.get_type() == 1:
-            if not other.has_secret():
-                rewarded = True
-            self.is_have_secret = True
-            other.have_secret_(True)
-        return (50 if rewarded else 0), None, None
-
-    def reset(self):
-        super().reset()
-        self.is_have_secret = False

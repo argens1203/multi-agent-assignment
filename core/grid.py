@@ -168,11 +168,11 @@ class Visual:
                 - Tuple of:
                     - coordinate: (int, int)
                     - type: int (1 or 2)
-                    - has_secret: bool
+                    - have_secret: bool
         """
         agent_types = map(lambda agent: agent.get_type(), self.agents)
-        has_secrets = map(lambda agent: agent.has_secret(), self.agents)
-        return list(zip(self.get_agent_positions(), agent_types, has_secrets))
+        have_secrets = map(lambda agent: agent.have_secret, self.agents)
+        return list(zip(self.get_agent_positions(), agent_types, have_secrets))
 
     def get_total_reward(self):
         return sum(map(lambda a: a.get_total_reward(), self.agents))
@@ -297,7 +297,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         agent = self.agents[self.idx]
         observed_state = self.extract_state(self.idx)
         action = agent.choose_action(
-            observed_state, choose_best=is_testing, ep_ratio=ep / total_ep
+            observed_state, choose_best=is_testing, episode_ratio=ep / total_ep
         )
         reward, next_state, is_terminal = self.move(self.idx, action)
         loss = agent.update(
@@ -335,7 +335,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         agent = self.agents[idx]
         goal_reached = False
         if new_pos == self.goal_pos:
-            if agent.has_secret():
+            if agent.have_secret:
                 reward += 50
                 goal_reached = True
                 if goal_reached and debug:
@@ -357,7 +357,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
             if self.agents[o_idx].get_type() != self.agents[idx].get_type()
         ]
         if len(other_agents_diff_type) > 0:
-            if not self.agents[idx].has_secret():
+            if not self.agents[idx].have_secret:
                 reward += 50
             for agents in other_agents_diff_type + [self.agents[idx]]:
                 agents.have_secret_(True)
@@ -365,7 +365,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         self.agent_positions[idx] = new_pos
         if debug:
             print(f"reward: {reward}")
-            print(f"has secret: {agent.has_secret()}")
+            print(f"has secret: {agent.have_secret}")
         return reward, self.extract_state(idx), goal_reached
 
     # ----- Private Functions ----- #
@@ -391,7 +391,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         state[x * side + y] = 1
         state[side**2 + x2 * side + y2] = 1
         state[side**2 * 2 + x3 * side + y3] = 1
-        state[side**2 * 3] = 1 if self.agents[idx].has_secret() else 0
+        state[side**2 * 3] = 1 if self.agents[idx].have_secret else 0
 
         return state
 
