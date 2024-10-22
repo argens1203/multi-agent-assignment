@@ -72,7 +72,7 @@ class Agent(ABC):
 
         # Initialize Learning param
         self.epsilon = 1
-        self.decay_ratio = 0.997
+        self.decay_ratio = 0.9997
         self.epsilon_min = 0.05
         self.gamma = 0.997
 
@@ -104,7 +104,7 @@ class Agent(ABC):
     ):
         self.total_reward += reward
         if not self.learning:
-            return
+            return None, None
 
         self.buffer.insert(
             state, self.actions.index(action), reward, next_state, is_terminal
@@ -128,7 +128,7 @@ class Agent(ABC):
         else:
             self.step_count += 1
 
-        return loss
+        return loss, self.epsilon
 
     # ----- Public Functions ----- #
     def have_secret_(self, new_value: bool):

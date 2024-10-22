@@ -52,6 +52,8 @@ class Trainer:
             )
 
             self.storage.append_ml_losses(ml_losses)
+            self.storage.append_loss_epsilon(loss, epsilon)
+
             if (i + 1) % 100 == 0:
                 print(
                     f"Epoch: {i+1}/{itr} -- Time Elapsed: {datetime.datetime.now() - start}"
@@ -116,10 +118,13 @@ class Trainer:
 
         max_step_count = 50
         ml_losses = []
+        epsilons = []
         while not self.has_ended() and self.step_count < max_step_count:
-            ml_loss = self.step(**kwargs)
+            ml_loss, epsilon = self.step(**kwargs)
             if ml_loss is not None:
                 ml_losses.append(ml_loss)
+            if epsilon is not None:
+                epsilons.append(epsilon)
             self.step_count += 1
 
         total_reward = sum(map(lambda a: a.get_total_reward(), self.agents))
@@ -127,7 +132,7 @@ class Trainer:
         return (
             loss,
             total_reward,
-            self.agents[0].epsilon,
+            epsilons[-1],
             ml_losses,
             self.step_count,
         )  # TODO: 0
@@ -315,7 +320,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
             observed_state, choose_best=is_testing, episode_ratio=ep / total_ep
         )
         reward, next_state, is_terminal = self.move(self.idx, action)
-        loss = agent.update(
+        loss, epsilon = agent.update(
             state=observed_state,
             action=action,
             reward=reward,
@@ -324,7 +329,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         )
 
         self.idx += 1
-        return loss
+        return loss, epsilon
 
     def move(
         self, idx: int, action: Tuple[int, int]
@@ -355,8 +360,8 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
                 goal_reached = True
                 if goal_reached and debug:
                     print(f"goal_reached: {goal_reached}")
-            else:
-                reward -= 20
+            # else:
+            #     reward -= 20
         self.goal_reached = goal_reached or self.goal_reached
         if goal_reached and debug:
             print(f"self.goal_reached: {self.goal_reached}")
@@ -385,8 +390,12 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
 
     # ----- Private Functions ----- #
     def reorder_for_min_step(self):
-        # TODO
-        pass
+        idx_positions = list(enumerate(self.agent_positions))
+        idx_positions.sort(
+            key=lambda idx_pos: -self.calc_mht_dist(idx_pos[1], self.goal_pos)
+        )
+        self.agents = [self.agents[i] for i, pos in idx_positions]
+        self.agent_positions = [self.agent_positions[i] for i, pos in idx_positions]
 
     # ----- Public Functions ----- #
     def reset(self):

@@ -1,13 +1,23 @@
 import matplotlib.pyplot as plt
 
-from core import Agent1, Agent2, Grid, Storage, Visualization, MLGraph, ExpBuffer, DQN
+from core import (
+    Agent1,
+    Agent2,
+    Grid,
+    Storage,
+    Visualization,
+    MLGraph,
+    ExpBuffer,
+    DQN,
+    Graph,
+)
 from constants import state_size, action_size
 
 if __name__ == "__main__":
-    width, height = 4, 4
+    width, height = 5, 5
     max_itr = 1000
 
-    storage = Storage(max_itr)
+    storage = Storage(20000)
     possible_actions = [(0, -1), (0, 1), (-1, 0), (1, 0), (0, 0)]
 
     buffer1 = ExpBuffer()
@@ -26,13 +36,17 @@ if __name__ == "__main__":
         ],
         storage,
     )
-    grid.try_load_dqn()
+    # grid.try_load_dqn()
     grid.reset()
 
-    grid.train(15000)
-    # grid.save_dqn()
+    grid.train(20000)
+    grid.save_dqn()
     fig2, ax2 = plt.subplots()
     MLGraph(storage.ml_losses, fig2, ax2).show()
+    fig, axs = plt.subplots(1, 2)
+    Graph(storage=storage, fig=fig, axs=(axs))
+
+    print(storage.epsilon)
 
     fig1, ax1 = plt.subplots()
     vis = Visualization(fig1, ax1)

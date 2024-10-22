@@ -126,7 +126,7 @@ class Visualization:
         self.draw_grid()
         self.draw_agent(info)
 
-        self.reward.set_text(f"Step: {step_count}")
+        self.reward.set_text(f"Step: {step_count + 1}")
         self.max_reward.set_text(f"Min Step: {min_step}")
 
         # Check if the environment is terminal
@@ -238,7 +238,7 @@ class Visualization:
 
     def init_text(self):
         # Add text box for cumulative reward
-        self.reward = self.add_text([0.01, 0.01, 0.2, 0.075], f"Step Count: {0}")
+        self.reward = self.add_text([0.01, 0.01, 0.2, 0.075], f"Step: 0")
 
         # Add text box for max reward
         self.max_reward = self.add_text(
