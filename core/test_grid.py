@@ -62,7 +62,7 @@ class TestGridUtil(unittest.TestCase):
             res = util.is_on_line_with_goal(pos, goal)
             self.assertEqual(res, expected)
 
-    def calculate_min_step_for_two_simple(self):
+    def test_calculate_min_step_for_two_simple(self):
         test_cases = [
             [(0, 3), (5, 3), (3, 3), 4],  # Diff side same line
             [(1, 2), (3, 5), (1, 4), 4],  # Diff side one on line
@@ -75,5 +75,20 @@ class TestGridUtil(unittest.TestCase):
             res = util.calculate_min_step_for_two(pos1, pos2, goal_pos)
             self.assertEqual(res, expected)
 
-    def calculate_min_step_for_two_clock(self):
-        pass
+    def test_calculate_min_step_for_two_clock(self):
+        test_cases = [
+            [(0, 3), (5, 3), (3, 3), 3],  # Diff side same line
+            [(1, 2), (3, 5), (1, 4), 3],  # Diff side one on line
+            [(0, 0), (3, 3), (0, 3), 4],  # Perpendicular line
+            [(0, 2), (2, 1), (0, 1), 2],  # Perpendicular line, distance differ by 1
+            [(0, 2), (3, 1), (0, 1), 3],  # Perpendicular line, distance differ by 2
+            [(1, 1), (3, 3), (2, 2), 3],  # Non-touching quadrant
+            [(2, 3), (5, 2), (0, 4), 6],  # Touching quadrant
+            [(0, 1), (2, 3), (0, 4), 3],  # Touching quadrant same distance
+            [(0, 1), (3, 3), (0, 4), 3],  # Touch quadrant, distance dffer by 1
+            [(0, 1), (0, 2), (0, 0), 1],  # Simple clock case
+        ]
+        util = GridUtil()
+        for pos1, pos2, goal_pos, expected in test_cases:
+            res = util.calculate_min_step_for_two(pos1, pos2, goal_pos, clock=True)
+            self.assertEqual(res, expected)

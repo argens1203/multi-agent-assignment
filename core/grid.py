@@ -195,21 +195,22 @@ class Visual:
 
 class GridUtil:
     def calculate_min_step_for_two(self, one_pos, two_pos, goal_pos, clock=False):
-        if self.line_passing_through_goal_can_cut(one_pos, two_pos, goal_pos):
-            return max(
-                self.calc_mht_dist(one_pos, goal_pos),
-                self.calc_mht_dist(two_pos, goal_pos),
-            )
+        one_dist = self.calc_mht_dist(one_pos, goal_pos)
+        two_dist = self.calc_mht_dist(two_pos, goal_pos)
 
-        return max(
-            self.calc_mht_dist(one_pos, goal_pos),
-            self.calc_mht_dist(two_pos, goal_pos),
-            min(
-                self.calc_mht_dist(one_pos, goal_pos),
-                self.calc_mht_dist(two_pos, goal_pos),
-            )
-            + 2,
+        if self.line_passing_through_goal_can_cut(one_pos, two_pos, goal_pos):
+            if one_dist == two_dist:
+                return one_dist
+
+            return max(one_dist, two_dist) - (1 if clock else 0)
+
+        smaller, larger = min(one_dist, two_dist), one_dist + two_dist - min(
+            one_dist, two_dist
         )
+        smaller = smaller + 2
+        smaller, larger = min(smaller, larger), max(smaller, larger)
+
+        return max(smaller, larger - (1 if clock else 0))
         #     )
         # one_on_line = self.is_on_line_with_goal(one_pos, goal_pos)
         # two_on_line = self.is_on_line_with_goal(two_pos, goal_pos)
