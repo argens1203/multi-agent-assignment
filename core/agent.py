@@ -152,8 +152,8 @@ class Agent(ABC):
         return self.total_reward
 
     def enable_learning(self):
-        if not self.learning:
-            self.buffer.clear()
+        # if not self.learning:
+        # self.buffer.clear()
         self.learning = True
 
     def disable_learning(self):
