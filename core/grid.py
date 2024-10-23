@@ -177,7 +177,7 @@ class Trainer:
         for a in agents:
             a.disable_learning()
 
-    def play_one_game(self, **kwargs):
+    def play_one_game(self, is_testing=False, ep=0, total_ep=1, **kwargs):
         # self.reset()
 
         max_step_count = 50
@@ -185,7 +185,36 @@ class Trainer:
         ml_losses = []
         epsilons = []
         while not self.has_ended() and self.step_count < max_step_count:
-            ml_loss, epsilon = self.step(**kwargs)
+            if self.idx >= len(self.agents):
+                self.step_count += 1
+                self.idx = 0
+                # random.shuffle(self.agent_idx)
+
+            agent = self.agents[self.idx]
+            observed_state = self.extract_state(self.idx)
+            choose_best = is_testing or not agent.get_type() in self.learners
+            action = agent.choose_action(
+                observed_state, choose_best=choose_best, episode_ratio=ep / total_ep
+            )
+            if debug:
+                old_pos = self.agent_positions[self.idx]
+            reward, next_state, is_terminal = self.move(self.idx, action)
+            if debug:
+                print(
+                    f"Agent {self.idx} of type {agent.get_type()} chose action {action} and moved from {old_pos} to {self.agent_positions[self.idx]}"
+                )
+                print(f"Agent {self.idx} received a reward of {reward}")
+
+            ml_loss, epsilon = agent.update(
+                state=observed_state,
+                action=action,
+                reward=reward,
+                next_state=next_state,
+                is_terminal=is_terminal,
+            )
+
+            self.idx += 1
+
             if ml_loss is not None:
                 ml_losses.append(ml_loss)
             if epsilon is not None:
