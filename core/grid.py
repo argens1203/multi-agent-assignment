@@ -58,6 +58,7 @@ class Trainer:
                     # self.enable_learning(agent_type=(2 - (i // (itr // 100)) % 2))
                     # self.disable_learning(agent_type=(1 + (i // (itr // 100)) % 2))
 
+            self.reset()
             (loss, reward, epsilon, ml_losses, step_count) = self.play_one_game(
                 ep=i, total_ep=itr
             )
@@ -77,12 +78,12 @@ class Trainer:
         for agent in self.agents:
             agent.disable_learning()
         for i in range(itr):
+            self.reset()
             loss, reward, eps, ml_losses, step_count = self.play_one_game()
             total_loss += loss
         return total_loss / itr
 
-    def test(self, itr=1):
-        self.reset()
+    def test(self, agents=[], itr=1):
         self.storage.reset_test_loss()
         self.learners = []
         for agent in self.agents:
@@ -91,37 +92,45 @@ class Trainer:
         possible_loc = [(x, y) for x in range(side) for y in range(side)]
         total_step_count = 0
         excess_step_count = 0
+        success_count = 0
         count = 0
         for goal_pos in possible_loc:
             for p1 in possible_loc:
                 for p2 in possible_loc:
                     for p3 in possible_loc:
                         for p4 in possible_loc:
+                            self.step_count = 0
+                            self.goal_reached = False
+                            self.itr = 0
+
+                            self.agents = agents
+                            self.agent_positions = [p1, p2, p3, p4]
+                            self.goal_pos = goal_pos
+                            self.min_step = self.calculate_min_step()
                             for agent in self.agents:
                                 agent.reset()
-                            self.goal_reached = False
-                            self.goal_pos = goal_pos
-                            self.agent_positions = [p1, p2, p3, p4]
-                            min_step_count = self.calculate_min_step()
+                            self.reorder_for_min_step()
 
                             (loss, reward, epsilon, ml_loss, step_count) = (
                                 self.play_one_game(is_testing=True)
                             )
+                            print(f"step_count: {step_count}")
                             self.storage.append_test_loss(loss)
                             self.storage.append_step_count(step_count)
 
                             total_step_count += step_count
-                            excess_step_count += step_count - min_step_count
+                            excess_step_count += step_count - self.min_step
+                            # print(excess_step_count, step_count, self.min_step)
+                            # print(p1, p2, p3, p4, goal_pos)
+                            # input()
+                            if step_count < 15:
+                                success_count += 1
                             count += 1
 
                             if count % 100 == 0:
                                 print(
-                                    f"Average step -- ep {count}: {total_step_count / count}"
+                                    f"Ep {count}: Avg = {total_step_count / count}; Excess = {excess_step_count / count}; Success = {success_count/count}"
                                 )
-                                print(
-                                    f"Excess step -- ep {count}: {excess_step_count / count}"
-                                )
-
         return self.storage.test_loss, self.storage.step_count
 
     def enable_learning(self, agent_type):
@@ -135,10 +144,10 @@ class Trainer:
             a.disable_learning()
 
     def play_one_game(self, **kwargs):
-        self.reset()
-        min_step = self.calculate_min_step()
+        # self.reset()
 
         max_step_count = 50
+        self.step_count = 0
         ml_losses = []
         epsilons = []
         while not self.has_ended() and self.step_count < max_step_count:
@@ -148,9 +157,9 @@ class Trainer:
             if epsilon is not None:
                 epsilons.append(epsilon)
             self.step_count += 1
-
+        # print(self.step_count)
         total_reward = sum(map(lambda a: a.get_total_reward(), self.agents))
-        loss = self.step_count - min_step
+        loss = self.step_count - self.min_step
         return (
             loss,
             total_reward,
@@ -318,14 +327,11 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
     def set_interactive_tiles(self):
         # Assign goal to set position
         self.goal_pos = self.get_random_pos(self.width, self.height)
-        self.goal_reached = False
 
         # Assign agents to random positions
         self.agent_positions = [
             self.get_random_pos(self.width, self.height) for _ in self.agents
         ]
-
-        self.min_step = self.calculate_min_step()
 
     # ----- Core Functions ----- #
     def step(self, is_testing=False, ep=0, total_ep=1):
@@ -423,7 +429,10 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
     # ----- Public Functions ----- #
     def reset(self):
         self.step_count = 0
+        self.goal_reached = False
+        self.itr = 0
         self.set_interactive_tiles()
+        self.min_step = self.calculate_min_step()
         for agent in self.agents:
             agent.reset()
         self.reorder_for_min_step()

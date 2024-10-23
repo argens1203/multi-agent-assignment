@@ -269,7 +269,7 @@ class Visualization:
     # ----- ----- ----- ----- Event Handlers  ----- ----- ----- ----- #
 
     def on_close(self, e):
-        self.anim.event_source.stop()
+        self.ani.event_source.stop()
 
     def on_show_graph(self, e):
         fig2, ax2 = plt.subplots()

@@ -91,23 +91,25 @@ if __name__ == "__main__":
         "batch_size": batch_size,
     }
 
+    agents = [
+        Agent1(dqn1, buffer1, **kwargs),
+        Agent1(dqn1, buffer1, **kwargs),
+        Agent2(dqn2, buffer2, **kwargs),
+        Agent2(dqn2, buffer2, **kwargs),
+    ]
     grid = Grid(
         side,
         side,
-        [
-            Agent1(dqn1, buffer1, **kwargs),
-            Agent1(dqn1, buffer1, **kwargs),
-            Agent2(dqn2, buffer2, **kwargs),
-            Agent2(dqn2, buffer2, **kwargs),
-        ],
+        agents,
         storage,
     )
     grid.try_load_dqn()
     # grid.reset()
-    # grid.train(20000)
+    grid.train(20000)
 
     # grid.train(20000)
-    # grid.save_dqn()
+    grid.save_dqn()
+    grid.test(agents=agents)
 
     fig2, ax2 = plt.subplots()
     MLGraph(storage.ml_losses, fig2, ax2).show()
