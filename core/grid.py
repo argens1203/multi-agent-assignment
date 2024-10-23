@@ -46,7 +46,7 @@ class Trainer:
             if i / itr >= 0.95:
                 self.learners = [1, 2]
             else:
-                if (i // (itr // 500)) % 2 == 0:
+                if (i // (itr // 100)) % 2 == 0:
                     self.learners = [1]
                     self.enable_learning(agent_type=1)
                     self.disable_learning(agent_type=2)
