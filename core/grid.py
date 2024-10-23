@@ -40,12 +40,14 @@ class Trainer:
         print(f"Start Time: {start}")
         self.reset()
         for i in range(itr):
-            if i / itr >= 0.9:
-                self.enable_learning(agent_type=1)
-                self.enable_learning(agent_type=2)
-            else:
-                self.enable_learning(agent_type=(2 - (i // (itr // 100)) % 2))
-                self.disable_learning(agent_type=(1 + (i // (itr // 100)) % 2))
+            self.enable_learning(agent_type=1)
+            self.enable_learning(agent_type=2)
+            # if i / itr >= 0.9:
+            #     self.enable_learning(agent_type=1)
+            #     self.enable_learning(agent_type=2)
+            # else:
+            #     self.enable_learning(agent_type=(2 - (i // (itr // 100)) % 2))
+            #     self.disable_learning(agent_type=(1 + (i // (itr // 100)) % 2))
 
             (loss, reward, epsilon, ml_losses, step_count) = self.play_one_game(
                 ep=i, total_ep=itr
@@ -59,6 +61,16 @@ class Trainer:
                     f"Epoch: {i+1}/{itr} -- Time Elapsed: {datetime.datetime.now() - start}"
                 )
         return self.storage.ml_losses
+
+    def small_test(self, itr=1):
+        self.reset()
+        total_loss = 0
+        for agent in self.agents:
+            agent.disable_learning()
+        for i in range(itr):
+            loss, reward, eps, ml_losses, step_count = self.play_one_game()
+            total_loss += loss
+        return total_loss / itr
 
     def test(self, itr=1):
         self.reset()
@@ -132,7 +144,7 @@ class Trainer:
         return (
             loss,
             total_reward,
-            epsilons[-1],
+            None if len(epsilons) == 0 else epsilons[-1],
             ml_losses,
             self.step_count,
         )  # TODO: 0
@@ -319,7 +331,14 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         action = agent.choose_action(
             observed_state, choose_best=is_testing, episode_ratio=ep / total_ep
         )
+        if debug:
+            old_pos = self.agent_positions[self.idx]
         reward, next_state, is_terminal = self.move(self.idx, action)
+        if debug:
+            print(
+                f"Agent {self.idx} of type {agent.get_type()} chose action {action} and moved from {old_pos} to {self.agent_positions[self.idx]}"
+            )
+            print(f"Agent {self.idx} received a reward of {reward}")
         loss, epsilon = agent.update(
             state=observed_state,
             action=action,
@@ -342,7 +361,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         reward = 0
 
         def clamp(i: int, lower: int, upper: int) -> Tuple[int, int]:
-            penalty = -50 if i < lower or i > upper else 0
+            penalty = -10 if i < lower or i > upper else 0
             return penalty, min(max(i, lower), upper)
 
         # Retreive reward and new location according to Entity.interaction
@@ -353,40 +372,32 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
 
         new_pos = new_x, new_y
         agent = self.agents[idx]
-        goal_reached = False
         if new_pos == self.goal_pos:
             if agent.have_secret:
-                reward += 50
-                goal_reached = True
-                if goal_reached and debug:
-                    print(f"goal_reached: {goal_reached}")
-            # else:
-            #     reward -= 20
-        self.goal_reached = goal_reached or self.goal_reached
-        if goal_reached and debug:
-            print(f"self.goal_reached: {self.goal_reached}")
-
-        other_indices = [
-            other_idx
-            for (other_idx, pos) in enumerate(self.agent_positions)
-            if other_idx != idx and pos == new_pos
-        ]
-        other_agents_diff_type = [
-            self.agents[o_idx]
-            for o_idx in other_indices
-            if self.agents[o_idx].get_type() != self.agents[idx].get_type()
-        ]
-        if len(other_agents_diff_type) > 0:
-            if not self.agents[idx].have_secret:
-                reward += 50
-            for agents in other_agents_diff_type + [self.agents[idx]]:
-                agents.have_secret_(True)
+                reward += 20
+                self.goal_reached = True
+        else:
+            other_indices = [
+                other_idx
+                for (other_idx, pos) in enumerate(self.agent_positions)
+                if other_idx != idx and pos == new_pos
+            ]
+            other_agents_diff_type = [
+                self.agents[o_idx]
+                for o_idx in other_indices
+                if self.agents[o_idx].get_type() != self.agents[idx].get_type()
+            ]
+            if len(other_agents_diff_type) > 0:
+                if not self.agents[idx].have_secret:
+                    reward += 20
+                for agents in other_agents_diff_type + [self.agents[idx]]:
+                    agents.have_secret_(True)
 
         self.agent_positions[idx] = new_pos
         if debug:
             print(f"reward: {reward}")
             print(f"has secret: {agent.have_secret}")
-        return reward, self.extract_state(idx), goal_reached
+        return reward, self.extract_state(idx), self.goal_reached
 
     # ----- Private Functions ----- #
     def reorder_for_min_step(self):

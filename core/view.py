@@ -19,7 +19,6 @@ Coordinates: TypeAlias = Tuple[float, float, float, float]
 class IVisual(ABC):
 
     # Getting Info
-
     @abstractmethod
     def get_agent_info(self) -> List[Tuple[Tuple[int, int], bool]]:
         pass
@@ -49,7 +48,6 @@ class IVisual(ABC):
         pass
 
     # Functions
-
     @abstractmethod
     def toggle_auto_reset(self):
         pass
@@ -58,8 +56,11 @@ class IVisual(ABC):
     def next(self):
         pass
 
-    # Trainings
+    @abstractmethod
+    def reset(self):
+        pass
 
+    # Trainings/Testing
     @abstractmethod
     def train(self, itr=1):
         pass
@@ -74,10 +75,6 @@ class IVisual(ABC):
 
     @abstractmethod
     def test_in_background(self, ep=1000):
-        pass
-
-    @abstractmethod
-    def reset(self):
         pass
 
 
@@ -272,7 +269,7 @@ class Visualization:
     # ----- ----- ----- ----- Event Handlers  ----- ----- ----- ----- #
 
     def on_close(self, e):
-        pass
+        self.anim.event_source.stop()
 
     def on_show_graph(self, e):
         fig2, ax2 = plt.subplots()

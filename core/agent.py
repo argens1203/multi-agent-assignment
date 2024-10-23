@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 
 
 class ExpBuffer:
-    def __init__(self):
-        self.max = 1000
+    def __init__(self, max):
+        self.max = max
         self.itr = 0
         self.has_reached = False
 
@@ -56,25 +56,34 @@ class ExpBuffer:
 
 
 class Agent(ABC):
-    def __init__(self, dqn, buffer):
+    def __init__(
+        self,
+        dqn,
+        buffer,
+        update_frequency=500,
+        eps_decay=0.9999,
+        eps_min=0.05,
+        gamma=0.997,
+        batch_size=200,
+    ):
         self.dqn = dqn
         self.buffer = buffer
         self.actions = action_space
 
         # Agent Properties
         self.total_reward = 0
+        self.step_count = 0
         self.have_secret = False
 
         # Initialize Q Table for all state-action to be 0
-        self.batch_size = 200
-        self.step_count = 0
-        self.C = 500  # Network update frequency
+        self.batch_size = batch_size
+        self.update_frequency = update_frequency  # Network update frequency
 
         # Initialize Learning param
         self.epsilon = 1
-        self.decay_ratio = 0.9997
-        self.epsilon_min = 0.05
-        self.gamma = 0.997
+        self.decay_ratio = eps_decay
+        self.epsilon_min = eps_min
+        self.gamma = gamma
 
         self.learning = True
 
@@ -109,6 +118,7 @@ class Agent(ABC):
         self.buffer.insert(
             state, self.actions.index(action), reward, next_state, is_terminal
         )
+        loss = None
         if len(self.buffer) >= self.batch_size:
             states, actions, rewards, next_states, is_terminals = self.buffer.extract(
                 self.batch_size
@@ -122,7 +132,7 @@ class Agent(ABC):
 
             loss = self.dqn.train_one_step(states, actions, targets)
 
-        if self.step_count >= self.C:
+        if self.step_count >= self.update_frequency:
             self.dqn.update_target()
             self.step_count = 0
         else:
