@@ -26,7 +26,7 @@ class DQN:
         self.model2 = copy.deepcopy(self.model).to(device)
         self.model2.load_state_dict(self.model.state_dict())
         self.loss_fn = torch.nn.MSELoss()
-        self.learning_rate = 0.001
+        self.learning_rate = 1e-4
         self.optimizer = torch.optim.Adam(
             self.model.parameters(), lr=self.learning_rate
         )
@@ -61,6 +61,7 @@ class DQN:
         loss = self.loss_fn(X, Y)
         # print(loss)
         self.optimizer.zero_grad()
+        # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5000)
         loss.backward()
         self.optimizer.step()
         return loss.item() / len(X)

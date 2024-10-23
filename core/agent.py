@@ -92,7 +92,7 @@ class Agent(ABC):
         self, state: torch.tensor, choose_best: bool, episode_ratio: float
     ) -> Tuple[int, int]:
         if not choose_best and np.random.rand() < self.epsilon:
-            self.epsilon_decay(episode_ratio)
+            # self.epsilon_decay(episode_ratio)
             return random.choice(self.actions)
         else:
             # Extract immutable state information
@@ -133,7 +133,7 @@ class Agent(ABC):
             loss = self.dqn.train_one_step(states, actions, targets)
 
         if self.step_count >= self.update_frequency:
-            self.dqn.update_target()
+            # self.dqn.update_target()
             self.step_count = 0
         else:
             self.step_count += 1
@@ -169,15 +169,6 @@ class Agent(ABC):
 
     def save(self, idx):
         self.dqn.save(idx)
-
-    def interact(self, other: "Agent"):
-        rewarded = False
-        if self.is_different_type(other):
-            if not other.have_secret:
-                rewarded = True
-            self.have_secret = True
-            other.have_secret_(True)
-        return (50 if rewarded else 0), None, None
 
     def is_different_type(self, other: "Agent"):
         return other.get_type() != self.get_type()

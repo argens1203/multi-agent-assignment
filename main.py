@@ -72,12 +72,14 @@ if __name__ == "__main__":
     #                         if loss < min_loss:
     #                             print(loss)
 
-    max_exp = 500
-    upd_freq = 200
+    max_exp = 100
+    upd_freq = 100
     eps_decay = 0.9995
     gamma = 0.9
     eps_min = 0.005
-    batch_size = 64
+    batch_size = 32
+    eps_decay_final_step = 15e3
+    max_grad_norm = 5e3
 
     buffer1 = ExpBuffer(max=max_exp)
     buffer2 = ExpBuffer(max=max_exp)
@@ -105,7 +107,15 @@ if __name__ == "__main__":
     )
     # grid.try_load_dqn()
     # grid.reset()
-    grid.train(20000)
+    grid.train(
+        20000,
+        upd_freq=upd_freq,
+        eps_min=eps_min,
+        eps_decay_final_step=eps_decay_final_step,
+        max_grad_norm=max_grad_norm,
+        dqn1=dqn1,
+        dqn2=dqn2,
+    )
 
     # grid.train(20000)
     grid.save_dqn()

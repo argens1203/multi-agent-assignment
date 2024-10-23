@@ -36,7 +36,26 @@ class Trainer:
         self.storage = storage
         self.learners = [1, 2]
 
-    def train(self, itr=1):
+        # upd_freq=upd_freq,
+        # eps_min=eps_min,
+        # eps_decay_final_step=eps_decay_final_step,
+        # max_grad_norm=max_grad_norm,
+
+    def train(
+        self,
+        itr=1,
+        upd_freq=100,
+        eps_min=5e-2,
+        eps_decay_final_step=15e3,
+        max_grad_norm=5e3,
+        dqn1=None,
+        dqn2=None,
+    ):
+        def calc_eps(start_eps, end_eps, step, final_step):
+            return (
+                start_eps + (end_eps - start_eps) * min(step, final_step) / final_step
+            )
+
         start = datetime.datetime.now()
         print(f"Start Time: {start}")
         self.reset()
@@ -54,9 +73,14 @@ class Trainer:
                     self.learners = [2]
                     self.enable_learning(agent_type=2)
                     self.disable_learning(agent_type=1)
-
-                    # self.enable_learning(agent_type=(2 - (i // (itr // 100)) % 2))
-                    # self.disable_learning(agent_type=(1 + (i // (itr // 100)) % 2))
+            if i % upd_freq == 0:
+                for dqn in [dqn1, dqn2]:
+                    dqn.update_target()
+            epsilon = calc_eps(1, eps_min, i, eps_decay_final_step)
+            for agent in self.agents:
+                agent.epsilon = epsilon
+            # self.enable_learning(agent_type=(2 - (i // (itr // 100)) % 2))
+            # self.disable_learning(agent_type=(1 + (i // (itr // 100)) % 2))
 
             self.reset()
             (loss, reward, epsilon, ml_losses, step_count) = self.play_one_game(
