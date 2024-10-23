@@ -181,7 +181,7 @@ class Trainer:
         # self.reset()
 
         max_step_count = 50
-        self.step_count = 0
+        self.step_count = 1
         ml_losses = []
         epsilons = []
         while not self.has_ended() and self.step_count < max_step_count:
@@ -190,7 +190,6 @@ class Trainer:
                 ml_losses.append(ml_loss)
             if epsilon is not None:
                 epsilons.append(epsilon)
-            self.step_count += 1
         # print(self.step_count)
         total_reward = sum(map(lambda a: a.get_total_reward(), self.agents))
         loss = self.step_count - self.min_step
