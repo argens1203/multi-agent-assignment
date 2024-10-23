@@ -61,8 +61,16 @@ class DQN:
         loss = self.loss_fn(X, Y)
         # print(loss)
         self.optimizer.zero_grad()
-        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5000)
+        # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5000)
         loss.backward()
+
+        # total_norm = 0
+        # for p in self.model.parameters():
+        #     param_norm = p.grad.data.norm(2)
+        #     total_norm += param_norm.item() ** 2
+        # total_norm = total_norm ** (1.0 / 2)
+        # print(total_norm)
+
         self.optimizer.step()
         return loss.item() / len(X)
 
