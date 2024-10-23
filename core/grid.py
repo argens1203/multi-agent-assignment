@@ -402,7 +402,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         agent = self.agents[idx]
         if new_pos == self.goal_pos:
             if agent.have_secret:
-                reward += 20
+                reward += 50
                 self.goal_reached = True
         else:
             other_indices = [
@@ -415,11 +415,17 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
                 for o_idx in other_indices
                 if self.agents[o_idx].get_type() != self.agents[idx].get_type()
             ]
+            # got_secret = False
             if len(other_agents_diff_type) > 0:
                 if not self.agents[idx].have_secret:
                     reward += 20
-                for agents in other_agents_diff_type + [self.agents[idx]]:
-                    agents.have_secret_(True)
+                    # pass
+                for agent in other_agents_diff_type + [self.agents[idx]]:
+                    # if not agent.have_secret:
+                    # got_secret = True
+                    agent.have_secret_(True)
+            # if got_secret:
+            # reward += 20
 
         self.agent_positions[idx] = new_pos
         if debug:

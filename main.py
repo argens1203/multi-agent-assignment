@@ -103,12 +103,12 @@ if __name__ == "__main__":
         agents,
         storage,
     )
-    grid.try_load_dqn()
+    # grid.try_load_dqn()
     # grid.reset()
-    # grid.train(20000)
+    grid.train(20000)
 
     # grid.train(20000)
-    # grid.save_dqn()
+    grid.save_dqn()
     # grid.test(agents=agents)
     grid.small_test(10000)
 
