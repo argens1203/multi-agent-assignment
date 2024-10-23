@@ -75,12 +75,23 @@ class Trainer:
     def small_test(self, itr=1):
         self.reset()
         total_loss = 0
+        total_step_count = 0
+        success_count = 0
         for agent in self.agents:
             agent.disable_learning()
         for i in range(itr):
             self.reset()
-            loss, reward, eps, ml_losses, step_count = self.play_one_game()
+            loss, reward, eps, ml_losses, step_count = self.play_one_game(
+                is_testing=True
+            )
+            if step_count < 15:
+                success_count += 1
             total_loss += loss
+            total_step_count += step_count
+            if (i + 1) % 100 == 0:
+                print(
+                    f"Ep {i + 1}: Avg = {total_step_count / (i + 1)}; Excess = {total_loss / (i + 1)}; Success = {success_count/(i + 1)}"
+                )
         return total_loss / itr
 
     def test(self, agents=[], itr=1):
@@ -114,7 +125,6 @@ class Trainer:
                             (loss, reward, epsilon, ml_loss, step_count) = (
                                 self.play_one_game(is_testing=True)
                             )
-                            print(f"step_count: {step_count}")
                             self.storage.append_test_loss(loss)
                             self.storage.append_step_count(step_count)
 
