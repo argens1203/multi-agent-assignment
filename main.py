@@ -13,10 +13,24 @@ from core import (
 )
 from constants import state_size, action_size, side
 
+import random, os, numpy as np, torch
+
 if __name__ == "__main__":
 
     storage = Storage(20000)
     possible_actions = [(0, -1), (0, 1), (-1, 0), (1, 0), (0, 0)]
+
+    def seed_all(seed=1029):
+        random.seed(seed)
+        os.environ["PYTHONHASHSEED"] = str(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+
+    seed_all(seed=1234)
 
     # min_loss = 1e9
 
