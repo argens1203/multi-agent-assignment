@@ -34,20 +34,29 @@ class Trainer:
     def __init__(self, storage, **kwargs):
         super().__init__(**kwargs)
         self.storage = storage
+        self.learners = [1, 2]
 
     def train(self, itr=1):
         start = datetime.datetime.now()
         print(f"Start Time: {start}")
         self.reset()
         for i in range(itr):
-            self.enable_learning(agent_type=1)
-            self.enable_learning(agent_type=2)
-            # if i / itr >= 0.9:
-            #     self.enable_learning(agent_type=1)
-            #     self.enable_learning(agent_type=2)
-            # else:
-            #     self.enable_learning(agent_type=(2 - (i // (itr // 100)) % 2))
-            #     self.disable_learning(agent_type=(1 + (i // (itr // 100)) % 2))
+            # self.enable_learning(agent_type=1)
+            # self.enable_learning(agent_type=2)
+            if i / itr >= 0.9:
+                self.learners = [1, 2]
+            else:
+                if (i // (itr // 1000)) % 2 == 0:
+                    self.learners = [1]
+                    self.enable_learning(agent_type=1)
+                    self.disable_learning(agent_type=2)
+                else:
+                    self.learners = [2]
+                    self.enable_learning(agent_type=2)
+                    self.disable_learning(agent_type=1)
+
+                    # self.enable_learning(agent_type=(2 - (i // (itr // 100)) % 2))
+                    # self.disable_learning(agent_type=(1 + (i // (itr // 100)) % 2))
 
             (loss, reward, epsilon, ml_losses, step_count) = self.play_one_game(
                 ep=i, total_ep=itr
@@ -75,8 +84,9 @@ class Trainer:
     def test(self, itr=1):
         self.reset()
         self.storage.reset_test_loss()
-        self.disable_learning(agent_type=1)
-        self.disable_learning(agent_type=2)
+        self.learners = []
+        for agent in self.agents:
+            agent.disable_learning()
 
         possible_loc = [(x, y) for x in range(side) for y in range(side)]
         total_step_count = 0
@@ -328,8 +338,9 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
 
         agent = self.agents[self.idx]
         observed_state = self.extract_state(self.idx)
+        choose_best = is_testing or not agent.get_type() in self.learners
         action = agent.choose_action(
-            observed_state, choose_best=is_testing, episode_ratio=ep / total_ep
+            observed_state, choose_best=choose_best, episode_ratio=ep / total_ep
         )
         if debug:
             old_pos = self.agent_positions[self.idx]
@@ -339,6 +350,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
                 f"Agent {self.idx} of type {agent.get_type()} chose action {action} and moved from {old_pos} to {self.agent_positions[self.idx]}"
             )
             print(f"Agent {self.idx} received a reward of {reward}")
+
         loss, epsilon = agent.update(
             state=observed_state,
             action=action,

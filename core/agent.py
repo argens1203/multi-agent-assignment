@@ -49,7 +49,7 @@ class ExpBuffer:
         )
 
     def clear(self):
-        self.__init__()
+        self.__init__(self.max)
 
     def __len__(self):
         return len(self.states)
