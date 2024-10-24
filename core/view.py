@@ -290,11 +290,12 @@ class Graph:
             self.fig, self.draw, frames=self.frames, interval=100, save_count=100
         )
 
-        plt.show()
-
     def frames(self):
         while True:
             yield None
+
+    def show(self):
+        plt.show()
 
     # Compulsory unused argument
     def draw(self, args):

@@ -121,9 +121,10 @@ class Trainer:
                 )
         return total_loss / itr
 
-    def test(self, agents=[], itr=1):
+    def test(self, max_itr=None):
         self.storage.reset_test_loss()
-        self.learners = []
+        itr = 0
+
         for agent in self.agents:
             agent.disable_learning()
 
@@ -137,29 +138,21 @@ class Trainer:
                 for p2 in possible_loc:
                     for p3 in possible_loc:
                         for p4 in possible_loc:
-                            self.step_count = 0
-                            self.goal_reached = False
-                            self.itr = 0
-
-                            self.agents = agents
+                            if max_itr is not None and itr >= max_itr:
+                                return
                             self.agent_positions = [p1, p2, p3, p4]
                             self.goal_pos = goal_pos
-                            self.min_step = self.calculate_min_step()
-                            for agent in self.agents:
-                                agent.reset()
-                            self.reorder_for_min_step()
+                            self.reset(random_pos=False)
 
-                            (loss, reward, epsilon, ml_loss, step_count) = (
+                            (excess_step, reward, epsilon, ml_loss, step_count) = (
                                 self.play_one_game(is_testing=True)
                             )
-                            self.storage.append_test_loss(loss)
                             self.storage.append_step_count(step_count)
+                            self.storage.append_excess_step(excess_step)
 
                             total_step_count += step_count
-                            excess_step_count += step_count - self.min_step
-                            # print(excess_step_count, step_count, self.min_step)
-                            # print(p1, p2, p3, p4, goal_pos)
-                            # input()
+                            excess_step_count += excess_step
+
                             if step_count < 15:
                                 success_count += 1
                             count += 1
@@ -168,7 +161,7 @@ class Trainer:
                                 print(
                                     f"Ep {count}: Avg = {total_step_count / count}; Excess = {excess_step_count / count}; Success = {success_count/count}"
                                 )
-        return self.storage.test_loss, self.storage.step_count
+                            itr += 1
 
     def enable_learning(self, agent_type):
         agents = [a for a in self.agents if a.get_type() == agent_type]
@@ -486,11 +479,12 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         self.agent_positions = [self.agent_positions[i] for i, pos in idx_positions]
 
     # ----- Public Functions ----- #
-    def reset(self):
+    def reset(self, random_pos=True):
         self.step_count = 0
         self.goal_reached = False
         self.idx = 0
-        self.set_interactive_tiles()
+        if random_pos:
+            self.set_interactive_tiles()
         self.min_step = self.calculate_min_step()
         for agent in self.agents:
             agent.reset()
