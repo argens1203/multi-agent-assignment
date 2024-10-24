@@ -1,6 +1,5 @@
 from multiprocessing import Array
 from typing import List
-import random
 
 
 class Storage:
@@ -15,10 +14,6 @@ class Storage:
         self.test_loss = []
         self.ml_losses = []
         self.step_count = []
-
-        for i in range(max_itr):
-            self.losses[i] = random.randint(0, 100)
-            self.epsilon[i] = random.random()
 
     def reset_counter(self):
         self.itr = 0

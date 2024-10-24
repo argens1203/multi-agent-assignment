@@ -7,13 +7,9 @@ from typing import Tuple, TypeAlias, TYPE_CHECKING, List
 from abc import ABC, abstractmethod
 
 if TYPE_CHECKING:
-    # from .controller import Controller
     from core import Grid, Storage
 
 Coordinates: TypeAlias = Tuple[float, float, float, float]
-
-
-# TODO: print step in text
 
 
 class IVisual(ABC):
@@ -67,14 +63,6 @@ class IVisual(ABC):
 
     @abstractmethod
     def test(self, itr=1):
-        pass
-
-    @abstractmethod
-    def train_in_background(self):
-        pass
-
-    @abstractmethod
-    def test_in_background(self, ep=1000):
         pass
 
 
@@ -323,50 +311,3 @@ class Graph:
         ax.set_title(key.title())
         ax.set_xlabel("Iteration")
         ax.set_ylabel(key.title())
-
-
-class TestGraph:
-    def __init__(self, storage, fig, ax):
-        self.storage = storage
-        self.fig = fig
-        self.ax = ax
-
-        self.ani = animation.FuncAnimation(
-            self.fig, self.draw, frames=self.frames, interval=100, save_count=100
-        )
-
-        plt.show()
-
-    def frames(self):
-        while True:
-            yield None
-
-    def draw(self, args):
-        self.plot_losses(
-            self.ax,
-            self.storage.iterations,
-            self.storage.test_loss,
-        )
-
-    def plot_losses(self, ax, iterations, loss):
-        # Plotting the loss in the first subplot
-        ax.plot(iterations, loss, color="blue", label="Loss")
-        ax.set_title("Loss")
-        ax.set_xlabel("Iteration")
-        ax.set_ylabel("Loss")
-
-
-class MLGraph:
-    def __init__(self, ml_losses, fig, ax):
-        ax.plot(range(len(ml_losses)), ml_losses, label="Loss")
-        # ax.set_title("Loss")
-        ax.set_xlabel("Iteration")
-        ax.set_ylabel("Loss")
-        pass
-
-    def show(self):
-
-        # Display the plots
-        plt.tight_layout()
-        plt.show()
-        pass

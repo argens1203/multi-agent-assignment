@@ -1,12 +1,9 @@
-import matplotlib.pyplot as plt
-
 from core import (
     Agent1,
     Agent2,
     Grid,
     Storage,
     Visualization,
-    MLGraph,
     ExpBuffer,
     DQN,
     Graph,
