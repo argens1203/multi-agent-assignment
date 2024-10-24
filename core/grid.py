@@ -54,40 +54,28 @@ class Trainer:
 
         start = datetime.datetime.now()
         print(f"Start Time: {start}")
-        self.reset()
+
+        self.enable_learning(agent_type=1)
+        self.enable_learning(agent_type=2)
+
         for i in range(itr):
-            # self.learners = [1, 2]
-            self.enable_learning(agent_type=1)
-            self.enable_learning(agent_type=2)
-            # if i / itr >= 0.3:
-            #     self.learners = [1, 2]
-            #     self.enable_learning(agent_type=1)
-            #     self.enable_learning(agent_type=2)
-            # else:
-            #     if (i // (itr // 100)) % 2 == 0:
-            #         self.learners = [1]
-            #         self.enable_learning(agent_type=1)
-            #         self.disable_learning(agent_type=2)
-            #     else:
-            #         self.learners = [2]
-            #         self.enable_learning(agent_type=2)
-            #         self.disable_learning(agent_type=1)
+            # Copy Q to Q_hat
             if i % upd_freq == 0:
                 for dqn in [dqn1, dqn2]:
                     dqn.update_target()
+
+            # Decay epsilon linearly, reaching eps_min at eps_decay_final_step
             epsilon = calc_eps(1, eps_min, i, eps_decay_final_step)
             for agent in self.agents:
                 agent.epsilon = epsilon
-            # self.enable_learning(agent_type=(2 - (i // (itr // 100)) % 2))
-            # self.disable_learning(agent_type=(1 + (i // (itr // 100)) % 2))
 
             self.reset()
-            (loss, reward, epsilon, ml_losses, step_count) = self.play_one_game(
+            (excess_step, reward, epsilon, ml_losses, step_count) = self.play_one_game(
                 is_testing=False
             )
 
-            self.storage.append_ml_losses(ml_losses)
-            self.storage.append_loss_epsilon(loss, epsilon)
+            self.storage.append_ml_losses(ml_losses / len(ml_losses))
+            self.storage.append_excess_epsilon(excess_step, epsilon)
 
             if (i + 1) % 100 == 0:
                 print(
@@ -96,12 +84,13 @@ class Trainer:
         return self.storage.ml_losses
 
     def small_test(self, itr=1):
-        self.reset()
         total_loss = 0
         total_step_count = 0
         success_count = 0
-        for agent in self.agents:
-            agent.disable_learning()
+
+        self.disable_learning(agent_type=1)
+        self.disable_learning(agent_type=2)
+
         for i in range(itr):
             self.reset()
             loss, reward, eps, ml_losses, step_count = self.play_one_game(
@@ -118,17 +107,17 @@ class Trainer:
         return total_loss / itr
 
     def test(self, max_itr=None):
-        self.storage.reset_test_loss()
         itr = 0
 
-        for agent in self.agents:
-            agent.disable_learning()
+        self.disable_learning(agent_type=1)
+        self.disable_learning(agent_type=2)
 
         possible_loc = [(x, y) for x in range(side) for y in range(side)]
         total_step_count = 0
         excess_step_count = 0
         success_count = 0
         count = 0
+
         for goal_pos in possible_loc:
             for p1 in possible_loc:
                 for p2 in possible_loc:
@@ -143,30 +132,32 @@ class Trainer:
                             (excess_step, reward, epsilon, ml_loss, step_count) = (
                                 self.play_one_game(is_testing=True)
                             )
+
                             self.storage.append_step_count(step_count)
                             self.storage.append_excess_step(excess_step)
 
                             total_step_count += step_count
                             excess_step_count += excess_step
-
                             if step_count < 15:
                                 success_count += 1
                             count += 1
 
                             if count % 100 == 0:
                                 print(
-                                    f"Ep {count}: Avg = {total_step_count / count}; Excess = {excess_step_count / count}; Success = {success_count/count}"
+                                    f"Ep {count}: Avg = {total_step_count / count}; Excess = {excess_step_count / count}; Success = {success_count / count}"
                                 )
                             itr += 1
 
     def enable_learning(self, agent_type):
-        agents = [a for a in self.agents if a.get_type() == agent_type]
-        for a in agents:
+        if agent_type not in self.learners:
+            self.learners.append(agent_type)
+        for a in [a for a in self.agents if a.get_type() == agent_type]:
             a.enable_learning()
 
     def disable_learning(self, agent_type):
-        agents = [a for a in self.agents if a.get_type() == agent_type]
-        for a in agents:
+        if agent_type in self.learners:
+            self.learners.remove(agent_type)
+        for a in [a for a in self.agents if a.get_type() == agent_type]:
             a.disable_learning()
 
     def play_one_game(self, is_testing=False, **kwargs):
@@ -181,7 +172,6 @@ class Trainer:
                 ml_losses.append(ml_loss)
             if epsilon is not None:
                 epsilons.append(epsilon)
-        # print(self.step_count)
         total_reward = sum(map(lambda a: a.get_total_reward(), self.agents))
         loss = self.step_count - self.min_step
         return (

@@ -78,16 +78,16 @@ if __name__ == "__main__":
 
     grid.small_test(10000)
     Graph(storage=storage, keys=["ml_losses"])
-    Graph(storage=storage, keys=["losses", "epsilon"])
+    Graph(storage=storage, keys=["excess_step", "epsilon"])
 
     # grid.test()
     # print("---------------STEP_COUNT----------------------")
     # for i, value in enumerate(storage.step_count):
     #     print(i, value)
     # print("---------------EXCESS----------------------")
-    # for i, value in enumerate(storage.excess_step):
+    # for i, value in enumerate(storage.excess_step_hist):
     #     print(i, value)
 
-    # Graph(storage=storage, keys=["step_count", "excess_step"]).show()
+    # Graph(storage=storage, keys=["step_count", "excess_step_hist"]).show()
     # grid.reset()
     vis = Visualization(storage, grid).show()
