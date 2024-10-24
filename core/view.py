@@ -290,19 +290,14 @@ class Visualization:
         self.draw(self.get_info())
 
 
-import matplotlib.animation as animation
-import matplotlib.pyplot as plt
-
-from typing import TYPE_CHECKING
-
-
 class Graph:
-    def __init__(self, storage: "Storage", fig, axs):
+    def __init__(self, storage: "Storage", keys=[]):
         self.storage = storage
-        self.fig = fig
-        self.ax1, self.ax2 = axs
+        self.keys = keys
 
-        self.storage = storage
+        self.fig, self.axs = plt.subplots(1, len(self.keys))
+        if len(self.keys) == 1:
+            self.axs = [self.axs]
         self.ani = animation.FuncAnimation(
             self.fig, self.draw, frames=self.frames, interval=100, save_count=100
         )
@@ -315,30 +310,19 @@ class Graph:
 
     # Compulsory unused argument
     def draw(self, args):
-        self.plot_losses(
-            self.ax1,
-            self.storage.iterations,
-            self.storage.losses,
-        )
-        self.plot_epsilon(
-            self.ax2,
-            self.storage.iterations,
-            self.storage.epsilon,
-        )
+        for i, k in enumerate(self.keys):
+            self.plot(
+                self.axs[i],
+                range(len(getattr(self.storage, k))),  # self.storage.iterations
+                getattr(self.storage, k),
+                k,
+            )
 
-    def plot_losses(self, ax, iterations, loss):
-        # Plotting the loss in the first subplot
-        ax.plot(iterations, loss, color="blue", label="Loss")
-        ax.set_title("Loss")
+    def plot(self, ax, itr, values, key):
+        ax.plot(itr, values, color="blue", label="Loss")
+        ax.set_title(key.title())
         ax.set_xlabel("Iteration")
-        ax.set_ylabel("Loss")
-
-    def plot_epsilon(self, ax, iterations, epsilon):
-        # Plotting the loss in the first subplot
-        ax.plot(iterations, epsilon, color="blue", label="Loss")
-        ax.set_title("Epsilon")
-        ax.set_xlabel("Iteration")
-        ax.set_ylabel("Epsilon")
+        ax.set_ylabel(key.title())
 
 
 class TestGraph:

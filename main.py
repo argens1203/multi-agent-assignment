@@ -82,13 +82,10 @@ if __name__ == "__main__":
     # grid.test(agents=agents)
     # grid.small_test(10000)
 
-    fig2, ax2 = plt.subplots()
-    MLGraph(storage.ml_losses, fig2, ax2).show()
-    fig, axs = plt.subplots(1, 2)
-    Graph(storage=storage, fig=fig, axs=(axs))
+    Graph(storage=storage, keys=["ml_losses"])
+    Graph(storage=storage, keys=["losses", "epsilon"])
 
     print(storage.epsilon)
 
-    # fig1, ax1 = plt.subplots()
     grid.reset()
     vis = Visualization(storage, grid).show()
