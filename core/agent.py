@@ -88,9 +88,7 @@ class Agent(ABC):
         self.learning = True
 
     # ----- Core Functions ----- #
-    def choose_action(
-        self, state: torch.tensor, choose_best: bool, episode_ratio: float
-    ) -> Tuple[int, int]:
+    def choose_action(self, state: torch.tensor, choose_best: bool) -> Tuple[int, int]:
         if not choose_best and np.random.rand() < self.epsilon:
             # self.epsilon_decay(episode_ratio)
             return random.choice(self.actions)

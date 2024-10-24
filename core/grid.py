@@ -26,7 +26,8 @@ class Controller:
     def next(self):
         if self.has_ended() and self.auto_reset:
             self.reset()
-        self.step(is_testing=True)
+        else:
+            self.step(is_testing=True)
         return
 
 
@@ -35,11 +36,6 @@ class Trainer:
         super().__init__(**kwargs)
         self.storage = storage
         self.learners = [1, 2]
-
-        # upd_freq=upd_freq,
-        # eps_min=eps_min,
-        # eps_decay_final_step=eps_decay_final_step,
-        # max_grad_norm=max_grad_norm,
 
     def train(
         self,
@@ -87,7 +83,7 @@ class Trainer:
 
             self.reset()
             (loss, reward, epsilon, ml_losses, step_count) = self.play_one_game(
-                ep=i, total_ep=itr
+                is_testing=False
             )
 
             self.storage.append_ml_losses(ml_losses)
@@ -173,43 +169,13 @@ class Trainer:
         for a in agents:
             a.disable_learning()
 
-    def play_one_game(self, is_testing=False, ep=0, total_ep=1, **kwargs):
-        # self.reset()
-
+    def play_one_game(self, is_testing=False, **kwargs):
         max_step_count = 50
         self.step_count = 1
         ml_losses = []
         epsilons = []
         while not self.has_ended() and self.step_count < max_step_count:
-            if self.idx >= len(self.agents):
-                self.step_count += 1
-                self.idx = 0
-                # random.shuffle(self.agent_idx)
-
-            agent = self.agents[self.idx]
-            observed_state = self.extract_state(self.idx)
-            choose_best = is_testing or not agent.get_type() in self.learners
-            action = agent.choose_action(
-                observed_state, choose_best=choose_best, episode_ratio=ep / total_ep
-            )
-            if debug:
-                old_pos = self.agent_positions[self.idx]
-            reward, next_state, is_terminal = self.move(self.idx, action)
-            if debug:
-                print(
-                    f"Agent {self.idx} of type {agent.get_type()} chose action {action} and moved from {old_pos} to {self.agent_positions[self.idx]}"
-                )
-                print(f"Agent {self.idx} received a reward of {reward}")
-
-            ml_loss, epsilon = agent.update(
-                state=observed_state,
-                action=action,
-                reward=reward,
-                next_state=next_state,
-                is_terminal=is_terminal,
-            )
-
-            self.idx += 1
+            ml_loss, epsilon = self.step(is_testing)
 
             if ml_loss is not None:
                 ml_losses.append(ml_loss)
@@ -239,7 +205,7 @@ class Visual:
         agent_types = map(lambda agent: agent.get_type(), self.agents)
         have_secrets = map(lambda agent: agent.have_secret, self.agents)
         step_counts = [
-            self.step_count + 1 if idx < self.idx else self.step_count
+            self.step_count if idx < self.idx else self.step_count - 1
             for idx in range(len(self.agents))
         ]
         return list(
@@ -266,7 +232,7 @@ class Visual:
 
     def get_step_count(self) -> int:
         # Incremented whenever first agent made a move
-        return self.step_count + (1 if self.idx >= 1 else 0)
+        return self.step_count
 
 
 class GridUtil:
@@ -349,7 +315,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         self.width = width
         self.height = height
         self.min_step = 0
-        self.step_count = 0
+        self.step_count = 1
 
         self.agents: List["Agent"] = agents
         self.idx: int = 0
@@ -367,17 +333,18 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         ]
 
     # ----- Core Functions ----- #
-    def step(self, is_testing=False, ep=0, total_ep=1):
+    def step(self, is_testing=False):
         if self.has_ended():
             return
+        if self.idx >= len(self.agents):
+            self.step_count += 1
+            self.idx = 0
             # random.shuffle(self.agent_idx)
 
         agent = self.agents[self.idx]
         observed_state = self.extract_state(self.idx)
         choose_best = is_testing or not agent.get_type() in self.learners
-        action = agent.choose_action(
-            observed_state, choose_best=choose_best, episode_ratio=ep / total_ep
-        )
+        action = agent.choose_action(observed_state, choose_best=choose_best)
         if debug:
             old_pos = self.agent_positions[self.idx]
         reward, next_state, is_terminal = self.move(self.idx, action)
@@ -396,9 +363,6 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         )
 
         self.idx += 1
-        if self.idx >= len(self.agents):
-            self.step_count += 1
-            self.idx = 0
         return loss, epsilon
 
     def move(
@@ -467,7 +431,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
 
     # ----- Public Functions ----- #
     def reset(self, random_pos=True):
-        self.step_count = 0
+        self.step_count = 1
         self.goal_reached = False
         self.idx = 0
         if random_pos:
