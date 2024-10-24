@@ -61,19 +61,21 @@ class Trainer:
         self.reset()
         for i in range(itr):
             # self.learners = [1, 2]
-            if i / itr >= 0.3:
-                self.learners = [1, 2]
-                self.enable_learning(agent_type=1)
-                self.enable_learning(agent_type=2)
-            else:
-                if (i // (itr // 100)) % 2 == 0:
-                    self.learners = [1]
-                    self.enable_learning(agent_type=1)
-                    self.disable_learning(agent_type=2)
-                else:
-                    self.learners = [2]
-                    self.enable_learning(agent_type=2)
-                    self.disable_learning(agent_type=1)
+            self.enable_learning(agent_type=1)
+            self.enable_learning(agent_type=2)
+            # if i / itr >= 0.3:
+            #     self.learners = [1, 2]
+            #     self.enable_learning(agent_type=1)
+            #     self.enable_learning(agent_type=2)
+            # else:
+            #     if (i // (itr // 100)) % 2 == 0:
+            #         self.learners = [1]
+            #         self.enable_learning(agent_type=1)
+            #         self.disable_learning(agent_type=2)
+            #     else:
+            #         self.learners = [2]
+            #         self.enable_learning(agent_type=2)
+            #         self.disable_learning(agent_type=1)
             if i % upd_freq == 0:
                 for dqn in [dqn1, dqn2]:
                     dqn.update_target()

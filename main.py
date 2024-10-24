@@ -92,7 +92,7 @@ if __name__ == "__main__":
     gamma = 0.9
     eps_min = 0.005
     batch_size = 32
-    eps_decay_final_step = 17e3
+    eps_decay_final_step = 1.6e4
     max_grad_norm = 5e3
 
     buffer1 = ExpBuffer(max=max_exp)
