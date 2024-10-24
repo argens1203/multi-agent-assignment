@@ -277,7 +277,13 @@ class Visual:
         """
         agent_types = map(lambda agent: agent.get_type(), self.agents)
         have_secrets = map(lambda agent: agent.have_secret, self.agents)
-        return list(zip(self.get_agent_positions(), agent_types, have_secrets))
+        step_counts = [
+            self.step_count + 1 if idx < self.idx else self.step_count
+            for idx in range(len(self.agents))
+        ]
+        return list(
+            zip(self.get_agent_positions(), agent_types, have_secrets, step_counts)
+        )
 
     def get_total_reward(self):
         return sum(map(lambda a: a.get_total_reward(), self.agents))
@@ -298,7 +304,8 @@ class Visual:
         return self.goal_reached
 
     def get_step_count(self) -> int:
-        return self.step_count
+        # Incremented whenever first agent made a move
+        return self.step_count + (1 if self.idx >= 1 else 0)
 
 
 class GridUtil:
@@ -402,9 +409,6 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
     def step(self, is_testing=False, ep=0, total_ep=1):
         if self.has_ended():
             return
-        if self.idx >= len(self.agents):
-            self.step_count += 1
-            self.idx = 0
             # random.shuffle(self.agent_idx)
 
         agent = self.agents[self.idx]
@@ -431,6 +435,9 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         )
 
         self.idx += 1
+        if self.idx >= len(self.agents):
+            self.step_count += 1
+            self.idx = 0
         return loss, epsilon
 
     def move(
@@ -501,7 +508,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
     def reset(self):
         self.step_count = 0
         self.goal_reached = False
-        self.itr = 0
+        self.idx = 0
         self.set_interactive_tiles()
         self.min_step = self.calculate_min_step()
         for agent in self.agents:

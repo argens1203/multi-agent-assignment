@@ -32,60 +32,6 @@ if __name__ == "__main__":
 
     seed_all(seed=1234)
 
-    # min_loss = 1e9
-
-    # for max_exp in [500]:
-    #     for upd_freq in [200]:
-    #         for eps_decay in [0.9995]:
-    #             for gamma in [0.9]:
-    #                 for batch_size in [64]:
-    #                     for eps_min in [0.005]:
-    #                         buffer1 = ExpBuffer(max=max_exp)
-    #                         buffer2 = ExpBuffer(max=max_exp)
-    #                         dqn1 = DQN(state_size=state_size, action_size=action_size)
-    #                         dqn2 = DQN(state_size=state_size, action_size=action_size)
-    #                         kwargs = {
-    #                             "update_frequency": upd_freq,
-    #                             "eps_decay": eps_decay,
-    #                             "eps_min": eps_min,
-    #                             "gamma": gamma,
-    #                             "batch_size": batch_size,
-    #                         }
-
-    #                         grid = Grid(
-    #                             side,
-    #                             side,
-    #                             [
-    #                                 Agent1(dqn1, buffer1, **kwargs),
-    #                                 Agent1(dqn1, buffer1, **kwargs),
-    #                                 Agent2(dqn2, buffer2, **kwargs),
-    #                                 Agent2(dqn2, buffer2, **kwargs),
-    #                             ],
-    #                             storage,
-    #                         )
-    #                         # grid.try_load_dqn()
-    #                         grid.reset()
-    #                         grid.train(20000)
-    #                         grid.reset()
-    #                         loss = grid.small_test(200)
-
-    #                         print(
-    #                             "max_exp",
-    #                             max_exp,
-    #                             "upd_freq",
-    #                             upd_freq,
-    #                             "eps_decay",
-    #                             eps_decay,
-    #                             "gamma",
-    #                             gamma,
-    #                             "batch_size",
-    #                             batch_size,
-    #                             "eps_min",
-    #                             eps_min,
-    #                         )
-    #                         if loss < min_loss:
-    #                             print(loss)
-
     max_exp = 100
     upd_freq = 80
     eps_decay = 0.9995
@@ -119,22 +65,22 @@ if __name__ == "__main__":
         agents,
         storage,
     )
-    # grid.try_load_dqn()
+    grid.try_load_dqn()
     # grid.reset()
-    grid.train(
-        20000,
-        upd_freq=upd_freq,
-        eps_min=eps_min,
-        eps_decay_final_step=eps_decay_final_step,
-        max_grad_norm=max_grad_norm,
-        dqn1=dqn1,
-        dqn2=dqn2,
-    )
+    # grid.train(
+    #     20000,
+    #     upd_freq=upd_freq,
+    #     eps_min=eps_min,
+    #     eps_decay_final_step=eps_decay_final_step,
+    #     max_grad_norm=max_grad_norm,
+    #     dqn1=dqn1,
+    #     dqn2=dqn2,
+    # )
 
     # grid.train(20000)
-    grid.save_dqn()
+    # grid.save_dqn()
     # grid.test(agents=agents)
-    grid.small_test(10000)
+    # grid.small_test(10000)
 
     fig2, ax2 = plt.subplots()
     MLGraph(storage.ml_losses, fig2, ax2).show()
@@ -143,7 +89,6 @@ if __name__ == "__main__":
 
     print(storage.epsilon)
 
-    fig1, ax1 = plt.subplots()
+    # fig1, ax1 = plt.subplots()
     grid.reset()
-    vis = Visualization(fig1, ax1)
-    vis.bind(storage, grid).show()
+    vis = Visualization(storage, grid).show()

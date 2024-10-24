@@ -79,15 +79,11 @@ class IVisual(ABC):
 
 
 class Visualization:
-    def __init__(self, fig, ax):
-        self.fig = fig
-        self.ax = ax
-        self.animating = False
-
-    def bind(self, storage: "Storage", grid: "Grid"):
+    def __init__(self, storage: "Storage", grid: "Grid"):
         self.storage = storage
         self.grid = grid
-        return self
+        self.fig, self.ax = plt.subplots()
+        self.animating = False
 
     def show(self):
         assert self.grid is not None
@@ -101,10 +97,10 @@ class Visualization:
         plt.show()
 
     def get_info(self):
-        agents = self.grid.get_agent_info()
+        agent_info = self.grid.get_agent_info()
         step_count = self.grid.get_step_count()
         min_step = self.grid.get_min_step()
-        return agents, step_count, min_step
+        return agent_info, step_count, min_step
 
     def frames(self):
         while True:
@@ -117,14 +113,14 @@ class Visualization:
     # ----- ----- ----- ----- Drawing Functions  ----- ----- ----- ----- #
 
     def draw(self, args):
-        info, step_count, min_step = args
+        agent_info, step_count, min_step = args
 
         self.ax.clear()
         self.draw_grid()
-        self.draw_agent(info)
+        self.draw_agent(agent_info)
 
-        self.reward.set_text(f"Step: {step_count + 1}")
-        self.max_reward.set_text(f"Min Step: {min_step}")
+        self.step_count.set_text(f"Step: {step_count}")
+        self.min_step.set_text(f"Min Step: {min_step}")
 
         # Check if the environment is terminal
         if self.grid.has_ended():
@@ -153,7 +149,6 @@ class Visualization:
         self.ax.xaxis.tick_top()
 
         # Draw target
-        # TODO: cater multiple goals
         tx, ty = self.grid.get_goal_positions()
         target_patch = patches.Rectangle(
             (tx, ty), 1, 1, linewidth=1, edgecolor="black", facecolor="green"
@@ -163,7 +158,7 @@ class Visualization:
     def draw_agent(self, info):
         # Draw agent
         # TODO: write self order on top
-        for idx, (pos, type, has_item) in enumerate(info):
+        for idx, (pos, type, has_item, step_count) in enumerate(info):
             dx = [0, 0.5, 0, 0.5][idx]
             dy = [0, 0, 0.5, 0.5][idx]
             ax, ay = pos
@@ -182,6 +177,16 @@ class Visualization:
                 facecolor=agent_color,
             )
             self.ax.add_patch(agent_patch)
+            self.ax.text(
+                ax + dx + 0.17,
+                ay + dy + 0.33,
+                step_count,
+                c="yellow",
+                ma="center",
+                size="large",
+                weight="bold",
+                # backgroundcolor="white",
+            )
 
     def draw_item(self, items):
         for item in items:
@@ -235,10 +240,10 @@ class Visualization:
 
     def init_text(self):
         # Add text box for cumulative reward
-        self.reward = self.add_text([0.01, 0.01, 0.2, 0.075], f"Step: 0")
+        self.step_count = self.add_text([0.01, 0.01, 0.2, 0.075], f"Step: 0")
 
         # Add text box for max reward
-        self.max_reward = self.add_text(
+        self.min_step = self.add_text(
             [0.25, 0.01, 0.2, 0.075],
             f"Min Step: {self.grid.get_min_step()}",
         )
