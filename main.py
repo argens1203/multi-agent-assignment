@@ -87,7 +87,7 @@ if __name__ == "__main__":
     #                             print(loss)
 
     max_exp = 100
-    upd_freq = 100
+    upd_freq = 80
     eps_decay = 0.9995
     gamma = 0.9
     eps_min = 0.005
