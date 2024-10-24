@@ -9,8 +9,8 @@ import numpy as np
 class DQN:
     def __init__(self, state_size, action_size=4):
         l1 = state_size
-        l2 = 150
-        l3 = 150
+        l2 = 200
+        l3 = 200
         l5 = action_size
         self.model = torch.nn.Sequential(
             torch.nn.Linear(l1, l2),
