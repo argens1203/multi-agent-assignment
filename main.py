@@ -62,7 +62,8 @@ if __name__ == "__main__":
         agents,
         storage,
     )
-    grid.try_load_dqn()
+    dqn1.load("dqn1")
+    dqn2.load("dqn2")
     # grid.train(
     #     20000,
     #     upd_freq=upd_freq,
@@ -73,20 +74,21 @@ if __name__ == "__main__":
     #     dqn2=dqn2,
     # )
     # grid.train(20000)
-    # grid.save_dqn()
+    # dqn1.save("dqn1")
+    # dqn2.save("dqn2")
 
-    # grid.small_test(10000)
-    # Graph(storage=storage, keys=["ml_losses"])
-    # Graph(storage=storage, keys=["losses", "epsilon"])
+    grid.small_test(10000)
+    Graph(storage=storage, keys=["ml_losses"])
+    Graph(storage=storage, keys=["losses", "epsilon"])
 
-    grid.test()
-    print("---------------STEP_COUNT----------------------")
-    for i, value in enumerate(storage.step_count):
-        print(i, value)
-    print("---------------EXCESS----------------------")
-    for i, value in enumerate(storage.excess_step):
-        print(i, value)
+    # grid.test()
+    # print("---------------STEP_COUNT----------------------")
+    # for i, value in enumerate(storage.step_count):
+    #     print(i, value)
+    # print("---------------EXCESS----------------------")
+    # for i, value in enumerate(storage.excess_step):
+    #     print(i, value)
 
-    Graph(storage=storage, keys=["step_count", "excess_step"]).show()
-    grid.reset()
+    # Graph(storage=storage, keys=["step_count", "excess_step"]).show()
+    # grid.reset()
     vis = Visualization(storage, grid).show()

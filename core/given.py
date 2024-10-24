@@ -71,10 +71,17 @@ class DQN:
         self.optimizer.step()
         return loss.item() / len(X)
 
-    def save(self, idx):
-        torch.save(self.model.state_dict(), f"agent_{idx}_1.pth")
-        torch.save(self.model2.state_dict(), f"agent_{idx}_2.pth")
+    def save(self, prefix):
+        torch.save(self.model.state_dict(), f"{prefix}_1.pth")
+        torch.save(self.model2.state_dict(), f"{prefix}_2.pth")
 
-    def load(self, idx):
-        self.model.load_state_dict(torch.load(f"agent_{idx}_1.pth", weights_only=True))
-        self.model2.load_state_dict(torch.load(f"agent_{idx}_2.pth", weights_only=True))
+    def load(self, prefix):
+        try:
+            self.model.load_state_dict(
+                torch.load(f"{prefix}_1.pth", weights_only=False, map_location=device)
+            )
+            self.model2.load_state_dict(
+                torch.load(f"{prefix}_2.pth", weights_only=False, map_location=device)
+            )
+        except:
+            print("load state_dict failed")

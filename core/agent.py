@@ -164,12 +164,6 @@ class Agent(ABC):
     def get_type(self):
         pass
 
-    def load(self, idx):
-        self.dqn.load(idx)
-
-    def save(self, idx):
-        self.dqn.save(idx)
-
     def is_different_type(self, other: "Agent"):
         return other.get_type() != self.get_type()
 
