@@ -157,7 +157,6 @@ class Visualization:
 
     def draw_agent(self, info):
         # Draw agent
-        # TODO: write self order on top
         for idx, (pos, type, has_item, step_count) in enumerate(info):
             dx = [0, 0.5, 0, 0.5][idx]
             dy = [0, 0, 0.5, 0.5][idx]
@@ -188,12 +187,6 @@ class Visualization:
                 # backgroundcolor="white",
             )
 
-    def draw_item(self, items):
-        for item in items:
-            ix, iy = item
-            item_patch = patches.Circle((ix + 0.5, iy + 0.5), 0.2, color="red")
-            self.ax.add_patch(item_patch)
-
     def draw_complete(self):
         self.ax.text(
             0.5,
@@ -221,9 +214,6 @@ class Visualization:
             ("Reset", self.on_reset),
             ("Anim\nOn", self.on_toggle_anim, "toggle_anim_btn"),
             ("Auto Reset\nOn", self.on_auto_reset, "toggle_auto_reset_btn"),
-            ("Train 2500", self.on_train(2500, blocking=True)),
-            ("Train Graph", self.on_show_graph),
-            ("Test", self.on_test(100, blocking=True)),
         ]
         self.buttons = []
         x, y, w, h = 0.85, 0.01, 0.12, 0.075
@@ -250,7 +240,6 @@ class Visualization:
 
     def add_button(self, coordinates: Coordinates, text, on_click):
         axis = plt.axes(coordinates)
-        # axis = self.ax
         button = Button(axis, text)
         button.on_clicked(on_click)
 
@@ -258,7 +247,6 @@ class Visualization:
 
     def add_text(self, coordinates: Coordinates, text):
         axis = plt.axes(coordinates)
-        # axis = self.ax
         textbox = axis.text(
             0.5,
             0.5,
@@ -275,40 +263,6 @@ class Visualization:
 
     def on_close(self, e):
         self.ani.event_source.stop()
-
-    def on_show_graph(self, e):
-        fig2, ax2 = plt.subplots()
-        MLGraph(self.storage.ml_losses, fig2, ax2).show()
-
-    def on_test(self, episodes, blocking=False):
-        def non_blocking_test(e):
-            self.before_auto_train()
-            self.grid.test_in_background(episodes)
-            self.after_auto_train()
-
-        def blocking_test(e):
-            losses, step_counts = self.grid.test(episodes)
-
-            fig2, ax2 = plt.subplots()
-            MLGraph(losses, fig2, ax2).show()
-
-            fig3, ax3 = plt.subplots()
-            MLGraph(step_counts, fig3, ax3).show()
-
-        return blocking_test if blocking else non_blocking_test
-
-    def on_train(self, episodes, blocking=False):
-        def blocking_train(e):
-            ml_losses = self.grid.train(episodes)
-            fig2, ax2 = plt.subplots()
-            MLGraph(ml_losses, fig2, ax2).show()
-
-        def non_blocking_train(e):
-            self.before_auto_train()
-            self.grid.train_in_background()
-            self.after_auto_train()
-
-        return blocking_train if blocking else non_blocking_train
 
     def on_auto_reset(self, event):
         is_on = self.grid.toggle_auto_reset()
@@ -334,46 +288,6 @@ class Visualization:
     def on_next(self, e):
         self.grid.next()
         self.draw(self.get_info())
-
-    # ----- ----- ----- ----- Helper Functions  ----- ----- ----- ----- #
-
-    def before_auto_train(self):
-        self.animating = False
-        self.grid.reset()
-
-        self.toggle_anim_btn.label.set_text("Anim\nOff")
-        self.draw(self.get_info())
-
-    def after_auto_train(self):
-        self.animating = True
-        self.grid.reset()
-
-        self.toggle_anim_btn.label.set_text("Anim\nOn")
-        self.draw(self.get_info())
-
-    # ----- ----- ----- ----- Plot Metrics  ----- ----- ----- ----- #
-    def plot_training(results):
-        iterations, losses, total_rewards = results
-        # Create a figure with 1 row and 2 columns of subplots
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-
-        # Plotting the loss in the first subplot
-        ax1.plot(iterations, losses, marker="o", label="Loss")
-        ax1.set_title("Iteration vs Loss")
-        ax1.set_xlabel("Iteration Number")
-        ax1.set_ylabel("Loss")
-
-        # Plotting the total rewards in the second subplot
-        ax2.plot(
-            iterations, total_rewards, label="Total Reward", color="orange", marker="o"
-        )
-        ax2.set_title("Epsilon decay across iteration")
-        ax2.set_xlabel("Iteration Number")
-        ax2.set_ylabel("Epsilon")
-
-        # Display the plots
-        plt.tight_layout()
-        plt.show()
 
 
 import matplotlib.animation as animation
