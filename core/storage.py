@@ -14,7 +14,7 @@ class Storage:
         self.test_loss = []
         self.ml_losses = []
 
-        self.step_count = Array("i", 51)
+        self.step_count_hist = Array("i", 51)
         self.excess_step_hist = Array("i", 51)
 
     def reset_counter(self):
@@ -27,8 +27,8 @@ class Storage:
         self.epsilon[self.itr] = epsilon
         self.itr += 1
 
-    def append_step_count(self, step_count: int):
-        self.step_count[step_count] += 1
+    def append_step_count_hist(self, step_count: int):
+        self.step_count_hist[step_count] += 1
 
     def append_excess_step_hist(self, excess_step: int):
         self.excess_step_hist[excess_step] += 1

@@ -74,7 +74,7 @@ class Trainer:
                 is_testing=False
             )
 
-            self.storage.append_ml_losses(ml_losses / len(ml_losses))
+            self.storage.append_ml_losses(sum(ml_losses) / len(ml_losses))
             self.storage.append_excess_epsilon(excess_step, epsilon)
 
             if (i + 1) % 100 == 0:
@@ -93,12 +93,13 @@ class Trainer:
 
         for i in range(itr):
             self.reset()
-            loss, reward, eps, ml_losses, step_count = self.play_one_game(
+            excess_step, reward, eps, ml_losses, step_count = self.play_one_game(
                 is_testing=True
             )
+            self.storage.append_excess_step_hist(excess_step)
             if step_count < 15:
                 success_count += 1
-            total_loss += loss
+            total_loss += excess_step
             total_step_count += step_count
             if (i + 1) % 100 == 0:
                 print(
@@ -133,8 +134,8 @@ class Trainer:
                                 self.play_one_game(is_testing=True)
                             )
 
-                            self.storage.append_step_count(step_count)
-                            self.storage.append_excess_step(excess_step)
+                            self.storage.append_step_count_hist(step_count)
+                            self.storage.append_excess_step_hist(excess_step)
 
                             total_step_count += step_count
                             excess_step_count += excess_step
@@ -221,7 +222,7 @@ class Visual:
         return self.goal_reached
 
     def get_step_count(self) -> int:
-        # Incremented whenever first agent made a move
+        # Incremented when last agent made a move
         return self.step_count
 
 

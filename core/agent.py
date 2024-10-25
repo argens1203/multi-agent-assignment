@@ -72,7 +72,6 @@ class Agent(ABC):
 
         # Agent Properties
         self.total_reward = 0
-        self.step_count = 0
         self.have_secret = False
 
         # Initialize Q Table for all state-action to be 0
@@ -129,12 +128,6 @@ class Agent(ABC):
             targets[indices] = rewards[indices]
 
             loss = self.dqn.train_one_step(states, actions, targets)
-
-        if self.step_count >= self.update_frequency:
-            # self.dqn.update_target()
-            self.step_count = 0
-        else:
-            self.step_count += 1
 
         return loss, self.epsilon
 
