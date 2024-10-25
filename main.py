@@ -15,7 +15,6 @@ import random, os, numpy as np, torch
 if __name__ == "__main__":
 
     storage = Storage(20000)
-    possible_actions = [(0, -1), (0, 1), (-1, 0), (1, 0), (0, 0)]
 
     def seed_all(seed=1029):
         random.seed(seed)
@@ -62,15 +61,15 @@ if __name__ == "__main__":
     )
     dqn1.load("dqn1")
     dqn2.load("dqn2")
-    # grid.train(
-    #     20000,
-    #     upd_freq=upd_freq,
-    #     eps_min=eps_min,
-    #     eps_decay_final_step=eps_decay_final_step,
-    #     max_grad_norm=max_grad_norm,
-    #     dqn1=dqn1,
-    #     dqn2=dqn2,
-    # )
+    grid.train(
+        20000,
+        upd_freq=upd_freq,
+        eps_min=eps_min,
+        eps_decay_final_step=eps_decay_final_step,
+        max_grad_norm=max_grad_norm,
+        dqn1=dqn1,
+        dqn2=dqn2,
+    )
     # dqn1.save("dqn1")
     # dqn2.save("dqn2")
     # Graph(storage=storage, keys=["ml_losses"])
