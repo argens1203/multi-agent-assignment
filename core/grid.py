@@ -330,20 +330,14 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         if self.idx >= len(self.agents):
             self.step_count += 1
             self.idx = 0
-            # random.shuffle(self.agent_idx)
 
         agent = self.agents[self.idx]
         observed_state = self.extract_state(self.idx)
+
+        # Disable epsilon exploration when testing or when not being trained
         choose_best = is_testing or not agent.get_type() in self.learners
         action = agent.choose_action(observed_state, choose_best=choose_best)
-        if debug:
-            old_pos = self.agent_positions[self.idx]
         reward, next_state, is_terminal = self.move(self.idx, action)
-        if debug:
-            print(
-                f"Agent {self.idx} of type {agent.get_type()} chose action {action} and moved from {old_pos} to {self.agent_positions[self.idx]}"
-            )
-            print(f"Agent {self.idx} received a reward of {reward}")
 
         loss, epsilon = agent.update(
             state=observed_state,
@@ -366,6 +360,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
 
         reward = 0
 
+        # Penalise when walking into wall
         def clamp(i: int, lower: int, upper: int) -> Tuple[int, int]:
             penalty = -10 if i < lower or i > upper else 0
             return penalty, min(max(i, lower), upper)
@@ -374,12 +369,15 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         penalty, new_x = clamp(new_x, 0, self.width - 1)
         penalty, new_y = clamp(new_y, 0, self.height - 1)
         reward += penalty
+
+        # -1 for each turn
         reward -= 1
 
         new_pos = new_x, new_y
         agent = self.agents[idx]
         if new_pos == self.goal_pos:
             if agent.have_secret:
+                # +50 for reaching the goal with secret
                 reward += 50
                 self.goal_reached = True
         else:
@@ -393,26 +391,19 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
                 for o_idx in other_indices
                 if self.agents[o_idx].get_type() != self.agents[idx].get_type()
             ]
-            # got_secret = False
             if len(other_agents_diff_type) > 0:
                 if not self.agents[idx].have_secret:
+                    # + 20 for getting the secret
                     reward += 20
-                    # pass
                 for agent in other_agents_diff_type + [self.agents[idx]]:
-                    # if not agent.have_secret:
-                    # got_secret = True
                     agent.have_secret_(True)
-            # if got_secret:
-            # reward += 20
 
         self.agent_positions[idx] = new_pos
-        if debug:
-            print(f"reward: {reward}")
-            print(f"has secret: {agent.have_secret}")
         return reward, self.extract_state(idx), self.goal_reached
 
     # ----- Private Functions ----- #
     def reorder_for_min_step(self):
+        # Further away an agent is from goal position, earlier it moves
         idx_positions = list(enumerate(self.agent_positions))
         idx_positions.sort(
             key=lambda idx_pos: -self.calc_mht_dist(idx_pos[1], self.goal_pos)
@@ -444,6 +435,7 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
 
         state = torch.zeros(state_size, dtype=dtype)
 
+        # One-hot vector of agent_pos, closest_oppo, goal_pos concatenatanted, with one bit for self.have_secret
         state[x * side + y] = 1
         state[side**2 + x2 * side + y2] = 1
         state[side**2 * 2 + x3 * side + y3] = 1

@@ -60,9 +60,6 @@ class Agent(ABC):
         self,
         dqn,
         buffer,
-        update_frequency=500,
-        eps_decay=0.9999,
-        eps_min=0.05,
         gamma=0.997,
         batch_size=200,
     ):
@@ -76,29 +73,24 @@ class Agent(ABC):
 
         # Initialize Q Table for all state-action to be 0
         self.batch_size = batch_size
-        self.update_frequency = update_frequency  # Network update frequency
 
         # Initialize Learning param
-        self.epsilon = 1
-        self.decay_ratio = eps_decay
-        self.epsilon_min = eps_min
+        self.epsilon = 1  # Epsilon is updated at Grid level
         self.gamma = gamma
 
         self.learning = True
 
     # ----- Core Functions ----- #
     def choose_action(self, state: torch.tensor, choose_best: bool) -> Tuple[int, int]:
-        if not choose_best and np.random.rand() < self.epsilon:
-            # self.epsilon_decay(episode_ratio)
+        if (
+            not choose_best
+            and np.random.rand() < self.epsilon  # Epsilon is updated at Grid level
+        ):
             return random.choice(self.actions)
         else:
             # Extract immutable state information
             idx = torch.argmax(self.dqn.get_qvals(state))
             return self.actions[idx]
-
-    def epsilon_decay(self, episode_ratio):
-        self.epsilon *= self.decay_ratio
-        self.epsilon = max(self.epsilon, self.epsilon_min)
 
     def update(
         self,

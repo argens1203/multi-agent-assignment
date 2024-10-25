@@ -31,7 +31,6 @@ if __name__ == "__main__":
 
     max_exp = 100
     upd_freq = 80
-    eps_decay = 0.9995
     gamma = 0.9
     eps_min = 0.005
     batch_size = 32
@@ -44,7 +43,6 @@ if __name__ == "__main__":
     dqn2 = DQN(state_size=state_size, action_size=action_size)
     kwargs = {
         "update_frequency": upd_freq,
-        "eps_decay": eps_decay,
         "eps_min": eps_min,
         "gamma": gamma,
         "batch_size": batch_size,
