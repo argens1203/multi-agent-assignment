@@ -77,7 +77,7 @@ class Trainer:
             self.storage.append_ml_losses(sum(ml_losses) / len(ml_losses))
             self.storage.append_excess_epsilon(excess_step, epsilon)
 
-            if (i + 1) % 100 == 0:
+            if (i + 1) % 1000 == 0:
                 print(
                     f"Epoch: {i+1}/{itr} -- Time Elapsed: {datetime.datetime.now() - start}"
                 )
@@ -166,15 +166,18 @@ class Trainer:
         self.step_count = 1
         ml_losses = []
         epsilons = []
+        if is_testing:
+            starting = [self.extract_state(idx) for idx in range(len(self.agents))]
         while not self.has_ended() and self.step_count < max_step_count:
             ml_loss, epsilon = self.step(is_testing)
-
             if ml_loss is not None:
                 ml_losses.append(ml_loss)
             if epsilon is not None:
                 epsilons.append(epsilon)
         total_reward = sum(map(lambda a: a.get_total_reward(), self.agents))
         loss = self.step_count - self.min_step
+        if self.step_count >= max_step_count and is_testing:
+            print(starting)
         return (
             loss,
             total_reward,
@@ -309,10 +312,11 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         self.step_count = 1
 
         self.agents: List["Agent"] = agents
+        random.shuffle(self.agents)
         self.idx: int = 0
 
         self.set_interactive_tiles()
-        self.reorder_for_min_step()
+        # self.reorder_for_min_step()
 
     def set_interactive_tiles(self):
         # Assign goal to set position
@@ -418,10 +422,11 @@ class Grid(Controller, Trainer, GridUtil, Visual, IVisual):
         self.idx = 0
         if random_pos:
             self.set_interactive_tiles()
-        self.min_step = self.calculate_min_step()
+        self.min_step = self.calculate_min_step(clock=False)
         for agent in self.agents:
             agent.reset()
-        self.reorder_for_min_step()
+        random.shuffle(self.agents)
+        # self.reorder_for_min_step()
 
     def extract_state(self, idx):
         if debug:

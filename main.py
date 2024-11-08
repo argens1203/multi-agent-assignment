@@ -41,8 +41,8 @@ if __name__ == "__main__":
     dqn1 = DQN(state_size=state_size, action_size=action_size)
     dqn2 = DQN(state_size=state_size, action_size=action_size)
     kwargs = {
-        "update_frequency": upd_freq,
-        "eps_min": eps_min,
+        # "update_frequency": upd_freq,
+        # "eps_min": eps_min,
         "gamma": gamma,
         "batch_size": batch_size,
     }
@@ -59,8 +59,8 @@ if __name__ == "__main__":
         agents,
         storage,
     )
-    dqn1.load("dqn1")
-    dqn2.load("dqn2")
+    # dqn1.load("dqn1")
+    # dqn2.load("dqn2")
     grid.train(
         20000,
         upd_freq=upd_freq,
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     grid.small_test(10000)
     Graph(storage=storage, keys=["excess_step_hist"])
 
-    grid.test(1000)
+    grid.test(10000)
     # print("---------------STEP_COUNT----------------------")
     # for i, value in enumerate(storage.step_count_hist):
     #     print(i, value)
